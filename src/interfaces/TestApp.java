@@ -1,7 +1,5 @@
-package test;
+package interfaces;
 
-
-import rmi.RMIProtocol;
 
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -26,19 +24,19 @@ public class TestApp {
 
         switch(args[1]) {
             case "backup":
-                remoteService.backupFile(args[2], Integer.parseInt(args[3]));
+                remoteService.backup(args[2], Integer.parseInt(args[3]));
                 break;
             case "restore":
-                remoteService.recoverFile(args[2]);
+                remoteService.restore(args[2]);
                 break;
             case "delete":
-                remoteService.deleteFile(args[2]);
+                remoteService.delete(args[2]);
                 break;
             case "reclaim":
-                remoteService.reclaimSpace(Integer.parseInt(args[2]));
+                remoteService.reclaim(Integer.parseInt(args[2]));
                 break;
             case "state":
-                remoteService.retrieveState();
+                remoteService.state();
                 break;
         }
     }

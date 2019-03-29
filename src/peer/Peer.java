@@ -3,7 +3,7 @@ package peer;
 import receiver.Channel;
 import protocol.*;
 import receiver.SocketReceiver;
-import rmi.RMIProtocol;
+import interfaces.RMIProtocol;
 
 import java.io.*;
 import java.rmi.RemoteException;
@@ -89,11 +89,15 @@ public class Peer implements RMIProtocol {
 // peer.Peer args
     //<protocol version> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>
     public static void main(final String args[]) throws IOException {
-        Peer peer;
-        if(!checkArgs(args))
-            printUsage();
-        else
-            peer = new Peer(args);
+        if (args.length != 9) {
+            System.out.println("Usage: java peer.Peer" +
+                    " <protocol_version> <peer_id> <service_access_point>" +
+                    " <MCReceiver_address> <MCReceiver_port> <MDBReceiver_address>" +
+                    " <MDBReceiver_port> <MDRReceiver_address> <MDRReceiver_port>");
+            return;
+        }
+
+        new Peer(args);
     }
 
     /**
@@ -127,26 +131,6 @@ public class Peer implements RMIProtocol {
         this.MC = new Channel(args[3], Integer.parseInt(args[4]));
         this.MDB = new Channel(args[5], Integer.parseInt(args[6]));
         this.MDR = new Channel(args[7], Integer.parseInt(args[8]));
-    }
-
-    /**
-      * Checks if peer arguments are correct
-      *
-      * @param args args to be checked
-      * @return true if args are correct, false otherwise
-      */
-    private static boolean checkArgs(final String args[]) {
-        //TODO: add thorough args verification
-        return args.length >= 9;
-    }
-
-    /**
-      * Print usage to show an user how to properly start a peer
-      */
-    private static void printUsage() {
-        //TODO: add thorough usage information
-        System.out.println("Usage:");
-        System.out.println("Java peer.Peer : <protocol version> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>");
     }
 
     /**
@@ -247,7 +231,7 @@ public class Peer implements RMIProtocol {
       * @throws RemoteException
       */
     @Override
-    public void backupFile(String filePath, int replicationDegree) throws RemoteException{
+    public void backup(String filePath, int replicationDegree) throws RemoteException{
         ProtocolInitiator backupInstance = new BackupInitiator(this, filePath, replicationDegree, MDB);
         threadPool.submit(backupInstance);
     }
@@ -259,7 +243,7 @@ public class Peer implements RMIProtocol {
       * @throws RemoteException
       */
     @Override
-    public void recoverFile(String filePath) throws RemoteException {
+    public void restore(String filePath) throws RemoteException {
         //TODO: make proper verification
         if(!version.equals("1.0")) {
             System.out.println("Starting enhanced restore protocol");
@@ -277,7 +261,7 @@ public class Peer implements RMIProtocol {
       * @throws RemoteException
       */
     @Override
-    public void deleteFile(String filePath) throws RemoteException {
+    public void delete(String filePath) throws RemoteException {
         ProtocolInitiator deleteInstance = new DeleteInitiator(this, filePath, MC);
         threadPool.submit(deleteInstance);
     }
@@ -289,7 +273,7 @@ public class Peer implements RMIProtocol {
       * @throws RemoteException
       */
     @Override
-    public void reclaimSpace(long space) throws RemoteException {
+    public void reclaim(long space) throws RemoteException {
         ProtocolInitiator reclaimInstance = new ReclaimInitiator(this, space);
         threadPool.submit(reclaimInstance);
     }
@@ -300,7 +284,7 @@ public class Peer implements RMIProtocol {
       * @throws RemoteException
       */
     @Override
-    public void retrieveState() throws RemoteException {
+    public void state() throws RemoteException {
         System.out.println(controller.toString());
     }
 }

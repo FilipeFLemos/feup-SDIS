@@ -1,4 +1,4 @@
-package rmi;
+package interfaces;
 
 import java.rmi.Remote;
 import java.rmi.RemoteException;
@@ -12,7 +12,7 @@ public interface RMIProtocol extends Remote {
      * @param replicationDegree the desired replication degree
      * @throws RemoteException
      */
-    void backupFile(String filePath, int replicationDegree) throws RemoteException;
+    void backup(String filePath, int replicationDegree) throws RemoteException;
 
     /**
      * Restore file service.
@@ -20,7 +20,7 @@ public interface RMIProtocol extends Remote {
      * @param filePath the file path
      * @throws RemoteException
      */
-    void recoverFile(String filePath) throws RemoteException;
+    void restore(String filePath) throws RemoteException;
 
     /**
      * Delete file service.
@@ -28,7 +28,7 @@ public interface RMIProtocol extends Remote {
      * @param filePath the file path
      * @throws RemoteException
      */
-    void deleteFile(String filePath) throws RemoteException;
+    void delete(String filePath) throws RemoteException;
 
     /**
      * Reclaim space service.
@@ -36,12 +36,12 @@ public interface RMIProtocol extends Remote {
      * @param space new value for reserved peer storage space
      * @throws RemoteException
      */
-    void reclaimSpace(long space) throws RemoteException;
+    void reclaim(long space) throws RemoteException;
 
     /**
      * Retrieve state service.
      *
      * @throws RemoteException
      */
-    void retrieveState() throws RemoteException;
+    void state() throws RemoteException;
 }
