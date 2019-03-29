@@ -6,7 +6,6 @@ import receiver.SocketReceiver;
 import interfaces.RMIProtocol;
 
 import java.io.*;
-import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -69,11 +68,6 @@ public class Peer implements RMIProtocol {
     private Channel MDB;
 
     /**
-     * Restore channel
-     */
-    private Channel MDR;
-
-    /**
      * Controller
      */
     private PeerController controller;
@@ -84,7 +78,6 @@ public class Peer implements RMIProtocol {
      * Constructor. Initiates peer from CLI args
      *
      * @param args initialization arguments
-     * @throws IOException
      */
     private Peer(final String args[]) throws IOException {
         System.out.println("Starting Peer with protocol protocolVersion " + args[0]);
@@ -109,7 +102,6 @@ public class Peer implements RMIProtocol {
 
         MC = new Channel(args[3], Integer.parseInt(args[4]));
         MDB = new Channel(args[5], Integer.parseInt(args[6]));
-        MDR = new Channel(args[7], Integer.parseInt(args[8]));
     }
 
     // peer.Peer args
@@ -131,7 +123,7 @@ public class Peer implements RMIProtocol {
      *
      * @param accessPoint the RMI access point
      */
-    protected void initRMI(String accessPoint) {
+    private void initRMI(String accessPoint) {
         try {
             RMIProtocol removeService = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
 
@@ -151,7 +143,7 @@ public class Peer implements RMIProtocol {
      *
      * @return true if controller successfully loaded from .ser file, false otherwise
      */
-    public boolean loadPeerController() {
+    private boolean loadPeerController() {
         try {
             FileInputStream controllerFile = new FileInputStream("PeerController" + peerId + ".ser");
             ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
@@ -162,9 +154,7 @@ public class Peer implements RMIProtocol {
             return true;
         } catch (FileNotFoundException e) {
             System.out.println("No pre-existing PeerController found, starting new one");
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
+        } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
 
@@ -174,7 +164,7 @@ public class Peer implements RMIProtocol {
     /**
      * Saves the controller state to non-volatile memory
      */
-    public void saveController() {
+    private void saveController() {
         try {
             FileOutputStream controllerFile = new FileOutputStream("PeerController" + peerId + ".ser");
             ObjectOutputStream controllerObject = new ObjectOutputStream(controllerFile);
