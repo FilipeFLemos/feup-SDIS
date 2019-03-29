@@ -1,6 +1,6 @@
 package storage;
 
-import message.Message;
+import message.PackedMessage;
 import message.PutChunkMessage;
 import utils.Globals;
 import utils.Utils;
@@ -9,7 +9,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class ChunkCreator {
-    private ArrayList<Message> chunkList;
+    private ArrayList<PackedMessage> chunkList;
 
     private int nChunks;
 
@@ -87,7 +87,7 @@ public class ChunkCreator {
      *
      * @return the chunk list
      */
-    public ArrayList<Message> getChunkList() {
+    public ArrayList<PackedMessage> getChunkList() {
         return chunkList;
     }
 }

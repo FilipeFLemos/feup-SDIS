@@ -1,9 +1,8 @@
 package protocol;
 
+import message.PackedMessage;
 import receiver.Channel;
-import message.Message;
 import peer.Peer;
-import utils.Utils;
 
 import java.util.ArrayList;
 
@@ -34,12 +33,12 @@ public abstract class ProtocolInitiator implements Runnable {
     /**
      * Send a list of messages to the channel.
      *
-     * @param messageList  the message list
+     * @param packedMessageList  the message list
      */
-    protected void sendMessages(ArrayList<Message> messageList) {
-        for(Message message : messageList) {
-            this.channel.sendMessage(message);
-            System.out.println("Sent " + message.getType() + " message: " + message.getChunkIndex());
+    protected void sendMessages(ArrayList<PackedMessage> packedMessageList) {
+        for(PackedMessage packedMessage : packedMessageList) {
+            this.channel.sendMessage(packedMessage);
+            System.out.println("Sent " + packedMessage.getType() + " packedMessage: " + packedMessage.getChunkIndex());
         }
     }
 

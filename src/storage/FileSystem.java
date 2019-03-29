@@ -1,7 +1,7 @@
 package storage;
 
 import message.ChunkMessage;
-import message.Message;
+import message.PackedMessage;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -64,7 +64,7 @@ public class FileSystem implements Serializable {
      * @param chunk the chunk to store
      * @return true if successful, false otherwise
      */
-    public synchronized boolean storeChunk(Message chunk) {
+    public synchronized boolean storeChunk(PackedMessage chunk) {
         if(!hasFreeSpace(chunk.getBody().length))
             return false;
 
@@ -91,7 +91,7 @@ public class FileSystem implements Serializable {
      * @param chunkIndex the chunk index
      * @return message with the chunk
      */
-    public synchronized Message retrieveChunk(String fileID, int chunkIndex) {
+    public synchronized PackedMessage retrieveChunk(String fileID, int chunkIndex) {
         Path chunkPath = Paths.get(this.backupDirectory + "/"+fileID+"_"+chunkIndex);
 
         byte[] buf = null;
@@ -101,7 +101,7 @@ public class FileSystem implements Serializable {
             e.printStackTrace();
         }
 
-        Message chunk = new ChunkMessage(peerVersion, peerID, fileID, chunkIndex, buf);
+        PackedMessage chunk = new ChunkMessage(peerVersion, peerID, fileID, chunkIndex, buf);
         return chunk;
     }
 

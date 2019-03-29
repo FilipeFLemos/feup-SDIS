@@ -1,6 +1,6 @@
 package message;
 
-public class PutChunkMessage extends Message {
+public class PutChunkMessage extends PackedMessage {
 
     /**
      * Instantiates a new Put chunk message.

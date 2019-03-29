@@ -1,6 +1,6 @@
 package receiver;
 
-import message.Message;
+import message.PackedMessage;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -42,12 +42,12 @@ public class Channel {
     }
 
     /**
-     * Sends a message encapsulated in a Message object to the channel
+     * Sends a packedMessage encapsulated in a PackedMessage object to the channel
      *
-     * @param message the message to be sent
+     * @param packedMessage the packedMessage to be sent
      */
-    public void sendMessage(Message message) {
-        byte[] rbuf = message.buildMessagePacket();
+    public void sendMessage(PackedMessage packedMessage) {
+        byte[] rbuf = packedMessage.buildMessagePacket();
         try {
             this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));
         } catch (IOException e) {

@@ -1,6 +1,6 @@
 package message;
 
-public class StoredMessage extends Message {
+public class StoredMessage extends PackedMessage {
 
     /**
      * Instantiates a new Stored message.

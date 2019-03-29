@@ -1,6 +1,6 @@
 package receiver;
 
-import message.Message;
+import message.PackedMessage;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
@@ -73,10 +73,10 @@ public class SocketReceiver implements Runnable {
             e.printStackTrace();
         }
 
-        Message message;
-        while((message = (Message) stream.readObject()) != null) {
-            dispatcher.handleMessage(message, null);
-            System.out.println("Received CHUNK message " + message.getChunkIndex() + " via TCP");
+        PackedMessage packedMessage;
+        while((packedMessage = (PackedMessage) stream.readObject()) != null) {
+            dispatcher.handleMessage(packedMessage, null);
+            System.out.println("Received CHUNK packedMessage " + packedMessage.getChunkIndex() + " via TCP");
 
             try {
                 stream = new ObjectInputStream(socket.getInputStream());

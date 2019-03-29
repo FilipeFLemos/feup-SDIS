@@ -1,6 +1,6 @@
 package receiver;
 
-import message.Message;
+import message.PackedMessage;
 import utils.Utils;
 
 import java.io.IOException;
@@ -85,12 +85,12 @@ public class Receiver {
     }
 
     /**
-     * Sends a message through the socket.
+     * Sends a packedMessage through the socket.
      *
-     * @param message the message to be sent
+     * @param packedMessage the packedMessage to be sent
      */
-    public void sendMessage(Message message) {
-        byte[] rbuf = message.buildMessagePacket();
+    public void sendMessage(PackedMessage packedMessage) {
+        byte[] rbuf = packedMessage.buildMessagePacket();
 
         try {
             this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));
@@ -100,12 +100,12 @@ public class Receiver {
     }
 
     /**
-     * Sends a message through the socket.
+     * Sends a packedMessage through the socket.
      *
-     * @param message the message to be sent
+     * @param packedMessage the packedMessage to be sent
      */
-    public void sendMessage(Message message, boolean sendBody) {
-        byte[] rbuf = message.buildMessagePacket(sendBody);
+    public void sendMessage(PackedMessage packedMessage, boolean sendBody) {
+        byte[] rbuf = packedMessage.buildMessagePacket(sendBody);
 
         try {
             this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));
@@ -115,15 +115,15 @@ public class Receiver {
     }
 
     /**
-     * Sends a message with random delay.
+     * Sends a packedMessage with random delay.
      *
      * @param min     the min delay
      * @param max     the max delay
-     * @param message the message to be sent
+     * @param packedMessage the packedMessage to be sent
      */
-    public void sendWithRandomDelay(int min, int max, Message message) {
+    public void sendWithRandomDelay(int min, int max, PackedMessage packedMessage) {
         threadPool.schedule(() -> {
-            sendMessage(message);
+            sendMessage(packedMessage);
         }, Utils.getRandomBetween(min, max), TimeUnit.MILLISECONDS);
     }
 

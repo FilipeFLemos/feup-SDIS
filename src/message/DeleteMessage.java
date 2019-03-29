@@ -1,6 +1,6 @@
 package message;
 
-public class DeleteMessage extends Message {
+public class DeleteMessage extends PackedMessage {
 
     /**
      * Instantiates a new Delete message.

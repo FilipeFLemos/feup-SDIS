@@ -1,7 +1,7 @@
 package message;
 
 /**
- * The enum Message type.
+ * The enum PackedMessage type.
  */
 public enum MessageType {
     /**

@@ -1,6 +1,6 @@
 package message;
 
-public class RemovedMessage extends Message {
+public class RemovedMessage extends PackedMessage {
     /**
      * Instantiates a new Removed message.
      *

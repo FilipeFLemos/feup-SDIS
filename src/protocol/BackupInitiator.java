@@ -1,7 +1,7 @@
 package protocol;
 
+import message.PackedMessage;
 import receiver.Channel;
-import message.Message;
 import peer.Peer;
 import storage.ChunkCreator;
 import utils.Globals;
@@ -34,7 +34,7 @@ public class BackupInitiator extends ProtocolInitiator {
     public void run() {
         ChunkCreator creator = new ChunkCreator(filePath, replicationDegree, peer.getPeerId(), peer.getProtocolVersion());
 
-        ArrayList<Message> chunkList = creator.getChunkList();
+        ArrayList<PackedMessage> chunkList = creator.getChunkList();
         String fileID = new String(chunkList.get(0).getFileID());
         int chunkAmmount = chunkList.size();
 
@@ -42,7 +42,7 @@ public class BackupInitiator extends ProtocolInitiator {
         int waitTime = 500; // initially 500 so in first iteration it doubles to 1000
 
         // notify peer to listen for these chunks' stored messages
-        for(Message chunk : chunkList)
+        for(PackedMessage chunk : chunkList)
             peer.getController().backedUpChunkListenForStored(chunk);
 
         do {
@@ -67,7 +67,7 @@ public class BackupInitiator extends ProtocolInitiator {
       * @param waitTime delay before starting to check
       * @return true if for every chunk observed rep degree >= desired rep degree
       */
-    private boolean confirmStoredMessages(ArrayList<Message> chunkList, int waitTime) {
+    private boolean confirmStoredMessages(ArrayList<PackedMessage> chunkList, int waitTime) {
         try {
             //TODO: remove sleeps
             Thread.sleep(waitTime);
@@ -77,7 +77,7 @@ public class BackupInitiator extends ProtocolInitiator {
 
         for(int i = 0; i < chunkList.size(); i++) {
             // if degree is satisfied, remove from list
-            Message chunk = chunkList.get(i);
+            PackedMessage chunk = chunkList.get(i);
             if (peer.getController().getBackedUpChunkRepDegree(chunk) >= chunk.getRepDegree()) {
                 chunkList.remove(chunk);
                 i--;

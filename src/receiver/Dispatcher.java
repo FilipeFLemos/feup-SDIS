@@ -1,6 +1,6 @@
 package receiver;
 
-import message.Message;
+import message.PackedMessage;
 import peer.PeerController;
 import utils.Globals;
 import utils.Utils;
@@ -30,17 +30,17 @@ public class Dispatcher {
     }
 
     /**
-      * Handles a message.
+      * Handles a packedMessage.
       *
-      * @param message message to be handled
-      * @param address address used in getchunk message handling
+      * @param packedMessage packedMessage to be handled
+      * @param address address used in getchunk packedMessage handling
       */
-    public void handleMessage(Message message, InetAddress address) {
+    public void handleMessage(PackedMessage packedMessage, InetAddress address) {
         //Ignore messages from self
-        if(message.getPeerID().equals(this.peerID))
+        if(packedMessage.getPeerID().equals(this.peerID))
             return;
 
-        dispatchMessage(message, address);
+        dispatchMessage(packedMessage, address);
     }
 
     /**
@@ -51,60 +51,60 @@ public class Dispatcher {
      * @param address address used in getchunk message handling
      */
     public void handleMessage(byte[] buf, int size, InetAddress address) {
-        Message message = new Message(buf, size);
+        PackedMessage packedMessage = new PackedMessage(buf, size);
 
-        if(message.getPeerID().equals(this.peerID))
+        if(packedMessage.getPeerID().equals(this.peerID))
             return;
-        dispatchMessage(message, address);
+        dispatchMessage(packedMessage, address);
     }
 
     /**
-      * Dispatches a message handler to the thread pool
+      * Dispatches a packedMessage handler to the thread pool
       *
-      * @param message message to be dispatched
-      * @param address address used in getchunk message dispatch
+      * @param packedMessage packedMessage to be dispatched
+      * @param address address used in getchunk packedMessage dispatch
       */
-    public void dispatchMessage(Message message, InetAddress address) {
+    public void dispatchMessage(PackedMessage packedMessage, InetAddress address) {
         int randomWait;
 
-        switch(message.getType()) {
+        switch(packedMessage.getType()) {
             case PUTCHUNK:
-                if(!message.getVersion().equals("1.0")) {
-                    controller.listenForStoredReplies(message);
+                if(!packedMessage.getVersion().equals("1.0")) {
+                    controller.listenForStoredReplies(packedMessage);
                     randomWait = Utils.getRandomBetween(0, Globals.MAX_BACKUP_ENH_WAIT_TIME);
                 }
                 else
                     randomWait = 0;
 
                 threadPool.schedule(() -> {
-                    controller.handlePutchunkMessage(message);
+                    controller.handlePutchunkMessage(packedMessage);
                 }, randomWait, TimeUnit.MILLISECONDS);
                 break;
             case STORED:
                 threadPool.submit(() -> {
-                    controller.handleStoredMessage(message);
+                    controller.handleStoredMessage(packedMessage);
                 });
                 break;
             case GETCHUNK:
-                controller.listenForChunkReplies(message);
+                controller.listenForChunkReplies(packedMessage);
                 randomWait = Utils.getRandomBetween(0, Globals.MAX_CHUNK_WAITING_TIME);
                 threadPool.schedule(() -> {
-                    controller.handleGetChunkMessage(message, address);
+                    controller.handleGetChunkMessage(packedMessage, address);
                 }, randomWait, TimeUnit.MILLISECONDS);
                 break;
             case CHUNK:
                 threadPool.submit(() -> {
-                    controller.handleChunkMessage(message);
+                    controller.handleChunkMessage(packedMessage);
                 });
                 break;
             case DELETE:
                 threadPool.submit(() -> {
-                    controller.handleDeleteMessage(message);
+                    controller.handleDeleteMessage(packedMessage);
                 });
                 break;
             case REMOVED:
                 threadPool.submit(() -> {
-                    controller.handleRemovedMessage(message);
+                    controller.handleRemovedMessage(packedMessage);
                 });
                 break;
             default:

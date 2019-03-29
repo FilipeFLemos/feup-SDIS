@@ -1,6 +1,6 @@
 package message;
 
-public class GetChunkMessage extends Message {
+public class GetChunkMessage extends PackedMessage {
 
     /**
      * Instantiates a new Get chunk message.

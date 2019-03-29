@@ -3,9 +3,9 @@ package message;
 import java.io.Serializable;
 
 /**
- * The type Message.
+ * The type PackedMessage.
  */
-public class Message implements Comparable, Serializable {
+public class PackedMessage implements Comparable, Serializable {
     /**
      * The constant CRLF.
      */
@@ -85,7 +85,7 @@ public class Message implements Comparable, Serializable {
      * @param message the message
      * @param size    the message size
      */
-    public Message(byte[] message, int size) {
+    public PackedMessage(byte[] message, int size) {
         int headerLength = 0;
         for (int i = 0; i < message.length; ++i) {
             if((char)message[i] == '\r' && (char)message[i+1] == '\n') {
@@ -103,14 +103,14 @@ public class Message implements Comparable, Serializable {
     }
 
     /**
-     * Instantiates a new Message.
+     * Instantiates a new PackedMessage.
      *
      * @param version the version
      * @param peerID  the peer id
      * @param fileID  the file id
      * @param body    the body
      */
-    public Message(String version, Integer peerID, String fileID, byte[] body) {
+    public PackedMessage(String version, Integer peerID, String fileID, byte[] body) {
         this.version = version;
         this.peerID = peerID;
         this.fileID = fileID;
@@ -135,7 +135,7 @@ public class Message implements Comparable, Serializable {
             result.append(this.repDegree);
             result.append(" ");
         }
-        result.append(Message.CRLF+Message.CRLF);
+        result.append(PackedMessage.CRLF+ PackedMessage.CRLF);
 
         String header = result.toString();
         byte[] headerArr = header.getBytes();
@@ -181,7 +181,7 @@ public class Message implements Comparable, Serializable {
             result.append(this.repDegree);
             result.append(" ");
         }
-        result.append(Message.CRLF+Message.CRLF);
+        result.append(PackedMessage.CRLF+ PackedMessage.CRLF);
         if(this.body != null)
             result.append(new String(this.body));
 
@@ -297,12 +297,12 @@ public class Message implements Comparable, Serializable {
     }
 
     /**
-      * Compares Message objects by the chunkNr
+      * Compares PackedMessage objects by the chunkNr
       * @param o object to compare to
       * @return difference between chunk numbers
       */
     @Override
     public int compareTo(Object o) {
-        return this.chunkNr - ((Message) o).getChunkIndex();
+        return this.chunkNr - ((PackedMessage) o).getChunkIndex();
     }
 }
