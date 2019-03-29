@@ -1,6 +1,6 @@
 package storage;
 
-import message.ChunkMessage;
+import message.MessageType;
 import message.PackedMessage;
 
 import java.io.IOException;
@@ -94,14 +94,14 @@ public class FileSystem implements Serializable {
     public synchronized PackedMessage retrieveChunk(String fileID, int chunkIndex) {
         Path chunkPath = Paths.get(this.backupDirectory + "/"+fileID+"_"+chunkIndex);
 
-        byte[] buf = null;
+        byte[] body = null;
         try {
-            buf = Files.readAllBytes(chunkPath);
+            body = Files.readAllBytes(chunkPath);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        PackedMessage chunk = new ChunkMessage(peerVersion, peerID, fileID, chunkIndex, buf);
+        PackedMessage chunk = new PackedMessage(peerVersion, peerID, fileID, body, MessageType.CHUNK, chunkIndex);
         return chunk;
     }
 

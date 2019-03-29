@@ -221,7 +221,7 @@ public class PeerController implements Serializable {
 
         //TODO: init this somewhere else
         Pair<String, Integer> chunkInfoKey = new Pair<>(packedMessage.getFileID(), packedMessage.getChunkIndex());
-        storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(packedMessage.getRepDegree(), 1));
+        storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(packedMessage.getReplicationDeg(), 1));
 
         // check if chunk is already stored
         if(!storedChunks.get(packedMessage.getFileID()).contains(packedMessage.getChunkIndex())) {
@@ -459,7 +459,7 @@ public class PeerController implements Serializable {
      */
     public void backedUpChunkListenForStored(PackedMessage chunk) {
         Pair<String, Integer> key = new Pair<>(chunk.getFileID(), chunk.getChunkIndex());
-        backedUpChunksInfo.putIfAbsent(key, new ChunkInfo(chunk.getRepDegree(), 0));
+        backedUpChunksInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**
@@ -468,7 +468,7 @@ public class PeerController implements Serializable {
      */
     public void listenForStoredReplies(PackedMessage chunk) {
         Pair<String, Integer> key = new Pair<>(chunk.getFileID(), chunk.getChunkIndex());
-        storedRepliesInfo.putIfAbsent(key, new ChunkInfo(chunk.getRepDegree(), 0));
+        storedRepliesInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**

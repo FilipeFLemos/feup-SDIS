@@ -22,7 +22,7 @@ public class SingleBackupInitiator implements Runnable {
       */
     public SingleBackupInitiator(PeerController controller, PackedMessage chunk, int replicationDegree, Receiver receiver) {
         //create putchunk packedMessage from chunk
-        chunk.setRepDegree(replicationDegree);
+        chunk.setReplicationDeg(replicationDegree);
         chunk.setType(MessageType.PUTCHUNK);
 
         packedMessage = chunk;
@@ -36,7 +36,7 @@ public class SingleBackupInitiator implements Runnable {
     @Override
     public void run() {
         //if chunk degree was satisfied meanwhile, cancel
-        if(controller.getBackedUpChunkRepDegree(packedMessage) >= packedMessage.getRepDegree()) {
+        if(controller.getBackedUpChunkRepDegree(packedMessage) >= packedMessage.getReplicationDeg()) {
             System.out.println("Chunk " + packedMessage.getChunkIndex() + " satisfied meanwhile, canceling");
             return;
         }
@@ -73,7 +73,7 @@ public class SingleBackupInitiator implements Runnable {
             e.printStackTrace();
         }
 
-        return controller.getBackedUpChunkRepDegree(packedMessage) >= packedMessage.getRepDegree();
+        return controller.getBackedUpChunkRepDegree(packedMessage) >= packedMessage.getReplicationDeg();
 
     }
 }

@@ -35,7 +35,7 @@ public class PackedMessage implements Comparable, Serializable {
     /**
      * The Rep degree.
      */
-    protected Integer repDegree = null; //Not used on all messages so null until (eventually) overwritten
+    protected Integer replicationDeg = null; //Not used on all messages so null until (eventually) overwritten
     /**
      * The Body.
      */
@@ -51,7 +51,7 @@ public class PackedMessage implements Comparable, Serializable {
       switch(header[0]) {
           case "PUTCHUNK":
               this.type = MessageType.PUTCHUNK;
-              this.repDegree = Integer.parseInt(header[5]);
+              this.replicationDeg = Integer.parseInt(header[5]);
               break;
           case "STORED":
               this.type = MessageType.STORED;
@@ -117,6 +117,14 @@ public class PackedMessage implements Comparable, Serializable {
         this.body = body;
     }
 
+    /**
+     * Constructor to create DELETED messages
+     * @param version
+     * @param peerID
+     * @param fileID
+     * @param body
+     * @param type
+     */
     public PackedMessage(String version, Integer peerID, String fileID, byte[] body, MessageType type) {
         this.version = version;
         this.peerID = peerID;
@@ -125,6 +133,15 @@ public class PackedMessage implements Comparable, Serializable {
         this.type = type;
     }
 
+    /**
+     * Constructor to create CHUNK and GETCHUNK messages
+     * @param version
+     * @param peerID
+     * @param fileID
+     * @param body
+     * @param type
+     * @param chunkIndex
+     */
     public PackedMessage(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex) {
         this.version = version;
         this.peerID = peerID;
@@ -132,6 +149,26 @@ public class PackedMessage implements Comparable, Serializable {
         this.body = body;
         this.type = type;
         this.chunkNr = chunkIndex;
+    }
+
+    /**
+     * Contructor to create PUTCHUNK Messages
+     * @param version
+     * @param peerID
+     * @param fileID
+     * @param body
+     * @param type
+     * @param chunkIndex
+     * @param replicationDeg
+     */
+    public PackedMessage(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex, int replicationDeg) {
+        this.version = version;
+        this.peerID = peerID;
+        this.fileID = fileID;
+        this.body = body;
+        this.type = type;
+        this.chunkNr = chunkIndex;
+        this.replicationDeg = replicationDeg;
     }
 
     public byte[] buildMessagePacket(boolean sendBody) {
@@ -148,8 +185,8 @@ public class PackedMessage implements Comparable, Serializable {
             result.append(this.chunkNr);
             result.append(" ");
         }
-        if(this.repDegree != null) {
-            result.append(this.repDegree);
+        if(this.replicationDeg != null) {
+            result.append(this.replicationDeg);
             result.append(" ");
         }
         result.append(PackedMessage.CRLF+ PackedMessage.CRLF);
@@ -194,8 +231,8 @@ public class PackedMessage implements Comparable, Serializable {
             result.append(this.chunkNr);
             result.append(" ");
         }
-        if(this.repDegree != null) {
-            result.append(this.repDegree);
+        if(this.replicationDeg != null) {
+            result.append(this.replicationDeg);
             result.append(" ");
         }
         result.append(PackedMessage.CRLF+ PackedMessage.CRLF);
@@ -276,8 +313,8 @@ public class PackedMessage implements Comparable, Serializable {
      *
      * @return the rep degree
      */
-    public Integer getRepDegree() {
-        return repDegree;
+    public Integer getReplicationDeg() {
+        return replicationDeg;
     }
 
     /**
@@ -301,8 +338,8 @@ public class PackedMessage implements Comparable, Serializable {
       * Sets the replication degree (used for backup)
       * @param degree new rep degree
       */
-    public void setRepDegree(int degree) {
-        this.repDegree = degree;
+    public void setReplicationDeg(int degree) {
+        this.replicationDeg = degree;
     }
 
     /**

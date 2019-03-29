@@ -1,7 +1,7 @@
 package storage;
 
+import message.MessageType;
 import message.PackedMessage;
-import message.PutChunkMessage;
 import utils.Globals;
 import utils.Utils;
 
@@ -72,7 +72,7 @@ public class ChunkCreator {
                     finalBuf = new byte[Globals.CHUNK_MAX_SIZE];
 
                 System.arraycopy(tempBuf, 0, finalBuf, 0, finalBuf.length);
-                chunkList.add(new PutChunkMessage(this.version, finalBuf, this.fileID, chunkIndex, this.replicationDegree, this.peerID));
+                chunkList.add(new PackedMessage(version, peerID, fileID, finalBuf, MessageType.PUTCHUNK, chunkIndex, replicationDegree));
             }
 
         } catch (FileNotFoundException e) {

@@ -78,7 +78,7 @@ public class BackupInitiator extends ProtocolInitiator {
         for(int i = 0; i < chunkList.size(); i++) {
             // if degree is satisfied, remove from list
             PackedMessage chunk = chunkList.get(i);
-            if (peer.getController().getBackedUpChunkRepDegree(chunk) >= chunk.getRepDegree()) {
+            if (peer.getController().getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg()) {
                 chunkList.remove(chunk);
                 i--;
             }
