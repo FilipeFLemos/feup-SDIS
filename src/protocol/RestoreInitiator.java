@@ -42,7 +42,7 @@ public class RestoreInitiator extends ProtocolInitiator {
 
         ArrayList<Message> getChunkList = new ArrayList<>();
         for(int i = 0; i < chunkAmount; i++) {
-            getChunkList.add(new GetChunkMessage(peer.getProtocolVersion(), peer.getPeerID(), fileID, i));
+            getChunkList.add(new GetChunkMessage(peer.getProtocolVersion(), peer.getPeerId(), fileID, i));
         }
 
         peer.getController().addToRestoringFiles(fileID, filePath, chunkAmount);

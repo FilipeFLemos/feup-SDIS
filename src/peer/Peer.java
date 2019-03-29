@@ -19,75 +19,70 @@ public class Peer implements RMIProtocol {
     private static final int MAX_INITIATOR_THREADS = 50;
 
     /**
-      * The peer's identifier
-      */
-    private int peerID;
+     * The peer's identifier
+     */
+    private int peerId;
 
     /**
-      * The protocol version being executed
-      */
-    private String version;
+     * The protocol protocolVersion being executed
+     */
+    private String protocolVersion;
 
     /**
-      * The RMI access point for client communication
-      */
-    private String rmiAccessPoint;
-
-    /**
-      * Control channel address
-      */
+     * Control channel address
+     */
     private String MCAddress;
 
     /**
-      * Control channel port
-      */
+     * Control channel port
+     */
     private int MCPort;
 
     /**
-      * Backup channel address
-      */
+     * Backup channel address
+     */
     private String MDBAddress;
 
     /**
-      * Backup channel port
-      */
+     * Backup channel port
+     */
     private int MDBPort;
 
     /**
-      * Restore channel address
-      */
+     * Restore channel address
+     */
     private String MDRAddress;
 
     /**
-      * Restore channel port
-      */
+     * Restore channel port
+     */
     private int MDRPort;
 
     /**
-      * Control channel
-      */
+     * Control channel
+     */
     private Channel MC;
 
     /**
-      * Backup channel
-      */
+     * Backup channel
+     */
     private Channel MDB;
 
     /**
-      * Restore channel
-      */
+     * Restore channel
+     */
     private Channel MDR;
 
     /**
-      * Controller
-      */
+     * Controller
+     */
     private PeerController controller;
 
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_INITIATOR_THREADS);
 
 
-// peer.Peer args
-    //<protocol version> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>
+    // peer.Peer args
+    //<protocol protocolVersion> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>
     public static void main(final String args[]) throws IOException {
         if (args.length != 9) {
             System.out.println("Usage: java peer.Peer" +
@@ -101,50 +96,49 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-      * Constructor. Initiates peer from CLI args
-      *
-      * @param args initialization arguments
-      * @throws IOException
-      */
+     * Constructor. Initiates peer from CLI args
+     *
+     * @param args initialization arguments
+     * @throws IOException
+     */
     private Peer(final String args[]) throws IOException {
-        System.out.println("Starting Peer with protocol version " + args[0]);
-        this.version = args[0];
+        System.out.println("Starting Peer with protocol protocolVersion " + args[0]);
         System.out.println("Starting Peer with ID " + args[1]);
-        this.peerID = Integer.parseInt(args[1]);
+        protocolVersion = args[0];
+        peerId = Integer.parseInt(args[1]);
 
-        // RMI
-        this.rmiAccessPoint = args[2];
-        this.initRemoteStub(rmiAccessPoint);
+        initRMI(args[2]);
 
-        this.MCAddress = args[3]; this.MCPort = Integer.parseInt(args[4]);
-        this.MDBAddress = args[5]; this.MDBPort = Integer.parseInt(args[6]);
-        this.MDRAddress = args[7]; this.MDRPort = Integer.parseInt(args[8]);
+        this.MCAddress = args[3];
+        this.MCPort = Integer.parseInt(args[4]);
+        this.MDBAddress = args[5];
+        this.MDBPort = Integer.parseInt(args[6]);
+        this.MDRAddress = args[7];
+        this.MDRPort = Integer.parseInt(args[8]);
 
-        if(!loadPeerController())
-            this.controller = new PeerController(version, peerID, MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
+        if (!loadPeerController())
+            this.controller = new PeerController(protocolVersion, peerId, MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
 
         // save peerController data every 3 seconds
-        threadPool.scheduleAtFixedRate(() -> {
-            this.saveController();
-        }, 0, 3, TimeUnit.SECONDS);
+        threadPool.scheduleAtFixedRate(this::saveController, 0, 3, TimeUnit.SECONDS);
 
-        this.MC = new Channel(args[3], Integer.parseInt(args[4]));
-        this.MDB = new Channel(args[5], Integer.parseInt(args[6]));
-        this.MDR = new Channel(args[7], Integer.parseInt(args[8]));
+        MC = new Channel(args[3], Integer.parseInt(args[4]));
+        MDB = new Channel(args[5], Integer.parseInt(args[6]));
+        MDR = new Channel(args[7], Integer.parseInt(args[8]));
     }
 
     /**
-     * Initiates remote stub.
+     * Initiates remote service.
      *
      * @param accessPoint the RMI access point
      */
-    protected void initRemoteStub(String accessPoint) {
+    protected void initRMI(String accessPoint) {
         try {
-            RMIProtocol stub = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
+            RMIProtocol removeService = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
 
-            // Bind the remote object's stub in the registry
+            // Bind the remote object's removeService in the registry
             Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(accessPoint, stub);
+            registry.rebind(accessPoint, removeService);
 
             System.err.println("Server ready");
         } catch (Exception e) {
@@ -154,15 +148,15 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-      * Loads the peer controller from non-volatile memory, if file is present, or starts a new one.
-      *
-      * @return true if controller successfully loaded from .ser file, false otherwise
-      */
+     * Loads the peer controller from non-volatile memory, if file is present, or starts a new one.
+     *
+     * @return true if controller successfully loaded from .ser file, false otherwise
+     */
     public boolean loadPeerController() {
         try {
-            FileInputStream controllerFile = new FileInputStream("PeerController" + peerID + ".ser");
+            FileInputStream controllerFile = new FileInputStream("PeerController" + peerId + ".ser");
             ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
-            this.controller = (PeerController)controllerObject.readObject();
+            this.controller = (PeerController) controllerObject.readObject();
             this.controller.initTransientMethods(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
             controllerObject.close();
             controllerFile.close();
@@ -179,11 +173,11 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-      * Saves the controller state to non-volatile memory
-      */
+     * Saves the controller state to non-volatile memory
+     */
     public void saveController() {
         try {
-            FileOutputStream controllerFile = new FileOutputStream("PeerController" + peerID + ".ser");
+            FileOutputStream controllerFile = new FileOutputStream("PeerController" + peerId + ".ser");
             ObjectOutputStream controllerObject = new ObjectOutputStream(controllerFile);
             controllerObject.writeObject(this.controller);
             controllerObject.close();
@@ -197,12 +191,12 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Gets the protocol version.
+     * Gets the protocol protocolVersion.
      *
-     * @return the protocol version
+     * @return the protocol protocolVersion
      */
     public String getProtocolVersion() {
-        return version;
+        return protocolVersion;
     }
 
     /**
@@ -210,8 +204,8 @@ public class Peer implements RMIProtocol {
      *
      * @return the peer id
      */
-    public int getPeerID() {
-        return peerID;
+    public int getPeerId() {
+        return peerId;
     }
 
     /**
@@ -224,67 +218,57 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-      * Submits an initiator instance of the backup protocol to the thread pool
-      *
-      * @param filePath filename of file to be backed up
-      * @param replicationDegree desired replication degree
-      * @throws RemoteException
-      */
+     * Submits an initiator instance of the backup protocol to the thread pool
+     *
+     * @param filePath          filename of file to be backed up
+     * @param replicationDegree desired replication degree
+     */
     @Override
-    public void backup(String filePath, int replicationDegree) throws RemoteException{
-        ProtocolInitiator backupInstance = new BackupInitiator(this, filePath, replicationDegree, MDB);
-        threadPool.submit(backupInstance);
+    public void backup(String filePath, int replicationDegree) {
+        threadPool.submit(new BackupInitiator(this, filePath, replicationDegree, MDB));
     }
 
     /**
-      * Submits an initiator instance of the restore protocol to the thread pool
-      *
-      * @param filePath filename of file to be restored
-      * @throws RemoteException
-      */
+     * Submits an initiator instance of the restore protocol to the thread pool
+     *
+     * @param filePath filename of file to be restored
+     */
     @Override
-    public void restore(String filePath) throws RemoteException {
+    public void restore(String filePath) {
         //TODO: make proper verification
-        if(!version.equals("1.0")) {
+        if (!protocolVersion.equals("1.0")) {
             System.out.println("Starting enhanced restore protocol");
             threadPool.submit(new SocketReceiver(MDRPort, controller.getDispatcher()));
         }
 
-        ProtocolInitiator recoverInstance = new RestoreInitiator(this, filePath, MC);
-        threadPool.submit(recoverInstance);
+        threadPool.submit(new RestoreInitiator(this, filePath, MC));
     }
 
     /**
-      * Submits an initiator instance of the delete protocol to the thread pool
-      *
-      * @param filePath filename of file to be deleted
-      * @throws RemoteException
-      */
+     * Submits an initiator instance of the delete protocol to the thread pool
+     *
+     * @param filePath filename of file to be deleted
+     */
     @Override
-    public void delete(String filePath) throws RemoteException {
-        ProtocolInitiator deleteInstance = new DeleteInitiator(this, filePath, MC);
-        threadPool.submit(deleteInstance);
+    public void delete(String filePath) {
+        threadPool.submit(new DeleteInitiator(this, filePath, MC));
     }
 
     /**
-      * Submits an initiator instance of the reclaim protocol to the thread pool
-      *
-      * @param space new amount of reserved space for peer, in kB
-      * @throws RemoteException
-      */
+     * Submits an initiator instance of the reclaim protocol to the thread pool
+     *
+     * @param space new amount of reserved space for peer, in kB
+     */
     @Override
-    public void reclaim(long space) throws RemoteException {
-        ProtocolInitiator reclaimInstance = new ReclaimInitiator(this, space);
-        threadPool.submit(reclaimInstance);
+    public void reclaim(long space) {
+        threadPool.submit(new ReclaimInitiator(this, space));
     }
 
     /**
-      * Retrieves the peer's local state by printing out its controller
-      *
-      * @throws RemoteException
-      */
+     * Retrieves the peer's local state by printing out its controller
+     */
     @Override
-    public void state() throws RemoteException {
+    public void state() {
         System.out.println(controller.toString());
     }
 }

@@ -32,7 +32,7 @@ public class BackupInitiator extends ProtocolInitiator {
       */
     @Override
     public void run() {
-        ChunkCreator creator = new ChunkCreator(filePath, replicationDegree, peer.getPeerID(), peer.getProtocolVersion());
+        ChunkCreator creator = new ChunkCreator(filePath, replicationDegree, peer.getPeerId(), peer.getProtocolVersion());
 
         ArrayList<Message> chunkList = creator.getChunkList();
         String fileID = new String(chunkList.get(0).getFileID());
