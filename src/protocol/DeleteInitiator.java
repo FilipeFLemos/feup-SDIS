@@ -1,7 +1,7 @@
 package protocol;
 
+import message.MessageType;
 import receiver.Channel;
-import message.DeleteMessage;
 import message.PackedMessage;
 import peer.Peer;
 import utils.Utils;
@@ -32,7 +32,7 @@ public class DeleteInitiator extends ProtocolInitiator {
         File file = new File(filePath);
         String fileID = Utils.getFileID(file);
 
-        PackedMessage packedMessage = new DeleteMessage(peer.getProtocolVersion(), peer.getPeerId(), fileID);
+        PackedMessage packedMessage = new PackedMessage(peer.getProtocolVersion(),peer.getPeerId(),fileID, null, MessageType.DELETE);
         channel.sendMessage(packedMessage);
     }
 }

@@ -117,6 +117,14 @@ public class PackedMessage implements Comparable, Serializable {
         this.body = body;
     }
 
+    public PackedMessage(String version, Integer peerID, String fileID, byte[] body, MessageType type) {
+        this.version = version;
+        this.peerID = peerID;
+        this.fileID = fileID;
+        this.body = body;
+        this.type = type;
+    }
+
     public byte[] buildMessagePacket(boolean sendBody) {
         StringBuilder result = new StringBuilder();
         result.append(parseType(this.type));
