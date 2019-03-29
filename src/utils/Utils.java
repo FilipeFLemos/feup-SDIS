@@ -34,16 +34,6 @@ public class Utils {
     }
 
     /**
-     * Gets random time up to a maximum value.
-     *
-     * @param max the max
-     * @return the random time
-     */
-    public static final int getRandomTime(int max) {
-        return ThreadLocalRandom.current().nextInt(max+1);
-    }
-
-    /**
      * Gets a random number in a specific range.
      *
      * @param min the min
