@@ -1,9 +1,6 @@
 package peer;
 
-import message.ChunkInfo;
-import message.PackedMessage;
-import message.RemovedMessage;
-import message.StoredMessage;
+import message.*;
 import javafx.util.Pair;
 import protocol.SingleBackupInitiator;
 import receiver.Dispatcher;
@@ -445,7 +442,7 @@ public class PeerController implements Serializable {
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
             deleteChunk(fileID, chunkIndex, true);
 
-            PackedMessage removedMessage = new RemovedMessage(peerVersion, peerID, fileID, chunkIndex);
+            PackedMessage removedMessage = new PackedMessage(peerVersion, peerID, fileID, null, MessageType.REMOVED, chunkIndex);
             MCReceiver.sendMessage(removedMessage);
         }
 
