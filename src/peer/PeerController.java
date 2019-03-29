@@ -99,7 +99,7 @@ public class PeerController implements Serializable {
     /**
      * Files being restored. Key = fileID, Value = chunks
      */
-    private ConcurrentHashMap<String, ConcurrentSkipListSet<PackedMessage>> restoringFiles;
+    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoringFiles;
 
     /**
      * Useful information on files being restored. Key = fileID, Value = <filename, chunk amount>
@@ -190,82 +190,82 @@ public class PeerController implements Serializable {
     }
 
     /**
-     * Handles a PUTCHUNK packedMessage
+     * Handles a PUTCHUNK message
      *
-     * @param packedMessage the packedMessage
+     * @param message the message
      */
-    public void handlePutchunkMessage(PackedMessage packedMessage) {
-        System.out.println("Received Putchunk: " + packedMessage.getChunkIndex());
+    public void handlePutchunkMessage(Message message) {
+        System.out.println("Received Putchunk: " + message.getChunkIndex());
 
-        String fileID = packedMessage.getFileID();
-        int chunkIndex = packedMessage.getChunkIndex();
+        String fileID = message.getFileID();
+        int chunkIndex = message.getChunkIndex();
 
-        if(backupEnhancement && !packedMessage.getVersion().equals("1.0")) {
+        if(backupEnhancement && !message.getVersion().equals("1.0")) {
             Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
 
             if(storedRepliesInfo.containsKey(key)) {
                 ChunkInfo chunkInfo = storedRepliesInfo.get(key);
 
                 if(storedRepliesInfo.get(key).isDegreeSatisfied()) {
-                    System.out.println("Received enough STORED messages for " + packedMessage.getChunkIndex() + " meanwhile, ignoring request");
+                    System.out.println("Received enough STORED messages for " + message.getChunkIndex() + " meanwhile, ignoring request");
                     return;
                 }
             }
         }
 
         // check if chunks from this file are already being saved
-        storedChunks.putIfAbsent(packedMessage.getFileID(), new ArrayList<>());
+        storedChunks.putIfAbsent(message.getFileID(), new ArrayList<>());
 
         //TODO: init this somewhere else
-        Pair<String, Integer> chunkInfoKey = new Pair<>(packedMessage.getFileID(), packedMessage.getChunkIndex());
-        storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(packedMessage.getReplicationDeg(), 1));
+        Pair<String, Integer> chunkInfoKey = new Pair<>(message.getFileID(), message.getChunkIndex());
+        storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(message.getReplicationDeg(), 1));
 
         // check if chunk is already stored
-        if(!storedChunks.get(packedMessage.getFileID()).contains(packedMessage.getChunkIndex())) {
-            if (!this.fileSystem.storeChunk(packedMessage)) {
-                System.out.println("Not enough space to save chunk " + packedMessage.getChunkIndex() + " of file " + packedMessage.getFileID());
+        if(!storedChunks.get(message.getFileID()).contains(message.getChunkIndex())) {
+            if (!this.fileSystem.storeChunk(message)) {
+                System.out.println("Not enough space to save chunk " + message.getChunkIndex() + " of file " + message.getFileID());
                 return;
             }
 
             //update map of stored chunks
-            ArrayList<Integer> fileStoredChunks = storedChunks.get(packedMessage.getFileID());
-            fileStoredChunks.add(packedMessage.getChunkIndex());
-            storedChunks.put(packedMessage.getFileID(), fileStoredChunks);
+            ArrayList<Integer> fileStoredChunks = storedChunks.get(message.getFileID());
+            fileStoredChunks.add(message.getChunkIndex());
+            storedChunks.put(message.getFileID(), fileStoredChunks);
         }
         else
             System.out.println("Already stored chunk, sending STORED anyway.");
 
-        PackedMessage storedMessage = new PackedMessage(packedMessage.getVersion(), peerID, packedMessage.getFileID(), null, MessageType.STORED, packedMessage.getChunkIndex());
+        Message storedMessage = new Message(message.getVersion(), peerID, message.getFileID(), null, MessageType.STORED, message.getChunkIndex());
 
         MCReceiver.sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
-        System.out.println("Sent Stored PackedMessage: " + storedMessage.getChunkIndex());
+        System.out.println("Sent Stored Message: " + storedMessage.getChunkIndex());
     }
 
     /**
-     * Handles a STORED packedMessage
+     * Handles a STORED message
      *
-     * @param packedMessage the packedMessage
+     * @param message the message
      */
-    public void handleStoredMessage(PackedMessage packedMessage) {
-        System.out.println("Received Stored PackedMessage: " + packedMessage.getChunkIndex());
-        Pair<String, Integer> key = new Pair<>(packedMessage.getFileID(), packedMessage.getChunkIndex());
+    public void handleStoredMessage(Message message) {
+        System.out.println("Received Stored Message: " + message.getChunkIndex());
+        Pair<String, Integer> key = new Pair<>(message.getFileID(), message.getChunkIndex());
 
         // if this chunk is from a file the peer
         // has requested to backup (aka is the
         // initiator peer), and hasn't received
-        // a stored packedMessage, update actual rep degree,
+        // a stored message, update actual rep degree,
         // and add peer
-        updateMapInformation(backedUpChunksInfo, key, packedMessage);
+        updateMapInformation(backedUpChunksInfo, key, message);
 
         // if this peer has this chunk stored,
-        // and hasn't received stored packedMessage
+        // and hasn't received stored message
         // from this peer yet, update actual
         // rep degree, and add peer
-        updateMapInformation(storedChunksInfo, key, packedMessage);
+        updateMapInformation(storedChunksInfo, key, message);
 
-        if(backupEnhancement && !packedMessage.getVersion().equals("1.0")) {
-            updateMapInformation(storedRepliesInfo, key, packedMessage);
+        if(backupEnhancement && !message.getVersion().equals("1.0")) {
+            updateMapInformation(storedRepliesInfo, key, message);
         }
     }
 
@@ -273,37 +273,37 @@ public class PeerController implements Serializable {
      * Updates a given ConcurrentHashMaps information at a given key
      * @param map the map to update
      * @param key the key whose value to update
-     * @param packedMessage the packedMessage whose information the map update is based on
+     * @param message the message whose information the map update is based on
      */
-    private void updateMapInformation(ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> map, Pair<String, Integer> key, PackedMessage packedMessage) {
+    private void updateMapInformation(ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> map, Pair<String, Integer> key, Message message) {
         ChunkInfo chunkInfo;
 
-        if(map.containsKey(key) && !map.get(key).isBackedUpByPeer(packedMessage.getPeerID())) {
+        if(map.containsKey(key) && !map.get(key).isBackedUpByPeer(message.getPeerID())) {
             chunkInfo = map.get(key);
             chunkInfo.incActualReplicationDegree();
-            chunkInfo.addPeer(packedMessage.getPeerID());
+            chunkInfo.addPeer(message.getPeerID());
             map.put(key, chunkInfo);
         }
     }
 
     /**
-     * Handles a GETCHUNK packedMessage.
+     * Handles a GETCHUNK message.
      *
-     * @param packedMessage the packedMessage
+     * @param message the message
      * @param sourceAddress address used for TCP connection in enhanced version of protocol
      */
-    public void handleGetChunkMessage(PackedMessage packedMessage, InetAddress sourceAddress) {
-        System.out.println("Received GetChunk PackedMessage: " + packedMessage.getChunkIndex());
+    public void handleGetChunkMessage(Message message, InetAddress sourceAddress) {
+        System.out.println("Received GetChunk Message: " + message.getChunkIndex());
 
-        String fileID = packedMessage.getFileID();
-        int chunkIndex = packedMessage.getChunkIndex();
+        String fileID = message.getFileID();
+        int chunkIndex = message.getChunkIndex();
 
-        // if received a chunk packedMessage for this chunk meanwhile, return
+        // if received a chunk message for this chunk meanwhile, return
         Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
         if(getChunkRequestsInfo.containsKey(key)) {
             if(getChunkRequestsInfo.get(key)) {
                 getChunkRequestsInfo.remove(key);
-                System.out.println("Received a CHUNK packedMessage for " + chunkIndex + " meanwhile, ignoring request");
+                System.out.println("Received a CHUNK message for " + chunkIndex + " meanwhile, ignoring request");
                 return;
             }
         }
@@ -316,9 +316,9 @@ public class PeerController implements Serializable {
         if(!storedChunks.get(fileID).contains(chunkIndex))
             return;
 
-        PackedMessage chunkMessage = fileSystem.retrieveChunk(fileID, chunkIndex);
+        Message chunkMessage = fileSystem.retrieveChunk(fileID, chunkIndex);
 
-        if(restoreEnhancement && !packedMessage.getVersion().equals("1.0")) {
+        if(restoreEnhancement && !message.getVersion().equals("1.0")) {
             //send chunk via tcp and send header to MDR
             TCPController.sendMessage(chunkMessage, sourceAddress);
             MDRReceiver.sendMessage(chunkMessage, false);
@@ -329,15 +329,15 @@ public class PeerController implements Serializable {
     }
 
     /**
-     * Handles a CHUNK packedMessage
+     * Handles a CHUNK message
      *
-     * @param packedMessage the packedMessage
+     * @param message the message
      */
-    public void handleChunkMessage(PackedMessage packedMessage) {
-        System.out.println("Received Chunk PackedMessage: " + packedMessage.getChunkIndex());
+    public void handleChunkMessage(Message message) {
+        System.out.println("Received Chunk Message: " + message.getChunkIndex());
 
-        String fileID = packedMessage.getFileID();
-        int chunkIndex = packedMessage.getChunkIndex();
+        String fileID = message.getFileID();
+        int chunkIndex = message.getChunkIndex();
 
         Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
         if(getChunkRequestsInfo.containsKey(key)) {
@@ -349,16 +349,16 @@ public class PeerController implements Serializable {
         if(!restoringFiles.containsKey(fileID))
             return;
 
-        // if an enhanced chunk packedMessage is sent via multicast
+        // if an enhanced chunk message is sent via multicast
         // channel, it only contains a header, don't restore
         //TODO: this verification isn't right
-        if(!packedMessage.getVersion().equals("1.0") && !packedMessage.hasBody())
+        if(!message.getVersion().equals("1.0") && !message.hasBody())
             return;
 
-        ConcurrentSkipListSet<PackedMessage> fileRestoredChunks = restoringFiles.get(fileID);
-        fileRestoredChunks.add(packedMessage);
+        ConcurrentSkipListSet<Message> fileRestoredChunks = restoringFiles.get(fileID);
+        fileRestoredChunks.add(message);
 
-        restoringFiles.put(packedMessage.getFileID(), fileRestoredChunks);
+        restoringFiles.put(message.getFileID(), fileRestoredChunks);
 
         int fileChunkAmount = restoringFilesInfo.get(fileID).getValue();
 
@@ -372,34 +372,34 @@ public class PeerController implements Serializable {
     }
 
     /**
-     * Handles a DELETE packedMessage
+     * Handles a DELETE message
      *
-     * @param packedMessage the packedMessage
+     * @param message the message
      */
-    public void handleDeleteMessage(PackedMessage packedMessage) {
-        System.out.println("Received Delete PackedMessage");
+    public void handleDeleteMessage(Message message) {
+        System.out.println("Received Delete Message");
 
         // peer doesn't have this chunk
-        if(!storedChunks.containsKey(packedMessage.getFileID()))
+        if(!storedChunks.containsKey(message.getFileID()))
             return;
 
-        ArrayList<Integer> fileChunks = storedChunks.get(packedMessage.getFileID());
+        ArrayList<Integer> fileChunks = storedChunks.get(message.getFileID());
         while(!fileChunks.isEmpty())
-            deleteChunk(packedMessage.getFileID(), fileChunks.get(0), false);
+            deleteChunk(message.getFileID(), fileChunks.get(0), false);
 
-        storedChunks.remove(packedMessage.getFileID());
+        storedChunks.remove(message.getFileID());
         System.out.println("Delete Success: file deleted.");
     }
 
     /**
-     * Handles a REMOVED packedMessage
+     * Handles a REMOVED message
      *
-     * @param packedMessage the packedMessage
+     * @param message the message
      */
-    public void handleRemovedMessage(PackedMessage packedMessage) {
-        System.out.println("Received Removed PackedMessage: " + packedMessage.getChunkIndex());
+    public void handleRemovedMessage(Message message) {
+        System.out.println("Received Removed Message: " + message.getChunkIndex());
 
-        Pair<String, Integer> key = new Pair<>(packedMessage.getFileID(), packedMessage.getChunkIndex());
+        Pair<String, Integer> key = new Pair<>(message.getFileID(), message.getChunkIndex());
         if(storedChunksInfo.containsKey(key)) {
             ChunkInfo chunkInfo = storedChunksInfo.get(key);
             chunkInfo.decActualReplicationDegree();
@@ -409,8 +409,8 @@ public class PeerController implements Serializable {
             // but wait between 0-400 ms and check if degree
             // satisfied in the meantime
             if(!chunkInfo.isDegreeSatisfied()) {
-                System.out.println("Chunk " + packedMessage.getChunkIndex() + " not satisfied anymore.");
-                PackedMessage chunk = fileSystem.retrieveChunk(packedMessage.getFileID(), packedMessage.getChunkIndex());
+                System.out.println("Chunk " + message.getChunkIndex() + " not satisfied anymore.");
+                Message chunk = fileSystem.retrieveChunk(message.getFileID(), message.getChunkIndex());
 
                 putChunkThreadPool.schedule( new SingleBackupInitiator(this, chunk, chunkInfo.getDesiredReplicationDegree(), MDBReceiver),
                 Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
@@ -442,7 +442,7 @@ public class PeerController implements Serializable {
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
             deleteChunk(fileID, chunkIndex, true);
 
-            PackedMessage removedMessage = new PackedMessage(peerVersion, peerID, fileID, null, MessageType.REMOVED, chunkIndex);
+            Message removedMessage = new Message(peerVersion, peerID, fileID, null, MessageType.REMOVED, chunkIndex);
             MCReceiver.sendMessage(removedMessage);
         }
 
@@ -454,7 +454,7 @@ public class PeerController implements Serializable {
      *
      * @param chunk the chunk
      */
-    public void backedUpChunkListenForStored(PackedMessage chunk) {
+    public void backedUpChunkListenForStored(Message chunk) {
         Pair<String, Integer> key = new Pair<>(chunk.getFileID(), chunk.getChunkIndex());
         backedUpChunksInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
@@ -463,7 +463,7 @@ public class PeerController implements Serializable {
      * Starts listening to stored messages for a chunk the peer is storing
      * @param chunk
      */
-    public void listenForStoredReplies(PackedMessage chunk) {
+    public void listenForStoredReplies(Message chunk) {
         Pair<String, Integer> key = new Pair<>(chunk.getFileID(), chunk.getChunkIndex());
         storedRepliesInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
@@ -472,7 +472,7 @@ public class PeerController implements Serializable {
      * Starts listening to generic stored messages
      * @param chunk
      */
-    public void listenForChunkReplies(PackedMessage chunk) {
+    public void listenForChunkReplies(Message chunk) {
         Pair<String, Integer> key = new Pair<>(chunk.getFileID(), chunk.getChunkIndex());
         getChunkRequestsInfo.putIfAbsent(key, false);
     }
@@ -483,7 +483,7 @@ public class PeerController implements Serializable {
      * @param chunk the chunk
      * @return the backed up chunk's observed rep degree
      */
-    public int getBackedUpChunkRepDegree(PackedMessage chunk) {
+    public int getBackedUpChunkRepDegree(Message chunk) {
         Pair<String, Integer> key = new Pair<>(chunk.getFileID(), chunk.getChunkIndex());
 
         int currentDegree = 0;
@@ -604,12 +604,12 @@ public class PeerController implements Serializable {
      */
     public byte[] mergeRestoredFile(String fileID) {
         // get file's chunks
-        ConcurrentSkipListSet<PackedMessage> fileChunks = restoringFiles.get(fileID);
+        ConcurrentSkipListSet<Message> fileChunks = restoringFiles.get(fileID);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         try {
-            for(PackedMessage chunk : fileChunks)
+            for(Message chunk : fileChunks)
                 stream.write(chunk.getBody());
         } catch (IOException e) {
             e.printStackTrace();

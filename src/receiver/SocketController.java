@@ -1,6 +1,6 @@
 package receiver;
 
-import message.PackedMessage;
+import message.Message;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -30,12 +30,12 @@ public class SocketController {
     }
 
     /**
-      * Send a packedMessage
+      * Send a message
       *
-      * @param packedMessage packedMessage to be sent
+      * @param message message to be sent
       * @param address destination address
       */
-    public synchronized void sendMessage(PackedMessage packedMessage, InetAddress address) {
+    public synchronized void sendMessage(Message message, InetAddress address) {
         threadPool.submit(() -> {
             Socket socket = null;
 
@@ -50,8 +50,8 @@ public class SocketController {
             ObjectOutputStream stream = null;
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
-                stream.writeObject(packedMessage);
-                System.out.println("Sent CHUNK packedMessage " + packedMessage.getChunkIndex() + " via TCP");
+                stream.writeObject(message);
+                System.out.println("Sent CHUNK message " + message.getChunkIndex() + " via TCP");
             } catch (IOException e) {
                 System.out.println("Closing TCP socket...");
                 try { socket.close(); }

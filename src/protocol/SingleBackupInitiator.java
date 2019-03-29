@@ -1,6 +1,6 @@
 package protocol;
 
-import message.PackedMessage;
+import message.Message;
 import message.MessageType;
 import receiver.Receiver;
 import peer.PeerController;
@@ -8,7 +8,7 @@ import utils.Globals;
 
 public class SingleBackupInitiator implements Runnable {
 
-    private PackedMessage packedMessage;
+    private Message message;
     private Receiver receiver;
     private PeerController controller;
 
@@ -20,12 +20,12 @@ public class SingleBackupInitiator implements Runnable {
       * @param replicationDegree the desired replication degree
       * @param receiver the helper receiver
       */
-    public SingleBackupInitiator(PeerController controller, PackedMessage chunk, int replicationDegree, Receiver receiver) {
-        //create putchunk packedMessage from chunk
+    public SingleBackupInitiator(PeerController controller, Message chunk, int replicationDegree, Receiver receiver) {
+        //create putchunk message from chunk
         chunk.setReplicationDeg(replicationDegree);
         chunk.setType(MessageType.PUTCHUNK);
 
-        packedMessage = chunk;
+        message = chunk;
         this.controller = controller;
         this.receiver = receiver;
     }
@@ -36,36 +36,36 @@ public class SingleBackupInitiator implements Runnable {
     @Override
     public void run() {
         //if chunk degree was satisfied meanwhile, cancel
-        if(controller.getBackedUpChunkRepDegree(packedMessage) >= packedMessage.getReplicationDeg()) {
-            System.out.println("Chunk " + packedMessage.getChunkIndex() + " satisfied meanwhile, canceling");
+        if(controller.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg()) {
+            System.out.println("Chunk " + message.getChunkIndex() + " satisfied meanwhile, canceling");
             return;
         }
 
         // notify controller to listen for this chunk's stored messages
-        controller.backedUpChunkListenForStored(packedMessage);
+        controller.backedUpChunkListenForStored(message);
 
         int tries = 0;
         int waitTime = 500;
 
         do {
-            receiver.sendMessage(packedMessage);
+            receiver.sendMessage(message);
             tries++; waitTime *= 2;
 
             if(tries > Globals.MAX_PUTCHUNK_TRIES) {
                 System.out.println("Aborting backup, attempt limit reached");
                 return;
             }
-        } while(!confirmStoredMessage(packedMessage, waitTime));
+        } while(!confirmStoredMessage(message, waitTime));
     }
 
     /**
       * Checks if the desired replication degree for the chunk has been met
       *
-      * @param packedMessage packedMessage containing information about the chunk
+      * @param message message containing information about the chunk
       * @param waitTime max delay before checking
       * @return true if desired replication degree has been met, false otherwise
       */
-    private boolean confirmStoredMessage(PackedMessage packedMessage, int waitTime) {
+    private boolean confirmStoredMessage(Message message, int waitTime) {
         try {
             //TODO: remove sleeps
             Thread.sleep(waitTime);
@@ -73,7 +73,7 @@ public class SingleBackupInitiator implements Runnable {
             e.printStackTrace();
         }
 
-        return controller.getBackedUpChunkRepDegree(packedMessage) >= packedMessage.getReplicationDeg();
+        return controller.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg();
 
     }
 }

@@ -3,9 +3,9 @@ package message;
 import java.io.Serializable;
 
 /**
- * The type PackedMessage.
+ * The type Message.
  */
-public class PackedMessage implements Comparable, Serializable {
+public class Message implements Comparable, Serializable {
     /**
      * The constant CRLF.
      */
@@ -85,7 +85,7 @@ public class PackedMessage implements Comparable, Serializable {
      * @param message the message
      * @param size    the message size
      */
-    public PackedMessage(byte[] message, int size) {
+    public Message(byte[] message, int size) {
         int headerLength = 0;
         for (int i = 0; i < message.length; ++i) {
             if((char)message[i] == '\r' && (char)message[i+1] == '\n') {
@@ -103,14 +103,14 @@ public class PackedMessage implements Comparable, Serializable {
     }
 
     /**
-     * Instantiates a new PackedMessage.
+     * Instantiates a new Message.
      *
      * @param version the version
      * @param peerID  the peer id
      * @param fileID  the file id
      * @param body    the body
      */
-    public PackedMessage(String version, Integer peerID, String fileID, byte[] body) {
+    public Message(String version, Integer peerID, String fileID, byte[] body) {
         this.version = version;
         this.peerID = peerID;
         this.fileID = fileID;
@@ -125,7 +125,7 @@ public class PackedMessage implements Comparable, Serializable {
      * @param body
      * @param type
      */
-    public PackedMessage(String version, Integer peerID, String fileID, byte[] body, MessageType type) {
+    public Message(String version, Integer peerID, String fileID, byte[] body, MessageType type) {
         this.version = version;
         this.peerID = peerID;
         this.fileID = fileID;
@@ -142,7 +142,7 @@ public class PackedMessage implements Comparable, Serializable {
      * @param type
      * @param chunkIndex
      */
-    public PackedMessage(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex) {
+    public Message(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex) {
         this.version = version;
         this.peerID = peerID;
         this.fileID = fileID;
@@ -161,7 +161,7 @@ public class PackedMessage implements Comparable, Serializable {
      * @param chunkIndex
      * @param replicationDeg
      */
-    public PackedMessage(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex, int replicationDeg) {
+    public Message(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex, int replicationDeg) {
         this.version = version;
         this.peerID = peerID;
         this.fileID = fileID;
@@ -189,7 +189,7 @@ public class PackedMessage implements Comparable, Serializable {
             result.append(this.replicationDeg);
             result.append(" ");
         }
-        result.append(PackedMessage.CRLF+ PackedMessage.CRLF);
+        result.append(Message.CRLF+ Message.CRLF);
 
         String header = result.toString();
         byte[] headerArr = header.getBytes();
@@ -235,7 +235,7 @@ public class PackedMessage implements Comparable, Serializable {
             result.append(this.replicationDeg);
             result.append(" ");
         }
-        result.append(PackedMessage.CRLF+ PackedMessage.CRLF);
+        result.append(Message.CRLF+ Message.CRLF);
         if(this.body != null)
             result.append(new String(this.body));
 
@@ -351,12 +351,12 @@ public class PackedMessage implements Comparable, Serializable {
     }
 
     /**
-      * Compares PackedMessage objects by the chunkNr
+      * Compares Message objects by the chunkNr
       * @param o object to compare to
       * @return difference between chunk numbers
       */
     @Override
     public int compareTo(Object o) {
-        return this.chunkNr - ((PackedMessage) o).getChunkIndex();
+        return this.chunkNr - ((Message) o).getChunkIndex();
     }
 }

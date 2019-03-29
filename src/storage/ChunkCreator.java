@@ -1,7 +1,7 @@
 package storage;
 
+import message.Message;
 import message.MessageType;
-import message.PackedMessage;
 import utils.Globals;
 import utils.Utils;
 
@@ -9,7 +9,7 @@ import java.io.*;
 import java.util.ArrayList;
 
 public class ChunkCreator {
-    private ArrayList<PackedMessage> chunkList;
+    private ArrayList<Message> chunkList;
 
     private int nChunks;
 
@@ -72,7 +72,7 @@ public class ChunkCreator {
                     finalBuf = new byte[Globals.CHUNK_MAX_SIZE];
 
                 System.arraycopy(tempBuf, 0, finalBuf, 0, finalBuf.length);
-                chunkList.add(new PackedMessage(version, peerID, fileID, finalBuf, MessageType.PUTCHUNK, chunkIndex, replicationDegree));
+                chunkList.add(new Message(version, peerID, fileID, finalBuf, MessageType.PUTCHUNK, chunkIndex, replicationDegree));
             }
 
         } catch (FileNotFoundException e) {
@@ -87,7 +87,7 @@ public class ChunkCreator {
      *
      * @return the chunk list
      */
-    public ArrayList<PackedMessage> getChunkList() {
+    public ArrayList<Message> getChunkList() {
         return chunkList;
     }
 }
