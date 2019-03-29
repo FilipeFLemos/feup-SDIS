@@ -43,5 +43,5 @@ public interface RMIProtocol extends Remote {
      *
      * @throws RemoteException
      */
-    String retrieveState() throws RemoteException;
+    void retrieveState() throws RemoteException;
 }

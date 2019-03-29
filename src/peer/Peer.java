@@ -300,7 +300,7 @@ public class Peer implements RMIProtocol {
       * @throws RemoteException
       */
     @Override
-    public String retrieveState() throws RemoteException {
-        return controller.toString();
+    public void retrieveState() throws RemoteException {
+        System.out.println(controller.toString());
     }
 }

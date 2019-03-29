@@ -38,7 +38,7 @@ public class TestApp {
                 remoteService.reclaimSpace(Integer.parseInt(args[2]));
                 break;
             case "state":
-                System.out.println(remoteService.retrieveState());
+                remoteService.retrieveState();
                 break;
         }
     }
