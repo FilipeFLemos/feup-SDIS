@@ -1,26 +1,13 @@
 package message;
 
 /**
- * The enum PackedMessage type.
+ * The enum with all the possible message types.
  */
 public enum MessageType {
-    /**
-     * Putchunk message type.
-     */
-    PUTCHUNK, /**
-     * Stored message type.
-     */
-    STORED, /**
-     * Getchunk message type.
-     */
-    GETCHUNK, /**
-     * Chunk message type.
-     */
-    CHUNK, /**
-     * Delete message type.
-     */
-    DELETE, /**
-     * Removed message type.
-     */
+    PUTCHUNK,
+    STORED,
+    GETCHUNK,
+    CHUNK,
+    DELETE,
     REMOVED
-    }
+}
