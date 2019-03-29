@@ -80,21 +80,6 @@ public class Peer implements RMIProtocol {
 
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_INITIATOR_THREADS);
 
-
-    // peer.Peer args
-    //<protocol protocolVersion> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>
-    public static void main(final String args[]) throws IOException {
-        if (args.length != 9) {
-            System.out.println("Usage: java peer.Peer" +
-                    " <protocol_version> <peer_id> <service_access_point>" +
-                    " <MCReceiver_address> <MCReceiver_port> <MDBReceiver_address>" +
-                    " <MDBReceiver_port> <MDRReceiver_address> <MDRReceiver_port>");
-            return;
-        }
-
-        new Peer(args);
-    }
-
     /**
      * Constructor. Initiates peer from CLI args
      *
@@ -125,6 +110,20 @@ public class Peer implements RMIProtocol {
         MC = new Channel(args[3], Integer.parseInt(args[4]));
         MDB = new Channel(args[5], Integer.parseInt(args[6]));
         MDR = new Channel(args[7], Integer.parseInt(args[8]));
+    }
+
+    // peer.Peer args
+    //<protocol protocolVersion> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>
+    public static void main(final String args[]) throws IOException {
+        if (args.length != 9) {
+            System.out.println("Usage: java peer.Peer" +
+                    " <protocol_version> <peer_id> <service_access_point>" +
+                    " <MCReceiver_address> <MCReceiver_port> <MDBReceiver_address>" +
+                    " <MDBReceiver_port> <MDRReceiver_address> <MDRReceiver_port>");
+            return;
+        }
+
+        new Peer(args);
     }
 
     /**
