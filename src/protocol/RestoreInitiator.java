@@ -1,8 +1,8 @@
 package protocol;
 
+import message.MessageType;
 import message.PackedMessage;
 import receiver.Channel;
-import message.GetChunkMessage;
 import peer.Peer;
 
 import java.util.ArrayList;
@@ -42,7 +42,7 @@ public class RestoreInitiator extends ProtocolInitiator {
 
         ArrayList<PackedMessage> getChunkList = new ArrayList<>();
         for(int i = 0; i < chunkAmount; i++) {
-            getChunkList.add(new GetChunkMessage(peer.getProtocolVersion(), peer.getPeerId(), fileID, i));
+            getChunkList.add(new PackedMessage(peer.getProtocolVersion(), peer.getPeerId(), fileID, null, MessageType.GETCHUNK, i));
         }
 
         peer.getController().addToRestoringFiles(fileID, filePath, chunkAmount);
