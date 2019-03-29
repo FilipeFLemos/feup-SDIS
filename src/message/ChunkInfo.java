@@ -5,20 +5,20 @@ import java.util.ArrayList;
 
 public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
 
-    private int desiredReplicationDegree;
-    private int actualReplicationDegree;
-    private ArrayList<Integer> peerList;
+    private int currentReplicationDeg;
+    private int desiredReplicationDeg;
+    private ArrayList<Integer> peersWithChunk;
 
     /**
      * Instantiates a new Chunk info.
      *
-     * @param desiredRepDegree the desired rep degree
-     * @param actualRepDegree  the actual rep degree
+     * @param desiredReplicationDeg the desired rep degree
+     * @param currentReplicationDeg  the actual rep degree
      */
-    public ChunkInfo(int desiredRepDegree, int actualRepDegree) {
-        this.desiredReplicationDegree = desiredRepDegree;
-        this.actualReplicationDegree = actualRepDegree;
-        this.peerList = new ArrayList<>();
+    public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg) {
+        this.desiredReplicationDeg = desiredReplicationDeg;
+        this.currentReplicationDeg = currentReplicationDeg;
+        this.peersWithChunk = new ArrayList<>();
     }
 
     /**
@@ -26,8 +26,8 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      *
      * @return the actual replication degree
      */
-    public int getActualReplicationDegree() {
-        return actualReplicationDegree;
+    public int getCurrentReplicationDeg() {
+        return currentReplicationDeg;
     }
 
     /**
@@ -35,22 +35,22 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      *
      * @return the desired replication degree
      */
-    public int getDesiredReplicationDegree() {
-        return desiredReplicationDegree;
+    public int getDesiredReplicationDeg() {
+        return desiredReplicationDeg;
     }
 
     /**
      * Increment actual replication degree.
      */
     public void incActualReplicationDegree() {
-        actualReplicationDegree++;
+        currentReplicationDeg++;
     }
 
     /**
      * Decrement actual replication degree.
      */
     public void decActualReplicationDegree() {
-        actualReplicationDegree--;
+        currentReplicationDeg--;
     }
 
     /**
@@ -59,7 +59,7 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      * @return the degree satisfaction
      */
     public int getDegreeSatisfaction() {
-        return actualReplicationDegree - desiredReplicationDegree;
+        return currentReplicationDeg - desiredReplicationDeg;
     }
 
     /**
@@ -68,7 +68,7 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      * @return the boolean
      */
     public boolean isDegreeSatisfied() {
-        return actualReplicationDegree >= desiredReplicationDegree;
+        return currentReplicationDeg >= desiredReplicationDeg;
     }
 
     /**
@@ -78,7 +78,7 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      * @return the boolean
      */
     public boolean isBackedUpByPeer(int peerID) {
-        return peerList.contains(peerID);
+        return peersWithChunk.contains(peerID);
     }
 
     /**
@@ -87,7 +87,7 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      * @param peerID the peer id
      */
     public void addPeer(int peerID) {
-        peerList.add(peerID);
+        peersWithChunk.add(peerID);
     }
 
     /**

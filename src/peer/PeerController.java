@@ -412,7 +412,7 @@ public class PeerController implements Serializable {
                 System.out.println("Chunk " + message.getChunkIndex() + " not satisfied anymore.");
                 Message chunk = fileSystem.retrieveChunk(message.getFileID(), message.getChunkIndex());
 
-                putChunkThreadPool.schedule( new SingleBackupInitiator(this, chunk, chunkInfo.getDesiredReplicationDegree(), MDBReceiver),
+                putChunkThreadPool.schedule( new SingleBackupInitiator(this, chunk, chunkInfo.getDesiredReplicationDeg(), MDBReceiver),
                 Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         }
@@ -488,7 +488,7 @@ public class PeerController implements Serializable {
 
         int currentDegree = 0;
         if(backedUpChunksInfo.containsKey(key))
-            currentDegree = backedUpChunksInfo.get(key).getActualReplicationDegree();
+            currentDegree = backedUpChunksInfo.get(key).getCurrentReplicationDeg();
 
         return currentDegree;
     }
@@ -640,12 +640,12 @@ public class PeerController implements Serializable {
             output.append("\tPathname = " + entry.getKey() + ", fileID = " + entry.getValue().getKey()+"\n");
 
             Pair<String, Integer> firstChunkInfo = new Pair<>(entry.getValue().getKey(), 0);
-            output.append("\t\tDesired replication degree: " + backedUpChunksInfo.get(firstChunkInfo).getDesiredReplicationDegree() + "\n");
+            output.append("\t\tDesired replication degree: " + backedUpChunksInfo.get(firstChunkInfo).getDesiredReplicationDeg() + "\n");
             output.append("\t\tChunks:\n");
 
             for(int chunkNr = 0; chunkNr < entry.getValue().getValue(); ++chunkNr) {
                 Pair<String, Integer> chunkEntry = new Pair<>(entry.getValue().getKey(), chunkNr);
-                output.append("\t\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + backedUpChunksInfo.get(chunkEntry).getActualReplicationDegree() + "\n");
+                output.append("\t\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + backedUpChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
             }
             output.append("\n");
         }
@@ -658,7 +658,7 @@ public class PeerController implements Serializable {
             for (int chunkNr : entry.getValue()) {
                 Pair<String, Integer> chunkEntry = new Pair<>(entry.getKey(), chunkNr);
                 //TODO: Add chunk size here
-                output.append("\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + storedChunksInfo.get(chunkEntry).getActualReplicationDegree() + "\n");
+                output.append("\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + storedChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
             }
             output.append("\n");
         }
