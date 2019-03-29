@@ -235,7 +235,7 @@ public class PeerController implements Serializable {
         else
             System.out.println("Already stored chunk, sending STORED anyway.");
 
-        PackedMessage storedMessage = new StoredMessage(packedMessage.getVersion(), peerID, packedMessage.getFileID(), packedMessage.getChunkIndex());
+        PackedMessage storedMessage = new PackedMessage(packedMessage.getVersion(), peerID, packedMessage.getFileID(), null, MessageType.STORED, packedMessage.getChunkIndex());
 
         MCReceiver.sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 

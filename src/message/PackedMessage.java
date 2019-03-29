@@ -134,7 +134,7 @@ public class PackedMessage implements Comparable, Serializable {
     }
 
     /**
-     * Constructor to create CHUNK, GETCHUNK and REMOVED messages
+     * Constructor to create CHUNK, GETCHUNK, REMOVED and STORED messages
      * @param version
      * @param peerID
      * @param fileID
