@@ -3,19 +3,18 @@ package peer;
 import receiver.Channel;
 import protocol.*;
 import receiver.SocketReceiver;
-import rmi.RemoteService;
+import rmi.RMIProtocol;
 
 import java.io.*;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Peer implements RemoteService {
+public class Peer implements RMIProtocol {
 
     private static final int MAX_INITIATOR_THREADS = 50;
 
@@ -157,7 +156,7 @@ public class Peer implements RemoteService {
      */
     protected void initRemoteStub(String accessPoint) {
         try {
-            RemoteService stub = (RemoteService) UnicastRemoteObject.exportObject(this, 0);
+            RMIProtocol stub = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
 
             // Bind the remote object's stub in the registry
             Registry registry = LocateRegistry.getRegistry();
