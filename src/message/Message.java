@@ -4,6 +4,15 @@ import java.io.Serializable;
 
 public class Message implements Comparable, Serializable {
 
+    public enum MessageType {
+        PUTCHUNK,
+        STORED,
+        GETCHUNK,
+        CHUNK,
+        DELETE,
+        REMOVED
+    }
+
     private MessageType messageType;
     private String version;
     private Integer senderId;

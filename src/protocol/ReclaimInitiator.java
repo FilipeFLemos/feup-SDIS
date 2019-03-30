@@ -2,7 +2,6 @@ package protocol;
 
 import javafx.util.Pair;
 import message.Message;
-import message.MessageType;
 import peer.PeerController;
 import storage.FileSystem;
 
@@ -57,7 +56,7 @@ public class ReclaimInitiator implements Runnable{
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
             peerController.deleteChunk(fileID, chunkIndex, true);
 
-            Message removedMessage = new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, MessageType.REMOVED, chunkIndex);
+            Message removedMessage = new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
             peerController.getMCReceiver().sendMessage(removedMessage);
         }
 

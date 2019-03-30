@@ -134,8 +134,7 @@ public class PeerController implements Serializable {
         getChunkRequestsInfo = new ConcurrentHashMap<>();
 
         storedRepliesInfo = new ConcurrentHashMap<>();
-
-        //TODO: make proper verification
+        
         if(version.equals("1.0")) {
             backupEnhancement = false;
             restoreEnhancement = false;

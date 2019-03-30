@@ -1,7 +1,6 @@
 package protocol;
 
 import message.Message;
-import message.MessageType;
 import receiver.Receiver;
 import peer.PeerController;
 import utils.Globals;
@@ -23,7 +22,7 @@ public class Backup implements Runnable {
     public Backup(PeerController peerController, Message chunk, int replicationDegree, Receiver receiver) {
         //create putchunk message from chunk
         chunk.setReplicationDeg(replicationDegree);
-        chunk.setMessageType(MessageType.PUTCHUNK);
+        chunk.setMessageType(Message.MessageType.PUTCHUNK);
 
         message = chunk;
         this.peerController = peerController;

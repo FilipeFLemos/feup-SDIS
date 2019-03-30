@@ -1,7 +1,6 @@
 package protocol;
 
 import message.Message;
-import message.MessageType;
 import peer.PeerController;
 import receiver.Channel;
 
@@ -44,7 +43,7 @@ public class RestoreInitiator implements Runnable{
 
         ArrayList<Message> chunks = new ArrayList<>();
         for(int i = 0; i < chunkAmount; i++) {
-            chunks.add(new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, MessageType.GETCHUNK, i));
+            chunks.add(new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, Message.MessageType.GETCHUNK, i));
         }
 
         peerController.addToRestoringFiles(fileID, filePath, chunkAmount);

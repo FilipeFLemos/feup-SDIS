@@ -3,7 +3,6 @@ package receiver;
 import javafx.util.Pair;
 import message.ChunkInfo;
 import message.Message;
-import message.MessageType;
 import peer.PeerController;
 import protocol.Backup;
 import utils.Globals;
@@ -145,7 +144,7 @@ public class Dispatcher {
         else
             System.out.println("Already stored chunk, sending STORED anyway.");
 
-        Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, MessageType.STORED, message.getChunkNo());
+        Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
 
         controller.getMCReceiver().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 

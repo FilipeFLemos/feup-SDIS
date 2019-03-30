@@ -1,7 +1,6 @@
 package storage;
 
 import message.Message;
-import message.MessageType;
 
 import java.io.IOException;
 import java.io.Serializable;
@@ -101,7 +100,7 @@ public class FileSystem implements Serializable {
             e.printStackTrace();
         }
 
-        Message chunk = new Message(peerVersion, peerID, fileID, body, MessageType.CHUNK, chunkIndex);
+        Message chunk = new Message(peerVersion, peerID, fileID, body, Message.MessageType.CHUNK, chunkIndex);
         return chunk;
     }
 
