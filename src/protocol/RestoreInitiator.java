@@ -43,15 +43,15 @@ public class RestoreInitiator implements Runnable{
             return;
         }
 
-        ArrayList<Message> getChunkList = new ArrayList<>();
+        ArrayList<Message> chunks = new ArrayList<>();
         for(int i = 0; i < chunkAmount; i++) {
-            getChunkList.add(new Message(peer.getProtocolVersion(), peer.getPeerId(), fileID, null, MessageType.GETCHUNK, i));
+            chunks.add(new Message(peer.getProtocolVersion(), peer.getPeerId(), fileID, null, MessageType.GETCHUNK, i));
         }
 
         peer.getController().addToRestoringFiles(fileID, filePath, chunkAmount);
         System.out.println("Restoring file with " + chunkAmount + " chunks");
 
-        for(Message chunk : getChunkList){
+        for(Message chunk : chunks){
             channel.sendMessage(chunk);
             System.out.println("Sent " + chunk.getType() + " message: " + chunk.getChunkIndex());
         }
