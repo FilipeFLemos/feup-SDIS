@@ -62,7 +62,7 @@ public class BackupInitiator extends ProtocolInitiator {
                 return;
             }
             sendMessages(chunks);
-        } while(!confirmStoredMessages(chunks, waitTime));
+        } while(!confirmStoredMessages(waitTime));
 
         peer.getController().addBackedUpFile(filePath, fileID, numberChunks);
         System.out.println("File " + filePath + " backed up");
@@ -100,11 +100,10 @@ public class BackupInitiator extends ProtocolInitiator {
     /**
       * Checks if replication degrees have been satisfied for given chunks
       *
-      * @param chunkList chunks to be verified
       * @param waitTime delay before starting to check
       * @return true if for every chunk observed rep degree >= desired rep degree
       */
-    private boolean confirmStoredMessages(ArrayList<Message> chunkList, int waitTime) {
+    private boolean confirmStoredMessages(int waitTime) {
         try {
             //TODO: remove sleeps
             Thread.sleep(waitTime);
@@ -119,15 +118,6 @@ public class BackupInitiator extends ProtocolInitiator {
             }
         }
 
-        /*for(int i = 0; i < chunkList.size(); i++) {
-            // if degree is satisfied, remove from list
-            Message chunk = chunkList.get(i);
-            if (peer.getController().getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg()) {
-                chunkList.remove(chunk);
-                i--;
-            }
-        }*/
-
-        return chunkList.isEmpty();
+        return chunks.isEmpty();
     }
 }
