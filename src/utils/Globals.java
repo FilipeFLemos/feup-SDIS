@@ -2,6 +2,7 @@ package utils;
 
 public class Globals {
 
+    public static final int MAX_TCP_SOCKET_THREADS = 50;
     /**
      * A chunk's max body size
      */

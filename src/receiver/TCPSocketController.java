@@ -1,6 +1,7 @@
 package receiver;
 
 import message.Message;
+import utils.Globals;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -9,22 +10,20 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SocketController {
+public class TCPSocketController {
 
-    private static final int MAX_TCP_SOCKET_THREADS = 50;
-
-    private ExecutorService threadPool = Executors.newFixedThreadPool(MAX_TCP_SOCKET_THREADS);
+    private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
 
     private ConcurrentHashMap<InetAddress, Socket> sockets;
 
     private int port;
 
     /**
-      * Instantiates a new SocketController
+      * Instantiates a new TCPSocketController
       *
       * @param port controller port
       */
-    public SocketController(int port) {
+    public TCPSocketController(int port) {
         this.port = port;
         sockets = new ConcurrentHashMap<>();
     }

@@ -1,6 +1,7 @@
 package receiver;
 
 import message.Message;
+import utils.Globals;
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -11,11 +12,9 @@ import java.util.concurrent.Executors;
 
 public class SocketReceiver implements Runnable {
 
-    private static final int MAX_TCP_SOCKETS = 50;
-
     private ServerSocket serverSocket;
 
-    private ExecutorService threadPool = Executors.newFixedThreadPool(MAX_TCP_SOCKETS);
+    private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
 
     private Dispatcher dispatcher;
 

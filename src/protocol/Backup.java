@@ -6,21 +6,21 @@ import receiver.Receiver;
 import peer.PeerController;
 import utils.Globals;
 
-public class SingleBackupInitiator implements Runnable {
+public class Backup implements Runnable {
 
     private Message message;
     private Receiver receiver;
     private PeerController controller;
 
     /**
-      * Instantiates a new SingleBackupInitiator protocol
+      * Instantiates a new Backup protocol
       *
       * @param controller the peer's controller
       * @param chunk the target chunk
       * @param replicationDegree the desired replication degree
       * @param receiver the helper receiver
       */
-    public SingleBackupInitiator(PeerController controller, Message chunk, int replicationDegree, Receiver receiver) {
+    public Backup(PeerController controller, Message chunk, int replicationDegree, Receiver receiver) {
         //create putchunk message from chunk
         chunk.setReplicationDeg(replicationDegree);
         chunk.setType(MessageType.PUTCHUNK);

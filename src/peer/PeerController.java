@@ -2,10 +2,10 @@ package peer;
 
 import message.*;
 import javafx.util.Pair;
-import protocol.SingleBackupInitiator;
+import protocol.Backup;
 import receiver.Dispatcher;
 import receiver.Receiver;
-import receiver.SocketController;
+import receiver.TCPSocketController;
 import storage.FileSystem;
 import utils.Globals;
 import utils.Utils;
@@ -74,7 +74,7 @@ public class PeerController implements Serializable {
     /**
      *  Socket controller used in enhanced restore protocol
      */
-    private transient SocketController TCPController;
+    private transient TCPSocketController TCPController;
 
     /**
      * Locally stored chunks. Key = fileID, Value = ArrayList of chunk indexes
@@ -186,7 +186,7 @@ public class PeerController implements Serializable {
         putChunkThreadPool = Executors.newScheduledThreadPool(50);
 
         if(restoreEnhancement)
-            TCPController = new SocketController(MDRPort);
+            TCPController = new TCPSocketController(MDRPort);
     }
 
     /**
@@ -412,7 +412,7 @@ public class PeerController implements Serializable {
                 System.out.println("Chunk " + message.getChunkIndex() + " not satisfied anymore.");
                 Message chunk = fileSystem.retrieveChunk(message.getFileID(), message.getChunkIndex());
 
-                putChunkThreadPool.schedule( new SingleBackupInitiator(this, chunk, chunkInfo.getDesiredReplicationDeg(), MDBReceiver),
+                putChunkThreadPool.schedule( new Backup(this, chunk, chunkInfo.getDesiredReplicationDeg(), MDBReceiver),
                 Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         }
