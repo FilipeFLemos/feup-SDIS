@@ -7,9 +7,11 @@ import peer.Peer;
 
 import java.util.ArrayList;
 
-public class RestoreInitiator extends ProtocolInitiator {
+public class RestoreInitiator implements Runnable{
 
     private String filePath;
+    private Peer peer;
+    private Channel channel;
 
     /**
      * Instantiates a new Restore initiator.
@@ -19,7 +21,8 @@ public class RestoreInitiator extends ProtocolInitiator {
      * @param channel  the message
      */
     public RestoreInitiator(Peer peer, String filePath, Channel channel) {
-        super(peer, channel);
+        this.peer = peer;
+        this.channel = channel;
         this.filePath = filePath;
     }
 
@@ -48,6 +51,9 @@ public class RestoreInitiator extends ProtocolInitiator {
         peer.getController().addToRestoringFiles(fileID, filePath, chunkAmount);
         System.out.println("Restoring file with " + chunkAmount + " chunks");
 
-        sendMessages(getChunkList);
+        for(Message chunk : getChunkList){
+            channel.sendMessage(chunk);
+            System.out.println("Sent " + chunk.getType() + " message: " + chunk.getChunkIndex());
+        }
     }
 }

@@ -2,9 +2,10 @@ package protocol;
 
 import peer.Peer;
 
-public class ReclaimInitiator extends ProtocolInitiator {
+public class ReclaimInitiator implements Runnable{
 
     private long space;
+    private Peer peer;
 
     /**
      * Instantiates a new Reclaim initiator.
@@ -13,7 +14,7 @@ public class ReclaimInitiator extends ProtocolInitiator {
      * @param space the space
      */
     public ReclaimInitiator(Peer peer, long space) {
-        super(peer, null);
+        this.peer = peer;
         this.space = space;
     }
 

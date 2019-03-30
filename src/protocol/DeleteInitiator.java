@@ -8,9 +8,11 @@ import utils.Utils;
 
 import java.io.File;
 
-public class DeleteInitiator extends ProtocolInitiator {
+public class DeleteInitiator implements Runnable{
 
     private String filePath;
+    private Peer peer;
+    private Channel channel;
 
     /**
      * Instantiates a new Delete initiator.
@@ -20,7 +22,8 @@ public class DeleteInitiator extends ProtocolInitiator {
      * @param channel  the message
      */
     public DeleteInitiator(Peer peer, String filePath, Channel channel) {
-        super(peer, channel);
+        this.peer = peer;
+        this.channel = channel;
         this.filePath = filePath;
     }
 

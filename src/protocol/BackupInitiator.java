@@ -10,7 +10,7 @@ import utils.Utils;
 import java.io.*;
 import java.util.ArrayList;
 
-public class BackupInitiator extends ProtocolInitiator {
+public class BackupInitiator implements Runnable{
 
     private String filePath;
     private int replicationDegree;
@@ -18,6 +18,8 @@ public class BackupInitiator extends ProtocolInitiator {
     private ArrayList<Message> chunks;
     private String fileID;
     private File file;
+    private Peer peer;
+    private Channel channel;
 
     /**
      * Instantiates a new Backup initiator.
@@ -28,7 +30,8 @@ public class BackupInitiator extends ProtocolInitiator {
      * @param channel           the message
      */
     public BackupInitiator(Peer peer, String filePath, int replicationDegree, Channel channel) {
-        super(peer, channel);
+        this.peer = peer;
+        this.channel = channel;
         this.filePath = filePath;
         this.replicationDegree = replicationDegree;
 
@@ -61,7 +64,12 @@ public class BackupInitiator extends ProtocolInitiator {
                 System.out.println("Aborting backup, attempt limit reached");
                 return;
             }
-            sendMessages(chunks);
+
+            for(Message chunk : chunks){
+                channel.sendMessage(chunk);
+                System.out.println("Sent " + chunk.getType() + " message: " + chunk.getChunkIndex());
+            }
+
         } while(!confirmStoredMessages(waitTime));
 
         peer.getController().addBackedUpFile(filePath, fileID, numberChunks);
