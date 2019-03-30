@@ -1,20 +1,23 @@
 package protocol;
 
-import peer.Peer;
+import javafx.util.Pair;
+import message.Message;
+import message.MessageType;
+import peer.PeerController;
+import storage.FileSystem;
 
 public class ReclaimInitiator implements Runnable{
 
+    private PeerController peerController;
     private long space;
-    private Peer peer;
 
     /**
      * Instantiates a new Reclaim initiator.
      *
-     * @param peer  the peer
      * @param space the space
      */
-    public ReclaimInitiator(Peer peer, long space) {
-        this.peer = peer;
+    public ReclaimInitiator(PeerController peerController, long space) {
+        this.peerController = peerController;
         this.space = space;
     }
 
@@ -23,9 +26,41 @@ public class ReclaimInitiator implements Runnable{
       */
     @Override
     public void run() {
-        if(peer.getController().reclaimSpace(space))
+        if(reclaimSpace(space))
             System.out.println("Successfully reclaimed down to " + space + " kB");
         else
             System.out.println("Couldn't reclaim down to " + space + " kB");
+    }
+
+    /**
+     * Tries to reclaim some local space (executes the reclaim protocol)
+     *
+     * @param targetSpaceKb the target space, in kB
+     * @return true
+     */
+    private boolean reclaimSpace(long targetSpaceKb) {
+        FileSystem fileSystem = peerController.getFileSystem();
+        long targetSpace = targetSpaceKb * 1000; //kbs to bytes
+
+        while(fileSystem.getUsedStorage() > targetSpace) {
+            Pair<String, Integer> toDelete = peerController.getMostSatisfiedChunk();
+
+            // no more chunks to delete
+            if (toDelete == null) {
+                System.out.println("Nothing to delete");
+                return fileSystem.getUsedStorage() < targetSpace;
+            }
+
+            String fileID = toDelete.getKey();
+            int chunkIndex = toDelete.getValue();
+
+            System.out.println("Deleting " + fileID + " - " + chunkIndex);
+            peerController.deleteChunk(fileID, chunkIndex, true);
+
+            Message removedMessage = new Message(peerController.getPeerVersion(), peerController.getPeerID(), fileID, null, MessageType.REMOVED, chunkIndex);
+            peerController.getMCReceiver().sendMessage(removedMessage);
+        }
+
+        return true;
     }
 }

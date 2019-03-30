@@ -204,7 +204,6 @@ public class PeerController implements Serializable {
             Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
 
             if(storedRepliesInfo.containsKey(key)) {
-                ChunkInfo chunkInfo = storedRepliesInfo.get(key);
 
                 if(storedRepliesInfo.get(key).isDegreeSatisfied()) {
                     System.out.println("Received enough STORED messages for " + message.getChunkIndex() + " meanwhile, ignoring request");
@@ -309,8 +308,9 @@ public class PeerController implements Serializable {
         }
 
         // if peer doesn't have any chunks from this file, return
-        if(!storedChunks.containsKey(fileID))
+        if(!storedChunks.containsKey(fileID)) {
             return;
+        }
 
         // if peer doesn't have this chunk, return
         if(!storedChunks.get(fileID).contains(chunkIndex))
@@ -416,37 +416,6 @@ public class PeerController implements Serializable {
                 Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         }
-    }
-
-    /**
-     * Tries to reclaim some local space (executes the reclaim protocol)
-     *
-     * @param targetSpaceKb the target space, in kB
-     * @return true
-     */
-    public boolean reclaimSpace(long targetSpaceKb) {
-        long targetSpace = targetSpaceKb * 1000; //kbs to bytes
-
-        while(fileSystem.getUsedStorage() > targetSpace) {
-            Pair<String, Integer> toDelete = getMostSatisfiedChunk();
-
-            // no more chunks to delete
-            if (toDelete == null) {
-                System.out.println("Nothing to delete");
-                return fileSystem.getUsedStorage() < targetSpace;
-            }
-
-            String fileID = toDelete.getKey();
-            int chunkIndex = toDelete.getValue();
-
-            System.out.println("Deleting " + fileID + " - " + chunkIndex);
-            deleteChunk(fileID, chunkIndex, true);
-
-            Message removedMessage = new Message(peerVersion, peerID, fileID, null, MessageType.REMOVED, chunkIndex);
-            MCReceiver.sendMessage(removedMessage);
-        }
-
-        return true;
     }
 
     /**
@@ -565,8 +534,7 @@ public class PeerController implements Serializable {
         fileSystem.deleteChunk(fileID, chunkIndex, updateMaxStorage);
 
         Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
-        if(storedChunksInfo.containsKey(key))
-            storedChunksInfo.remove(key);
+        storedChunksInfo.remove(key);
 
         if(storedChunks.get(fileID).contains(chunkIndex))
             storedChunks.get(fileID).remove((Integer) chunkIndex);
@@ -668,4 +636,19 @@ public class PeerController implements Serializable {
         return output.toString();
     }
 
+    public FileSystem getFileSystem() {
+        return fileSystem;
+    }
+
+    public Receiver getMCReceiver() {
+        return MCReceiver;
+    }
+
+    public String getPeerVersion() {
+        return peerVersion;
+    }
+
+    public int getPeerID() {
+        return peerID;
+    }
 }

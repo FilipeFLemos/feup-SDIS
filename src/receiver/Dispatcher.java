@@ -6,6 +6,7 @@ import utils.Globals;
 import utils.Utils;
 
 import java.net.InetAddress;
+import java.util.ArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -76,36 +77,24 @@ public class Dispatcher {
                 else
                     randomWait = 0;
 
-                threadPool.schedule(() -> {
-                    controller.handlePutchunkMessage(message);
-                }, randomWait, TimeUnit.MILLISECONDS);
+                threadPool.schedule(() -> controller.handlePutchunkMessage(message), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case STORED:
-                threadPool.submit(() -> {
-                    controller.handleStoredMessage(message);
-                });
+                threadPool.submit(() -> controller.handleStoredMessage(message));
                 break;
             case GETCHUNK:
                 controller.listenForChunkReplies(message);
                 randomWait = Utils.getRandomBetween(0, Globals.MAX_CHUNK_WAITING_TIME);
-                threadPool.schedule(() -> {
-                    controller.handleGetChunkMessage(message, address);
-                }, randomWait, TimeUnit.MILLISECONDS);
+                threadPool.schedule(() -> controller.handleGetChunkMessage(message, address), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case CHUNK:
-                threadPool.submit(() -> {
-                    controller.handleChunkMessage(message);
-                });
+                threadPool.submit(() -> controller.handleChunkMessage(message));
                 break;
             case DELETE:
-                threadPool.submit(() -> {
-                    controller.handleDeleteMessage(message);
-                });
+                threadPool.submit(() -> controller.handleDeleteMessage(message));
                 break;
             case REMOVED:
-                threadPool.submit(() -> {
-                    controller.handleRemovedMessage(message);
-                });
+                threadPool.submit(() -> controller.handleRemovedMessage(message));
                 break;
             default:
                 System.out.println("No valid type");

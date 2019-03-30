@@ -2,6 +2,7 @@ package protocol;
 
 import message.Message;
 import message.MessageType;
+import peer.PeerController;
 import receiver.Channel;
 import peer.Peer;
 
@@ -10,18 +11,17 @@ import java.util.ArrayList;
 public class RestoreInitiator implements Runnable{
 
     private String filePath;
-    private Peer peer;
+    private PeerController peerController;
     private Channel channel;
 
     /**
      * Instantiates a new Restore initiator.
      *
-     * @param peer     the peer
      * @param filePath the file path
      * @param channel  the message
      */
-    public RestoreInitiator(Peer peer, String filePath, Channel channel) {
-        this.peer = peer;
+    public RestoreInitiator(PeerController peerController, String filePath, Channel channel) {
+        this.peerController = peerController;
         this.channel = channel;
         this.filePath = filePath;
     }
@@ -31,13 +31,13 @@ public class RestoreInitiator implements Runnable{
       */
     @Override
     public void run() {
-        String fileID = peer.getController().getBackedUpFileID(filePath);
+        String fileID = peerController.getBackedUpFileID(filePath);
         if(fileID == null) {
             System.out.println("Restore Error: file " + filePath + " is not backed up.");
             return;
         }
 
-        int chunkAmount = peer.getController().getBackedUpFileChunkAmount(filePath);
+        int chunkAmount = peerController.getBackedUpFileChunkAmount(filePath);
         if(chunkAmount == 0) {
             System.out.println("Restore Error: error retrieving chunk ammount.");
             return;
@@ -45,10 +45,10 @@ public class RestoreInitiator implements Runnable{
 
         ArrayList<Message> chunks = new ArrayList<>();
         for(int i = 0; i < chunkAmount; i++) {
-            chunks.add(new Message(peer.getProtocolVersion(), peer.getPeerId(), fileID, null, MessageType.GETCHUNK, i));
+            chunks.add(new Message(peerController.getPeerVersion(), peerController.getPeerID(), fileID, null, MessageType.GETCHUNK, i));
         }
 
-        peer.getController().addToRestoringFiles(fileID, filePath, chunkAmount);
+        peerController.addToRestoringFiles(fileID, filePath, chunkAmount);
         System.out.println("Restoring file with " + chunkAmount + " chunks");
 
         for(Message chunk : chunks){

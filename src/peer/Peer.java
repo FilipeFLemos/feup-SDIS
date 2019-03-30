@@ -230,7 +230,7 @@ public class Peer implements RMIProtocol {
             threadPool.submit(new SocketReceiver(MDRPort, controller.getDispatcher()));
         }
 
-        threadPool.submit(new RestoreInitiator(this, filePath, MC));
+        threadPool.submit(new RestoreInitiator(controller, filePath, MC));
     }
 
     /**
@@ -250,7 +250,7 @@ public class Peer implements RMIProtocol {
      */
     @Override
     public void reclaim(long space) {
-        threadPool.submit(new ReclaimInitiator(this, space));
+        threadPool.submit(new ReclaimInitiator(controller, space));
     }
 
     /**
