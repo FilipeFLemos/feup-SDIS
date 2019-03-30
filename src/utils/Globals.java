@@ -5,7 +5,7 @@ public class Globals {
     /**
      * A chunk's max body size
      */
-    public static int CHUNK_MAX_SIZE = 64000;
+    public static int MAX_CHUNK_SIZE = 64000;
 
     /**
      * Maximum time waiting before processing a STORED message

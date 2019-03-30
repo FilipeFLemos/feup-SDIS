@@ -1,17 +1,23 @@
 package protocol;
 
 import message.Message;
+import message.MessageType;
 import receiver.Channel;
 import peer.Peer;
-import storage.ChunkCreator;
 import utils.Globals;
+import utils.Utils;
 
+import java.io.*;
 import java.util.ArrayList;
 
 public class BackupInitiator extends ProtocolInitiator {
 
     private String filePath;
     private int replicationDegree;
+    private int numberChunks;
+    private ArrayList<Message> chunks;
+    private String fileID;
+    private File file;
 
     /**
      * Instantiates a new Backup initiator.
@@ -25,6 +31,12 @@ public class BackupInitiator extends ProtocolInitiator {
         super(peer, channel);
         this.filePath = filePath;
         this.replicationDegree = replicationDegree;
+
+        file = new File(filePath);
+        fileID = Utils.getFileID(file);
+
+        numberChunks = (int) (file.length() / Globals.MAX_CHUNK_SIZE + 1);
+        chunks = new ArrayList<>();
     }
 
     /**
@@ -32,17 +44,19 @@ public class BackupInitiator extends ProtocolInitiator {
       */
     @Override
     public void run() {
-        ChunkCreator creator = new ChunkCreator(filePath, replicationDegree, peer.getPeerId(), peer.getProtocolVersion());
+        //ChunkCreator creator = new ChunkCreator(filePath, replicationDegree, peer.getPeerId(), peer.getProtocolVersion());
 
-        ArrayList<Message> chunkList = creator.getChunkList();
-        String fileID = new String(chunkList.get(0).getFileID());
-        int chunkAmmount = chunkList.size();
+        splitIntoChunks();
+
+        //ArrayList<Message> chunkList = creator.getChunkList();
+        String fileID = chunks.get(0).getFileID();
+        int chunkAmmount = chunks.size();
 
         int tries = 0;
         int waitTime = 500; // initially 500 so in first iteration it doubles to 1000
 
         // notify peer to listen for these chunks' stored messages
-        for(Message chunk : chunkList)
+        for(Message chunk : chunks)
             peer.getController().backedUpChunkListenForStored(chunk);
 
         do {
@@ -53,11 +67,40 @@ public class BackupInitiator extends ProtocolInitiator {
                 System.out.println("Aborting backup, attempt limit reached");
                 return;
             }
-            sendMessages(chunkList);
-        } while(!confirmStoredMessages(chunkList, waitTime));
+            sendMessages(chunks);
+        } while(!confirmStoredMessages(chunks, waitTime));
 
         peer.getController().addBackedUpFile(filePath, fileID, chunkAmmount);
         System.out.println("File " + filePath + " backed up");
+    }
+
+
+    /**
+     * Splits file in chunks
+     */
+    private void splitIntoChunks() {
+        try {
+            FileInputStream fileStream = new FileInputStream(file);
+            BufferedInputStream bufferedFile = new BufferedInputStream(fileStream);
+
+            for(int i = 0; i < numberChunks; i++) {
+                byte[] body;
+                byte[] aux = new byte[Globals.MAX_CHUNK_SIZE];
+                int bytesRead = bufferedFile.read(aux);
+
+                if(bytesRead == -1)
+                    body = new byte[0];
+                else if(bytesRead < Globals.MAX_CHUNK_SIZE)
+                    body = new byte[bytesRead];
+                else
+                    body = new byte[Globals.MAX_CHUNK_SIZE];
+
+                System.arraycopy(aux, 0, body, 0, body.length);
+                chunks.add(new Message(peer.getProtocolVersion(), peer.getPeerId(), fileID, body, MessageType.PUTCHUNK, i, replicationDegree));
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     /**
