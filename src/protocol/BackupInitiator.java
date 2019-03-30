@@ -44,13 +44,7 @@ public class BackupInitiator extends ProtocolInitiator {
       */
     @Override
     public void run() {
-        //ChunkCreator creator = new ChunkCreator(filePath, replicationDegree, peer.getPeerId(), peer.getProtocolVersion());
-
         splitIntoChunks();
-
-        //ArrayList<Message> chunkList = creator.getChunkList();
-        String fileID = chunks.get(0).getFileID();
-        int chunkAmmount = chunks.size();
 
         int tries = 0;
         int waitTime = 500; // initially 500 so in first iteration it doubles to 1000
@@ -70,7 +64,7 @@ public class BackupInitiator extends ProtocolInitiator {
             sendMessages(chunks);
         } while(!confirmStoredMessages(chunks, waitTime));
 
-        peer.getController().addBackedUpFile(filePath, fileID, chunkAmmount);
+        peer.getController().addBackedUpFile(filePath, fileID, numberChunks);
         System.out.println("File " + filePath + " backed up");
     }
 
@@ -118,14 +112,21 @@ public class BackupInitiator extends ProtocolInitiator {
             e.printStackTrace();
         }
 
-        for(int i = 0; i < chunkList.size(); i++) {
+        //TODO testar isto
+        for(Message chunk : chunks){
+            if(peer.getController().getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg()){
+                chunks.remove(chunk);
+            }
+        }
+
+        /*for(int i = 0; i < chunkList.size(); i++) {
             // if degree is satisfied, remove from list
             Message chunk = chunkList.get(i);
             if (peer.getController().getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg()) {
                 chunkList.remove(chunk);
                 i--;
             }
-        }
+        }*/
 
         return chunkList.isEmpty();
     }
