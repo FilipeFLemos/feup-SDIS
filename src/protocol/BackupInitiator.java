@@ -4,7 +4,6 @@ import message.Message;
 import message.MessageType;
 import peer.PeerController;
 import receiver.Channel;
-import peer.Peer;
 import utils.Globals;
 import utils.Utils;
 
@@ -67,7 +66,7 @@ public class BackupInitiator implements Runnable{
 
             for(Message chunk : chunks){
                 channel.sendMessage(chunk);
-                System.out.println("Sent " + chunk.getType() + " message: " + chunk.getChunkIndex());
+                System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
             }
 
         } while(!confirmStoredMessages(waitTime));

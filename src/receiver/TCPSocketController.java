@@ -50,7 +50,7 @@ public class TCPSocketController {
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
                 stream.writeObject(message);
-                System.out.println("Sent CHUNK message " + message.getChunkIndex() + " via TCP");
+                System.out.println("Sent CHUNK message " + message.getChunkNo() + " via TCP");
             } catch (IOException e) {
                 System.out.println("Closing TCP socket...");
                 try { socket.close(); }

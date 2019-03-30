@@ -49,7 +49,7 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
     /**
      * Decrement actual replication degree.
      */
-    public void decActualReplicationDegree() {
+    public void decreaseCurrentReplicationDeg() {
         currentReplicationDeg--;
     }
 

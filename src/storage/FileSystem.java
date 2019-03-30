@@ -69,7 +69,7 @@ public class FileSystem implements Serializable {
             return false;
 
         try {
-            Path chunkPath = Paths.get(this.backupDirectory + "/"+chunk.getFileID()+"_"+chunk.getChunkIndex());
+            Path chunkPath = Paths.get(this.backupDirectory + "/"+chunk.getFileId()+"_"+chunk.getChunkNo());
 
             if(!Files.exists(chunkPath))
                 Files.createFile(chunkPath);

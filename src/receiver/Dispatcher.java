@@ -1,12 +1,16 @@
 package receiver;
 
+import javafx.util.Pair;
+import message.ChunkInfo;
 import message.Message;
 import peer.PeerController;
+import protocol.Backup;
 import utils.Globals;
 import utils.Utils;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
@@ -38,7 +42,7 @@ public class Dispatcher {
       */
     public void handleMessage(Message message, InetAddress address) {
         //Ignore messages from self
-        if(message.getPeerID().equals(this.peerID))
+        if(message.getSenderId().equals(this.peerID))
             return;
 
         dispatchMessage(message, address);
@@ -54,7 +58,7 @@ public class Dispatcher {
     public void handleMessage(byte[] buf, int size, InetAddress address) {
         Message message = new Message(buf, size);
 
-        if(message.getPeerID().equals(this.peerID))
+        if(message.getSenderId().equals(this.peerID))
             return;
         dispatchMessage(message, address);
     }
@@ -68,7 +72,7 @@ public class Dispatcher {
     public void dispatchMessage(Message message, InetAddress address) {
         int randomWait;
 
-        switch(message.getType()) {
+        switch(message.getMessageType()) {
             case PUTCHUNK:
                 if(!message.getVersion().equals("1.0")) {
                     controller.listenForStoredReplies(message);
@@ -85,19 +89,98 @@ public class Dispatcher {
             case GETCHUNK:
                 controller.listenForChunkReplies(message);
                 randomWait = Utils.getRandomBetween(0, Globals.MAX_CHUNK_WAITING_TIME);
-                threadPool.schedule(() -> controller.handleGetChunkMessage(message, address), randomWait, TimeUnit.MILLISECONDS);
+                threadPool.schedule(() -> handleGetChunkMessage(message, address), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case CHUNK:
                 threadPool.submit(() -> controller.handleChunkMessage(message));
                 break;
             case DELETE:
-                threadPool.submit(() -> controller.handleDeleteMessage(message));
+                threadPool.submit(() -> handleDELETE(message));
                 break;
             case REMOVED:
-                threadPool.submit(() -> controller.handleRemovedMessage(message));
+                threadPool.submit(() -> handleREMOVED(message));
                 break;
             default:
                 System.out.println("No valid type");
+        }
+    }
+
+    /**
+     * Handles a GETCHUNK message. If a CHUNK message for this chunk is received while handling GETCHUNK, the operation
+     * is aborted. If the peer does not have any or a particular stored CHUNK for this file, the operation is aborted.
+     *
+     * @param message the message
+     * @param sourceAddress address used for TCP connection in enhanced version of protocol
+     */
+    public void handleGetChunkMessage(Message message, InetAddress sourceAddress) {
+        System.out.println("Received GetChunk Message: " + message.getChunkNo());
+
+        String fileId = message.getFileId();
+        int chunkNo = message.getChunkNo();
+        Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
+
+        ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        if(getChunkRequestsInfo.containsKey(key)) {
+            if(getChunkRequestsInfo.get(key)) {
+                getChunkRequestsInfo.remove(key);
+                System.out.println("Received a CHUNK message for " + chunkNo + " meanwhile, ignoring request");
+                return;
+            }
+        }
+
+        ConcurrentHashMap<String, ArrayList<Integer>> storedChunks = controller.getStoredChunks();
+        if(!storedChunks.containsKey(fileId) || !storedChunks.get(fileId).contains(chunkNo)) {
+            return;
+        }
+
+        Message chunk = controller.getFileSystem().retrieveChunk(fileId, chunkNo);
+        controller.sendMessage(chunk,sourceAddress);
+    }
+
+
+    /**
+     * Handles a DELETE message. If the peer does not have the chunk, the message is ignored.
+     *
+     * @param message the message
+     */
+    public void handleDELETE(Message message) {
+        System.out.println("Received Delete Message");
+        ConcurrentHashMap<String, ArrayList<Integer>> storedChunks = controller.getStoredChunks();
+
+        if(!storedChunks.containsKey(message.getFileId()))
+            return;
+
+        ArrayList<Integer> fileStoredChunks = storedChunks.get(message.getFileId());
+        while(!fileStoredChunks.isEmpty())
+            controller.deleteChunk(message.getFileId(), fileStoredChunks.get(0), false);
+
+        controller.removeStoredChunksFile(message.getFileId());
+        System.out.println("Delete Success: file deleted.");
+    }
+
+    /**
+     * Handles a REMOVED message. If this action leads to an unsatisfied replication degree, a new backup protocol for
+     * the chunk must be initiated. However, it must wait a random interval of [0-400]ms to check if the degree was
+     * satisfied before taking action.
+     *
+     * @param message the message
+     */
+    public void handleREMOVED(Message message) {
+        System.out.println("Received Removed Message: " + message.getChunkNo());
+        ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
+
+        Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
+        if(storedChunksInfo.containsKey(key)) {
+            ChunkInfo chunkInfo = storedChunksInfo.get(key);
+            chunkInfo.decreaseCurrentReplicationDeg();
+
+            if(!chunkInfo.isDegreeSatisfied()) {
+                System.out.println("Chunk " + message.getChunkNo() + " not satisfied anymore.");
+                Message chunk = controller.getFileSystem().retrieveChunk(message.getFileId(), message.getChunkNo());
+
+                threadPool.schedule( new Backup(controller, chunk, chunkInfo.getDesiredReplicationDeg(), controller.getMDBReceiver()),
+                        Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
+            }
         }
     }
 }

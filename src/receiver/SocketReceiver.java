@@ -76,7 +76,7 @@ public class SocketReceiver implements Runnable {
         Message message;
         while((message = (Message) stream.readObject()) != null) {
             dispatcher.handleMessage(message, null);
-            System.out.println("Received CHUNK message " + message.getChunkIndex() + " via TCP");
+            System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
 
             try {
                 stream = new ObjectInputStream(socket.getInputStream());

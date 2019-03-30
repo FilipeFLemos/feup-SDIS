@@ -23,7 +23,7 @@ public class Backup implements Runnable {
     public Backup(PeerController peerController, Message chunk, int replicationDegree, Receiver receiver) {
         //create putchunk message from chunk
         chunk.setReplicationDeg(replicationDegree);
-        chunk.setType(MessageType.PUTCHUNK);
+        chunk.setMessageType(MessageType.PUTCHUNK);
 
         message = chunk;
         this.peerController = peerController;
@@ -37,7 +37,7 @@ public class Backup implements Runnable {
     public void run() {
         //if chunk degree was satisfied meanwhile, cancel
         if(peerController.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg()) {
-            System.out.println("Chunk " + message.getChunkIndex() + " satisfied meanwhile, canceling");
+            System.out.println("Chunk " + message.getChunkNo() + " satisfied meanwhile, canceling");
             return;
         }
 

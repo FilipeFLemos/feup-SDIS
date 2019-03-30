@@ -2,82 +2,15 @@ package message;
 
 import java.io.Serializable;
 
-/**
- * The type Message.
- */
 public class Message implements Comparable, Serializable {
-    /**
-     * The constant CRLF.
-     */
-    public static String CRLF = "\r\n";
 
-    /**
-     * The Type.
-     */
-    protected MessageType type;
-    /**
-     * The Version.
-     */
-    protected String version;
-    /**
-     * The Peer id.
-     */
-    protected Integer peerID;
-    /**
-     * The File id.
-     */
-    protected String fileID;
-
-    /**
-     * The Chunk nr.
-     */
-    protected Integer chunkNr = null; //Not used on all messages so null until (eventually) overwritten
-    /**
-     * The Rep degree.
-     */
-    protected Integer replicationDeg = null; //Not used on all messages so null until (eventually) overwritten
-    /**
-     * The Body.
-     */
-    protected byte[] body = null; //Not used on all messages so null until (eventually) overwritten
-
-    /**
-     * Process a message header given as a string.
-     *
-     * @param str the header
-     */
-    public void processHeader(String str) {
-      String[] header = str.split("\\s+");
-      switch(header[0]) {
-          case "PUTCHUNK":
-              this.type = MessageType.PUTCHUNK;
-              this.replicationDeg = Integer.parseInt(header[5]);
-              break;
-          case "STORED":
-              this.type = MessageType.STORED;
-              break;
-          case "GETCHUNK":
-              this.type = MessageType.GETCHUNK;
-              break;
-          case "CHUNK":
-              this.type = MessageType.CHUNK;
-              break;
-          case "DELETE":
-              this.type = MessageType.DELETE;
-              break;
-          case "REMOVED":
-              this.type = MessageType.REMOVED;
-              break;
-          default:
-              break;
-      }
-
-      this.version = header[1];
-      this.peerID = Integer.parseInt(header[2]);
-      this.fileID = header[3];
-      if(header.length > 4)
-        this.chunkNr = Integer.parseInt(header[4]);
-    }
+    private MessageType messageType;
+    private String version;
+    private Integer senderId;
+    private String fileId;
+    private Integer chunkNo = null;
+    private Integer replicationDeg = null;
+    private byte[] body;
 
     /**
      * Processes a message given as a byte[] (directly from a DatagramPacket)
@@ -103,108 +36,123 @@ public class Message implements Comparable, Serializable {
     }
 
     /**
-     * Instantiates a new Message.
-     *
-     * @param version the version
-     * @param peerID  the peer id
-     * @param fileID  the file id
-     * @param body    the body
-     */
-    public Message(String version, Integer peerID, String fileID, byte[] body) {
-        this.version = version;
-        this.peerID = peerID;
-        this.fileID = fileID;
-        this.body = body;
-    }
-
-    /**
      * Constructor to create DELETED messages
      * @param version
-     * @param peerID
-     * @param fileID
+     * @param senderId
+     * @param fileId
      * @param body
-     * @param type
+     * @param messageType
      */
-    public Message(String version, Integer peerID, String fileID, byte[] body, MessageType type) {
+    public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType) {
         this.version = version;
-        this.peerID = peerID;
-        this.fileID = fileID;
+        this.senderId = senderId;
+        this.fileId = fileId;
         this.body = body;
-        this.type = type;
+        this.messageType = messageType;
     }
 
     /**
      * Constructor to create CHUNK, GETCHUNK, REMOVED and STORED messages
      * @param version
-     * @param peerID
-     * @param fileID
+     * @param senderId
+     * @param fileId
      * @param body
-     * @param type
+     * @param messageType
      * @param chunkIndex
      */
-    public Message(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex) {
-        this.version = version;
-        this.peerID = peerID;
-        this.fileID = fileID;
-        this.body = body;
-        this.type = type;
-        this.chunkNr = chunkIndex;
+    public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkIndex) {
+        this(version, senderId, fileId, body, messageType);
+        this.chunkNo = chunkIndex;
     }
 
     /**
      * Contructor to create PUTCHUNK Messages
      * @param version
-     * @param peerID
-     * @param fileID
+     * @param senderId
+     * @param fileId
      * @param body
-     * @param type
+     * @param messageType
      * @param chunkIndex
      * @param replicationDeg
      */
-    public Message(String version, Integer peerID, String fileID, byte[] body, MessageType type, int chunkIndex, int replicationDeg) {
-        this.version = version;
-        this.peerID = peerID;
-        this.fileID = fileID;
-        this.body = body;
-        this.type = type;
-        this.chunkNr = chunkIndex;
+    public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkIndex, int replicationDeg) {
+        this(version, senderId, fileId, body, messageType, chunkIndex);
         this.replicationDeg = replicationDeg;
     }
 
+    /**
+     * Process a message header given as a string.
+     *
+     * @param str the header
+     */
+    public void processHeader(String str) {
+        String[] header = str.split("\\s+");
+        switch(header[0]) {
+            case "PUTCHUNK":
+                this.messageType = MessageType.PUTCHUNK;
+                this.replicationDeg = Integer.parseInt(header[5]);
+                break;
+            case "STORED":
+                this.messageType = MessageType.STORED;
+                break;
+            case "GETCHUNK":
+                this.messageType = MessageType.GETCHUNK;
+                break;
+            case "CHUNK":
+                this.messageType = MessageType.CHUNK;
+                break;
+            case "DELETE":
+                this.messageType = MessageType.DELETE;
+                break;
+            case "REMOVED":
+                this.messageType = MessageType.REMOVED;
+                break;
+            default:
+                break;
+        }
+
+        this.version = header[1];
+        this.senderId = Integer.parseInt(header[2]);
+        this.fileId = header[3];
+        if(header.length > 4)
+            this.chunkNo = Integer.parseInt(header[4]);
+    }
+
     public byte[] buildMessagePacket(boolean sendBody) {
-        StringBuilder result = new StringBuilder();
-        result.append(parseType(this.type));
+        String header = buildHeader();
 
-        result.append(this.version);
-        result.append(" ");
-        result.append(this.peerID);
-        result.append(" ");
-        result.append(this.fileID);
-        result.append(" ");
-        if(this.chunkNr != null) {
-            result.append(this.chunkNr);
-            result.append(" ");
-        }
-        if(this.replicationDeg != null) {
-            result.append(this.replicationDeg);
-            result.append(" ");
-        }
-        result.append(Message.CRLF+ Message.CRLF);
-
-        String header = result.toString();
-        byte[] headerArr = header.getBytes();
+        byte[] headerBytes = header.getBytes();
 
         int bodyLength;
-        if(this.body == null || !sendBody) bodyLength = 0;
-        else bodyLength = this.body.length;
+        if(body == null || !sendBody) {
+            bodyLength = 0;
+        } else {
+            bodyLength = body.length;
+        }
 
-        byte[] packet = new byte[headerArr.length + bodyLength];
-        System.arraycopy(headerArr, 0, packet, 0, headerArr.length);
+        byte[] packet = new byte[headerBytes.length + bodyLength];
+        System.arraycopy(headerBytes, 0, packet, 0, headerBytes.length);
 
-        if(this.body != null)
+        if(bodyLength != 0)
             System.arraycopy(this.body, 0, packet, header.length(), bodyLength);
 
         return packet;
+    }
+
+    private String buildHeader() {
+        String header = parseType() + version + " " + senderId + " " + fileId + " ";
+
+        if (this.chunkNo != null) {
+            header += chunkNo + " ";
+        }
+        if (this.replicationDeg != null) {
+            header += replicationDeg + " ";
+        }
+
+        String CRLF = "\r\n";
+
+        header += CRLF + CRLF;
+        return header;
     }
 
     /**
@@ -218,32 +166,16 @@ public class Message implements Comparable, Serializable {
 
     @Override
     public String toString() {
-        StringBuilder result = new StringBuilder();
-        result.append(parseType(this.type));
-
-        result.append(this.version);
-        result.append(" ");
-        result.append(this.peerID);
-        result.append(" ");
-        result.append(this.fileID);
-        result.append(" ");
-        if(this.chunkNr != null) {
-            result.append(this.chunkNr);
-            result.append(" ");
+        String message = buildHeader();
+        if(body != null) {
+            message += new String(this.body);
         }
-        if(this.replicationDeg != null) {
-            result.append(this.replicationDeg);
-            result.append(" ");
-        }
-        result.append(Message.CRLF+ Message.CRLF);
-        if(this.body != null)
-            result.append(new String(this.body));
 
-        return result.toString();
+        return message;
     }
 
-    private String parseType(MessageType type) {
-        switch(this.type){
+    private String parseType() {
+        switch(this.messageType){
             case PUTCHUNK:
                 return "PUTCHUNK ";
             case STORED:
@@ -264,12 +196,12 @@ public class Message implements Comparable, Serializable {
     }
 
     /**
-     * Gets the message type.
+     * Gets the message messageType.
      *
-     * @return the type
+     * @return the messageType
      */
-    public MessageType getType() {
-        return type;
+    public MessageType getMessageType() {
+        return messageType;
     }
 
     /**
@@ -286,8 +218,8 @@ public class Message implements Comparable, Serializable {
      *
      * @return the peer id
      */
-    public Integer getPeerID() {
-        return peerID;
+    public Integer getSenderId() {
+        return senderId;
     }
 
     /**
@@ -295,8 +227,8 @@ public class Message implements Comparable, Serializable {
      *
      * @return the file id
      */
-    public String getFileID() {
-        return fileID;
+    public String getFileId() {
+        return fileId;
     }
 
     /**
@@ -304,8 +236,8 @@ public class Message implements Comparable, Serializable {
      *
      * @return the chunk index
      */
-    public Integer getChunkIndex() {
-        return chunkNr;
+    public Integer getChunkNo() {
+        return chunkNo;
     }
 
     /**
@@ -327,11 +259,11 @@ public class Message implements Comparable, Serializable {
     }
 
     /**
-      * Sets the message type
-      * @param type new type
+      * Sets the message messageType
+      * @param messageType new messageType
       */
-    public void setType(MessageType type) {
-        this.type = type;
+    public void setMessageType(MessageType messageType) {
+        this.messageType = messageType;
     }
 
     /**
@@ -351,12 +283,12 @@ public class Message implements Comparable, Serializable {
     }
 
     /**
-      * Compares Message objects by the chunkNr
+      * Compares Message objects by the chunkNo
       * @param o object to compare to
       * @return difference between chunk numbers
       */
     @Override
     public int compareTo(Object o) {
-        return this.chunkNr - ((Message) o).getChunkIndex();
+        return this.chunkNo - ((Message) o).getChunkNo();
     }
 }

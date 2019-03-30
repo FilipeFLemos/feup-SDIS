@@ -4,7 +4,6 @@ import message.Message;
 import message.MessageType;
 import peer.PeerController;
 import receiver.Channel;
-import peer.Peer;
 
 import java.util.ArrayList;
 
@@ -53,7 +52,7 @@ public class RestoreInitiator implements Runnable{
 
         for(Message chunk : chunks){
             channel.sendMessage(chunk);
-            System.out.println("Sent " + chunk.getType() + " message: " + chunk.getChunkIndex());
+            System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
         }
     }
 }
