@@ -10,23 +10,23 @@ public class Backup implements Runnable {
 
     private Message message;
     private Receiver receiver;
-    private PeerController controller;
+    private PeerController peerController;
 
     /**
       * Instantiates a new Backup protocol
       *
-      * @param controller the peer's controller
+      * @param peerController the peer's peerController
       * @param chunk the target chunk
       * @param replicationDegree the desired replication degree
       * @param receiver the helper receiver
       */
-    public Backup(PeerController controller, Message chunk, int replicationDegree, Receiver receiver) {
+    public Backup(PeerController peerController, Message chunk, int replicationDegree, Receiver receiver) {
         //create putchunk message from chunk
         chunk.setReplicationDeg(replicationDegree);
         chunk.setType(MessageType.PUTCHUNK);
 
         message = chunk;
-        this.controller = controller;
+        this.peerController = peerController;
         this.receiver = receiver;
     }
 
@@ -36,13 +36,13 @@ public class Backup implements Runnable {
     @Override
     public void run() {
         //if chunk degree was satisfied meanwhile, cancel
-        if(controller.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg()) {
+        if(peerController.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg()) {
             System.out.println("Chunk " + message.getChunkIndex() + " satisfied meanwhile, canceling");
             return;
         }
 
-        // notify controller to listen for this chunk's stored messages
-        controller.backedUpChunkListenForStored(message);
+        // notify peerController to listen for this chunk's stored messages
+        peerController.backedUpChunkListenForStored(message);
 
         int tries = 0;
         int waitTime = 500;
@@ -73,7 +73,7 @@ public class Backup implements Runnable {
             e.printStackTrace();
         }
 
-        return controller.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg();
+        return peerController.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg();
 
     }
 }

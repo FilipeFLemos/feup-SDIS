@@ -2,6 +2,7 @@ package protocol;
 
 import message.Message;
 import message.MessageType;
+import peer.PeerController;
 import receiver.Channel;
 import peer.Peer;
 import utils.Globals;
@@ -18,19 +19,18 @@ public class BackupInitiator implements Runnable{
     private ArrayList<Message> chunks;
     private String fileID;
     private File file;
-    private Peer peer;
+    private PeerController peerController;
     private Channel channel;
 
     /**
      * Instantiates a new Backup initiator.
      *
-     * @param peer              the peer
      * @param filePath          the file path
      * @param replicationDegree the replication degree
      * @param channel           the message
      */
-    public BackupInitiator(Peer peer, String filePath, int replicationDegree, Channel channel) {
-        this.peer = peer;
+    public BackupInitiator(PeerController peerController, String filePath, int replicationDegree, Channel channel) {
+        this.peerController = peerController;
         this.channel = channel;
         this.filePath = filePath;
         this.replicationDegree = replicationDegree;
@@ -54,7 +54,7 @@ public class BackupInitiator implements Runnable{
 
         // notify peer to listen for these chunks' stored messages
         for(Message chunk : chunks)
-            peer.getController().backedUpChunkListenForStored(chunk);
+            peerController.backedUpChunkListenForStored(chunk);
 
         do {
             tries++; waitTime *= 2;
@@ -72,7 +72,7 @@ public class BackupInitiator implements Runnable{
 
         } while(!confirmStoredMessages(waitTime));
 
-        peer.getController().addBackedUpFile(filePath, fileID, numberChunks);
+        peerController.addBackedUpFile(filePath, fileID, numberChunks);
         System.out.println("File " + filePath + " backed up");
     }
 
@@ -98,7 +98,7 @@ public class BackupInitiator implements Runnable{
                     body = new byte[Globals.MAX_CHUNK_SIZE];
 
                 System.arraycopy(aux, 0, body, 0, body.length);
-                chunks.add(new Message(peer.getProtocolVersion(), peer.getPeerId(), fileID, body, MessageType.PUTCHUNK, i, replicationDegree));
+                chunks.add(new Message(peerController.getPeerVersion(), peerController.getPeerID(), fileID, body, MessageType.PUTCHUNK, i, replicationDegree));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -121,7 +121,7 @@ public class BackupInitiator implements Runnable{
 
         //TODO testar isto
         for(Message chunk : chunks){
-            if(peer.getController().getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg()){
+            if(peerController.getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg()){
                 chunks.remove(chunk);
             }
         }
