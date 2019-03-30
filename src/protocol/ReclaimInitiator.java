@@ -57,7 +57,7 @@ public class ReclaimInitiator implements Runnable{
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
             peerController.deleteChunk(fileID, chunkIndex, true);
 
-            Message removedMessage = new Message(peerController.getPeerVersion(), peerController.getPeerID(), fileID, null, MessageType.REMOVED, chunkIndex);
+            Message removedMessage = new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, MessageType.REMOVED, chunkIndex);
             peerController.getMCReceiver().sendMessage(removedMessage);
         }
 

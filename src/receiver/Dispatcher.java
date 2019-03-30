@@ -3,6 +3,7 @@ package receiver;
 import javafx.util.Pair;
 import message.ChunkInfo;
 import message.Message;
+import message.MessageType;
 import peer.PeerController;
 import protocol.Backup;
 import utils.Globals;
@@ -10,10 +11,7 @@ import utils.Utils;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
 
 public class Dispatcher {
 
@@ -81,18 +79,18 @@ public class Dispatcher {
                 else
                     randomWait = 0;
 
-                threadPool.schedule(() -> controller.handlePutchunkMessage(message), randomWait, TimeUnit.MILLISECONDS);
+                threadPool.schedule(() -> handlePUTCHUNK(message), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case STORED:
-                threadPool.submit(() -> controller.handleStoredMessage(message));
+                threadPool.submit(() -> handleSTORED(message));
                 break;
             case GETCHUNK:
                 controller.listenForChunkReplies(message);
                 randomWait = Utils.getRandomBetween(0, Globals.MAX_CHUNK_WAITING_TIME);
-                threadPool.schedule(() -> handleGetChunkMessage(message, address), randomWait, TimeUnit.MILLISECONDS);
+                threadPool.schedule(() -> handleGETCHUNK(message, address), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case CHUNK:
-                threadPool.submit(() -> controller.handleChunkMessage(message));
+                threadPool.submit(() -> handleCHUNK(message));
                 break;
             case DELETE:
                 threadPool.submit(() -> handleDELETE(message));
@@ -106,13 +104,103 @@ public class Dispatcher {
     }
 
     /**
+     * Handles a PUTCHUNK message
+     *
+     * @param message the message
+     */
+    public void handlePUTCHUNK(Message message) {
+        System.out.println("Received Putchunk: " + message.getChunkNo());
+
+        String fileID = message.getFileId();
+        int chunkIndex = message.getChunkNo();
+
+        if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
+            Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
+            ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
+
+            if(storedRepliesInfo.containsKey(key)) {
+
+                if(storedRepliesInfo.get(key).isDegreeSatisfied()) {
+                    System.out.println("Received enough STORED messages for " + message.getChunkNo() + " meanwhile, ignoring request");
+                    return;
+                }
+            }
+        }
+
+        controller.startStoringChunks(message);
+        ConcurrentHashMap<String, ArrayList<Integer>> storedChunks = controller.getStoredChunks();
+
+        // check if chunk is already stored
+        if(!storedChunks.get(message.getFileId()).contains(message.getChunkNo())) {
+            if (!controller.getFileSystem().storeChunk(message)) {
+                System.out.println("Not enough space to save chunk " + message.getChunkNo() + " of file " + message.getFileId());
+                return;
+            }
+
+            //update map of stored chunks
+            ArrayList<Integer> fileStoredChunks = storedChunks.get(message.getFileId());
+            fileStoredChunks.add(message.getChunkNo());
+            storedChunks.put(message.getFileId(), fileStoredChunks);
+        }
+        else
+            System.out.println("Already stored chunk, sending STORED anyway.");
+
+        Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, MessageType.STORED, message.getChunkNo());
+
+        controller.getMCReceiver().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
+
+        System.out.println("Sent Stored Message: " + storedMessage.getChunkNo());
+    }
+
+    /**
+     * Handles a CHUNK message
+     *
+     * @param message the message
+     */
+    public void handleCHUNK(Message message) {
+        System.out.println("Received Chunk Message: " + message.getChunkNo());
+
+        String fileId = message.getFileId();
+        int chunkNo = message.getChunkNo();
+        Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
+
+        ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        if(getChunkRequestsInfo.containsKey(key)) {
+            controller.addGetChunkRequestInfo(key);
+            System.out.println("Added Chunk " + chunkNo + " to requests info.");
+        }
+
+        ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoringFiles = controller.getRestoringFiles();
+        if(!restoringFiles.containsKey(fileId))
+            return;
+
+        // if an enhanced chunk message is sent via multicast
+        // channel, it only contains a header, don't restore
+        //TODO: this verification isn't right
+        if(!message.getVersion().equals("1.0") && !message.hasBody())
+            return;
+
+        ConcurrentSkipListSet<Message> fileRestoredChunks = restoringFiles.get(fileId);
+        fileRestoredChunks.add(message);
+
+        controller.addRestoredFile(message, fileRestoredChunks);
+
+        int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getValue();
+
+        if(fileRestoredChunks.size() == fileChunkAmount) {
+            controller.saveRestoredFile(fileId);
+            controller.stopRestoringFile(fileId);
+        }
+    }
+
+    /**
      * Handles a GETCHUNK message. If a CHUNK message for this chunk is received while handling GETCHUNK, the operation
      * is aborted. If the peer does not have any or a particular stored CHUNK for this file, the operation is aborted.
      *
      * @param message the message
      * @param sourceAddress address used for TCP connection in enhanced version of protocol
      */
-    public void handleGetChunkMessage(Message message, InetAddress sourceAddress) {
+    public void handleGETCHUNK(Message message, InetAddress sourceAddress) {
         System.out.println("Received GetChunk Message: " + message.getChunkNo());
 
         String fileId = message.getFileId();
@@ -137,6 +225,16 @@ public class Dispatcher {
         controller.sendMessage(chunk,sourceAddress);
     }
 
+    /**
+     * Handles a STORED message
+     *
+     * @param message the message
+     */
+    public void handleSTORED(Message message) {
+        System.out.println("Received Stored Message: " + message.getChunkNo());
+        Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
+        controller.updateChunksInfo(key,message);
+    }
 
     /**
      * Handles a DELETE message. If the peer does not have the chunk, the message is ignored.

@@ -44,7 +44,7 @@ public class RestoreInitiator implements Runnable{
 
         ArrayList<Message> chunks = new ArrayList<>();
         for(int i = 0; i < chunkAmount; i++) {
-            chunks.add(new Message(peerController.getPeerVersion(), peerController.getPeerID(), fileID, null, MessageType.GETCHUNK, i));
+            chunks.add(new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, MessageType.GETCHUNK, i));
         }
 
         peerController.addToRestoringFiles(fileID, filePath, chunkAmount);
