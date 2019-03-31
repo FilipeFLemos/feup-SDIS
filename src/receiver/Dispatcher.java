@@ -189,7 +189,7 @@ public class Dispatcher {
         controller.addRestoredFile(message, fileRestoredChunks);
 
         //int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getValue();
-        int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getChunkNo();
+        int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getNumberOfChunks();
 
         if(fileRestoredChunks.size() == fileChunkAmount) {
             controller.saveRestoredFile(fileId);

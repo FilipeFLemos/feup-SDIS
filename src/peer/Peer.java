@@ -267,7 +267,7 @@ public class Peer implements RMIProtocol {
         //TODO: make proper verification
         if (!protocolVersion.equals("1.0")) {
             System.out.println("Starting enhanced restore protocol");
-            threadPool.submit(new SocketReceiver(MDRPort, controller.getDispatcher()));
+            threadPool.submit(new SocketReceiver(MDRPort, dispatcher));
         }
 
         threadPool.submit(new RestoreInitiator(controller, filePath, MC));

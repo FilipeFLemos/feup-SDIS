@@ -1,7 +1,6 @@
 package peer;
 
 import message.*;
-import receiver.Dispatcher;
 import receiver.Receiver;
 import receiver.TCPSocketController;
 import storage.FileSystem;
@@ -23,46 +22,29 @@ public class PeerController implements Serializable {
 
 
     private static final long serialVersionUID = 1L;
+    
     private transient Peer peer;
+    
     private String version;
+    
     private int peerId;
 
-    /**
-     * The dispatcher
-     */
-    private transient Dispatcher dispatcher;
-
-    
     private FileSystem fileSystem;
 
     private boolean backupEnhancement;
 
     private boolean restoreEnhancement;
 
-    /**
-     * Locally stored chunks. Key = fileID, Value = ArrayList of chunk indexes
-     */
-    private ConcurrentHashMap<String, ArrayList<Integer>> storedChunks;
-
-    /**
-     * Useful information of locally stored chunks. Key = <fileID, chunk nr>, Value = Information (observed and desired rep degrees)
-     */
-    //private ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedChunksInfo;
-    private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo;
-
     private ConcurrentHashMap<String, FileInfo> backedupFilesByPaths;
     private ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunksInfo;
 
-    /**
-     * Files being restored. Key = fileID, Value = chunks
-     */
-    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoringFiles;
+    private ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId;
+    private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo;
 
-    /**
-     * Useful information on files being restored. Key = fileID, Value = <filename, chunk amount>
-     */
-    //private ConcurrentHashMap<String, Pair<String, Integer>> restoringFilesInfo;
-    private ConcurrentHashMap<String, FileChunk> restoringFilesInfo;
+    
+    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile;
+    //TODO: nao deveria ser fileinfo pq ele quer guardar o path e nao o id
+    private ConcurrentHashMap<String, FileInfo> fileInfoByRestoredFile;
 
     /**
      * Useful information on files being restored by other peers. Key = fileID, Value = ArrayList of chunk numbers
@@ -83,14 +65,14 @@ public class PeerController implements Serializable {
         this.version = peer.getProtocolVersion();
         this.peerId = peer.getPeerId();
 
-        storedChunks = new ConcurrentHashMap<>();
+        storedChunksByFileId = new ConcurrentHashMap<>();
         storedChunksInfo = new ConcurrentHashMap<>();
 
         backedupFilesByPaths = new ConcurrentHashMap<>();
         backedUpChunksInfo = new ConcurrentHashMap<>();
 
-        restoringFiles = new ConcurrentHashMap<>();
-        restoringFilesInfo = new ConcurrentHashMap<>();
+        chunksByRestoredFile = new ConcurrentHashMap<>();
+        fileInfoByRestoredFile = new ConcurrentHashMap<>();
 
         getChunkRequestsInfo = new ConcurrentHashMap<>();
 
@@ -113,7 +95,6 @@ public class PeerController implements Serializable {
 
     public void setChannels(Peer peer){
         this.peer = peer;
-        dispatcher = peer.getDispatcher();
     }
 
     /**
@@ -274,8 +255,8 @@ public class PeerController implements Serializable {
         FileChunk key = new FileChunk(fileID, chunkIndex);
         storedChunksInfo.remove(key);
 
-        if(storedChunks.get(fileID).contains(chunkIndex))
-            storedChunks.get(fileID).remove((Integer) chunkIndex);
+        if(storedChunksByFileId.get(fileID).contains(chunkIndex))
+            storedChunksByFileId.get(fileID).remove((Integer) chunkIndex);
     }
 
     /**
@@ -286,9 +267,9 @@ public class PeerController implements Serializable {
      * @param chunkAmount the chunk amount
      */
     public void addToRestoringFiles(String fileID, String filePath, int chunkAmount) {
-        restoringFiles.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
+        chunksByRestoredFile.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
         //restoringFilesInfo.putIfAbsent(fileID, new Pair<>(filePath, chunkAmount));
-        restoringFilesInfo.putIfAbsent(fileID, new FileChunk(filePath, chunkAmount));
+        fileInfoByRestoredFile.putIfAbsent(fileID, new FileInfo(filePath, chunkAmount));
     }
 
     /**
@@ -299,7 +280,7 @@ public class PeerController implements Serializable {
     public void saveRestoredFile(String fileID) {
         byte[] fileBody = mergeRestoredFile(fileID);
         //String filePath = restoringFilesInfo.get(fileID).getKey();
-        String filePath = restoringFilesInfo.get(fileID).getFileId();
+        String filePath = fileInfoByRestoredFile.get(fileID).getFileId();
 
         fileSystem.saveFile(filePath, fileBody);
     }
@@ -312,7 +293,7 @@ public class PeerController implements Serializable {
      */
     public byte[] mergeRestoredFile(String fileID) {
         // get file's chunks
-        ConcurrentSkipListSet<Message> fileChunks = restoringFiles.get(fileID);
+        ConcurrentSkipListSet<Message> fileChunks = chunksByRestoredFile.get(fileID);
 
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
@@ -326,14 +307,6 @@ public class PeerController implements Serializable {
         return stream.toByteArray();
     }
 
-    /**
-      * Gets the peer's dispatcher
-      *
-      * @return the dispatcher
-      */
-    public Dispatcher getDispatcher() {
-        return dispatcher;
-    }
 
     /**
       * Represents the peer's state by printing all the information about the structures it keeps and its file system manager
@@ -373,7 +346,7 @@ public class PeerController implements Serializable {
 
         output.append("Chunks stored by this peer:\n");
 
-        for (Map.Entry<String, ArrayList<Integer>> entry : storedChunks.entrySet()) {
+        for (Map.Entry<String, ArrayList<Integer>> entry : storedChunksByFileId.entrySet()) {
             output.append("\tBacked up chunks of file with fileID " + entry.getKey() + ":\n");
 
             for (int chunkNr : entry.getValue()) {
@@ -419,7 +392,7 @@ public class PeerController implements Serializable {
     }
 
     public ConcurrentHashMap<String, ArrayList<Integer>> getStoredChunks() {
-        return storedChunks;
+        return storedChunksByFileId;
     }
 
 //    public ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> getStoredChunksInfo() {
@@ -446,18 +419,18 @@ public class PeerController implements Serializable {
     }
 
     public ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> getRestoringFiles() {
-        return restoringFiles;
+        return chunksByRestoredFile;
     }
 
 //    public ConcurrentHashMap<String, Pair<String, Integer>> getRestoringFilesInfo() {
 //        return restoringFilesInfo;
 //    }
-    public ConcurrentHashMap<String, FileChunk> getRestoringFilesInfo() {
-        return restoringFilesInfo;
+    public ConcurrentHashMap<String, FileInfo> getRestoringFilesInfo() {
+        return fileInfoByRestoredFile;
     }
 
     public void removeStoredChunksFile(String fileId) {
-        storedChunks.remove(fileId);
+        storedChunksByFileId.remove(fileId);
     }
 
     public void sendMessage(Message message, InetAddress sourceAddress){
@@ -542,7 +515,7 @@ public class PeerController implements Serializable {
     }
 
     public void startStoringChunks(Message message) {
-        storedChunks.putIfAbsent(message.getFileId(), new ArrayList<>());
+        storedChunksByFileId.putIfAbsent(message.getFileId(), new ArrayList<>());
         //Pair<String, Integer> chunkInfoKey = new Pair<>(message.getFileId(), message.getChunkNo());
         FileChunk chunkInfoKey = new FileChunk(message.getFileId(), message.getChunkNo());
         storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(message.getReplicationDeg(), 1));
@@ -556,11 +529,11 @@ public class PeerController implements Serializable {
     }
 
     public void stopRestoringFile(String fileId) {
-        restoringFiles.remove(fileId);
-        restoringFilesInfo.remove(fileId);
+        chunksByRestoredFile.remove(fileId);
+        fileInfoByRestoredFile.remove(fileId);
     }
 
     public void addRestoredFile(Message message, ConcurrentSkipListSet<Message> fileRestoredChunks) {
-        restoringFiles.put(message.getFileId(), fileRestoredChunks);
+        chunksByRestoredFile.put(message.getFileId(), fileRestoredChunks);
     }
 }
