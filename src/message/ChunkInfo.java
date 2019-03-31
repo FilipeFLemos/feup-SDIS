@@ -5,6 +5,8 @@ import java.util.ArrayList;
 
 public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
 
+    private static final long serialVersionUID = 1L;
+    
     private int currentReplicationDeg;
     private int desiredReplicationDeg;
     private ArrayList<Integer> peersWithChunk;

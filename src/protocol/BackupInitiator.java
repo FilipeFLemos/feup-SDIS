@@ -15,7 +15,7 @@ public class BackupInitiator implements Runnable{
     private int replicationDegree;
     private int numberChunks;
     private ArrayList<Message> chunks;
-    private String fileID;
+    private String fileId;
     private File file;
     private PeerController peerController;
     private Channel channel;
@@ -34,7 +34,7 @@ public class BackupInitiator implements Runnable{
         this.replicationDegree = replicationDegree;
 
         file = new File(filePath);
-        fileID = Utils.getFileID(filePath);
+        fileId = Utils.getFileID(filePath);
 
         numberChunks = (int) (file.length() / Globals.MAX_CHUNK_SIZE + 1);
         chunks = new ArrayList<>();
@@ -48,11 +48,10 @@ public class BackupInitiator implements Runnable{
         splitIntoChunks();
 
         int tries = 0;
-        int waitTime = 500; // initially 500 so in first iteration it doubles to 1000
+        int waitTime = 500;
 
-        // notify peer to listen for these chunks' stored messages
         for(Message chunk : chunks)
-            peerController.backedUpChunkListenForStored(chunk);
+            peerController.listenforSTORED(chunk);
 
         do {
             tries++; waitTime *= 2;
@@ -65,12 +64,12 @@ public class BackupInitiator implements Runnable{
 
             for(Message chunk : chunks){
                 channel.sendMessage(chunk);
-                System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
+                System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getNumberOfChunks());
             }
 
-        } while(!confirmStoredMessages(waitTime));
+        } while(!wereAllSTOREDReceived(waitTime));
 
-        peerController.addBackedUpFile(filePath, fileID, numberChunks);
+        peerController.addBackedUpFile(filePath, fileId, numberChunks);
         System.out.println("File " + filePath + " backed up");
     }
 
@@ -96,7 +95,7 @@ public class BackupInitiator implements Runnable{
                     body = new byte[Globals.MAX_CHUNK_SIZE];
 
                 System.arraycopy(aux, 0, body, 0, body.length);
-                chunks.add(new Message(peerController.getVersion(), peerController.getPeerId(), fileID, body, Message.MessageType.PUTCHUNK, i, replicationDegree));
+                chunks.add(new Message(peerController.getVersion(), peerController.getPeerId(), fileId, body, Message.MessageType.PUTCHUNK, i, replicationDegree));
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -104,25 +103,18 @@ public class BackupInitiator implements Runnable{
     }
 
     /**
-      * Checks if replication degrees have been satisfied for given chunks
-      *
-      * @param waitTime delay before starting to check
-      * @return true if for every chunk observed rep degree >= desired rep degree
+      * After the given waitTime, checks if all chunks have achieved their desired replication degree, while removing those that have from the chunks container.
+      * @param waitTime - the delay before starting to check
+      * @return true if all the chunks achieved their desired replication degree and false if otherwise
       */
-    private boolean confirmStoredMessages(int waitTime) {
+    private boolean wereAllSTOREDReceived(int waitTime) {
         try {
-            //TODO: remove sleeps
             Thread.sleep(waitTime);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
-        //TODO testar isto
-        for(Message chunk : chunks){
-            if(peerController.getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg()){
-                chunks.remove(chunk);
-            }
-        }
+        chunks.removeIf( chunk -> peerController.getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg());
 
         return chunks.isEmpty();
     }

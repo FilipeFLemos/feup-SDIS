@@ -4,6 +4,8 @@ import java.io.Serializable;
 
 public class Message implements Comparable, Serializable {
 
+    private static final long serialVersionUID = 1L;
+
     public enum MessageType {
         PUTCHUNK,
         STORED,

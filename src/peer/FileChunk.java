@@ -2,12 +2,13 @@ package peer;
 
 import java.io.Serializable;
 
-public class ChunkFile implements Serializable {
+public class FileChunk implements Serializable {
 
-    private String fileId;
+    private static final long serialVersionUID = 1L;
+	private String fileId;
     private Integer chunkNo;
 
-    public ChunkFile(String fileId, Integer chunkNo){
+    public FileChunk(String fileId, Integer chunkNo){
         this.fileId = fileId;
         this.chunkNo = chunkNo;
     }
@@ -20,6 +21,19 @@ public class ChunkFile implements Serializable {
         return chunkNo;
     }
 
+	@Override
+	public int hashCode() {
+		final int prime = 31;
+
+		int result = 1;
+
+		result = prime * result + chunkNo;
+
+		result = prime * result + ((fileId == null) ? 0 : fileId.hashCode());
+
+		return result;
+	}
+
     @Override
 	public boolean equals(Object obj) {
 		if (this == obj)
@@ -31,7 +45,7 @@ public class ChunkFile implements Serializable {
 		if (getClass() != obj.getClass())
 			return false;
 
-		ChunkFile other = (ChunkFile) obj;
+		FileChunk other = (FileChunk) obj;
 
 		if (chunkNo != other.chunkNo)
 			return false;

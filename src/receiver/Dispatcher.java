@@ -2,7 +2,7 @@ package receiver;
 
 import message.ChunkInfo;
 import message.Message;
-import peer.ChunkFile;
+import peer.FileChunk;
 import peer.PeerController;
 import protocol.Backup;
 import utils.Globals;
@@ -108,21 +108,21 @@ public class Dispatcher {
      * @param message the message
      */
     public void handlePUTCHUNK(Message message) {
-        System.out.println("Received Putchunk: " + message.getChunkNo());
+        System.out.println("Received Putchunk: " + message.getNumberOfChunks());
 
         String fileID = message.getFileId();
-        int chunkIndex = message.getChunkNo();
+        int chunkIndex = message.getNumberOfChunks();
 
         if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
             //Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
-            ChunkFile key = new ChunkFile(fileID, chunkIndex);
+            FileChunk key = new FileChunk(fileID, chunkIndex);
             //ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
-            ConcurrentHashMap<ChunkFile, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
 
             if(storedRepliesInfo.containsKey(key)) {
 
                 if(storedRepliesInfo.get(key).isDegreeSatisfied()) {
-                    System.out.println("Received enough STORED messages for " + message.getChunkNo() + " meanwhile, ignoring request");
+                    System.out.println("Received enough STORED messages for " + message.getNumberOfChunks() + " meanwhile, ignoring request");
                     return;
                 }
             }
@@ -132,25 +132,25 @@ public class Dispatcher {
         ConcurrentHashMap<String, ArrayList<Integer>> storedChunks = controller.getStoredChunks();
 
         // check if chunk is already stored
-        if(!storedChunks.get(message.getFileId()).contains(message.getChunkNo())) {
+        if(!storedChunks.get(message.getFileId()).contains(message.getNumberOfChunks())) {
             if (!controller.getFileSystem().storeChunk(message)) {
-                System.out.println("Not enough space to save chunk " + message.getChunkNo() + " of file " + message.getFileId());
+                System.out.println("Not enough space to save chunk " + message.getNumberOfChunks() + " of file " + message.getFileId());
                 return;
             }
 
             //update map of stored chunks
             ArrayList<Integer> fileStoredChunks = storedChunks.get(message.getFileId());
-            fileStoredChunks.add(message.getChunkNo());
+            fileStoredChunks.add(message.getNumberOfChunks());
             storedChunks.put(message.getFileId(), fileStoredChunks);
         }
         else
             System.out.println("Already stored chunk, sending STORED anyway.");
 
-        Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
+        Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, Message.MessageType.STORED, message.getNumberOfChunks());
 
         controller.getMCReceiver().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
-        System.out.println("Sent Stored Message: " + storedMessage.getChunkNo());
+        System.out.println("Sent Stored Message: " + storedMessage.getNumberOfChunks());
     }
 
     /**
@@ -159,15 +159,15 @@ public class Dispatcher {
      * @param message the message
      */
     public void handleCHUNK(Message message) {
-        System.out.println("Received Chunk Message: " + message.getChunkNo());
+        System.out.println("Received Chunk Message: " + message.getNumberOfChunks());
 
         String fileId = message.getFileId();
-        int chunkNo = message.getChunkNo();
+        int chunkNo = message.getNumberOfChunks();
         //Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
-        ChunkFile key = new ChunkFile(fileId, chunkNo);
+        FileChunk key = new FileChunk(fileId, chunkNo);
 
         //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
-        ConcurrentHashMap<ChunkFile, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        ConcurrentHashMap<FileChunk, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
         if(getChunkRequestsInfo.containsKey(key)) {
             controller.addGetChunkRequestInfo(key);
             System.out.println("Added Chunk " + chunkNo + " to requests info.");
@@ -189,7 +189,7 @@ public class Dispatcher {
         controller.addRestoredFile(message, fileRestoredChunks);
 
         //int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getValue();
-        int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getChunkNo();
+        int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getNumberOfChunks();
 
         if(fileRestoredChunks.size() == fileChunkAmount) {
             controller.saveRestoredFile(fileId);
@@ -205,15 +205,15 @@ public class Dispatcher {
      * @param sourceAddress address used for TCP connection in enhanced version of protocol
      */
     public void handleGETCHUNK(Message message, InetAddress sourceAddress) {
-        System.out.println("Received GetChunk Message: " + message.getChunkNo());
+        System.out.println("Received GetChunk Message: " + message.getNumberOfChunks());
 
         String fileId = message.getFileId();
-        int chunkNo = message.getChunkNo();
+        int chunkNo = message.getNumberOfChunks();
         //Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
-        ChunkFile key = new ChunkFile(fileId, chunkNo);
+        FileChunk key = new FileChunk(fileId, chunkNo);
 
         //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
-        ConcurrentHashMap<ChunkFile, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        ConcurrentHashMap<FileChunk, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
         if(getChunkRequestsInfo.containsKey(key)) {
             if(getChunkRequestsInfo.get(key)) {
                 getChunkRequestsInfo.remove(key);
@@ -237,9 +237,9 @@ public class Dispatcher {
      * @param message the message
      */
     public void handleSTORED(Message message) {
-        System.out.println("Received Stored Message: " + message.getChunkNo());
+        System.out.println("Received Stored Message: " + message.getNumberOfChunks());
         //Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
-        ChunkFile key = new ChunkFile(message.getFileId(), message.getChunkNo());
+        FileChunk key = new FileChunk(message.getFileId(), message.getNumberOfChunks());
         controller.updateChunksInfo(key,message);
     }
 
@@ -271,19 +271,19 @@ public class Dispatcher {
      * @param message the message
      */
     public void handleREMOVED(Message message) {
-        System.out.println("Received Removed Message: " + message.getChunkNo());
+        System.out.println("Received Removed Message: " + message.getNumberOfChunks());
         //ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
-        ConcurrentHashMap<ChunkFile, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
+        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
 
         //Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
-        ChunkFile key = new ChunkFile(message.getFileId(), message.getChunkNo());
+        FileChunk key = new FileChunk(message.getFileId(), message.getNumberOfChunks());
         if(storedChunksInfo.containsKey(key)) {
             ChunkInfo chunkInfo = storedChunksInfo.get(key);
             chunkInfo.decreaseCurrentReplicationDeg();
 
             if(!chunkInfo.isDegreeSatisfied()) {
-                System.out.println("Chunk " + message.getChunkNo() + " not satisfied anymore.");
-                Message chunk = controller.getFileSystem().retrieveChunk(message.getFileId(), message.getChunkNo());
+                System.out.println("Chunk " + message.getNumberOfChunks() + " not satisfied anymore.");
+                Message chunk = controller.getFileSystem().retrieveChunk(message.getFileId(), message.getNumberOfChunks());
 
                 threadPool.schedule( new Backup(controller, chunk, chunkInfo.getDesiredReplicationDeg(), controller.getMDBReceiver()),
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
