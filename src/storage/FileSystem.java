@@ -46,13 +46,13 @@ public class FileSystem implements Serializable {
      */
     public FileSystem(String peerVersion, int peerID, long maxStorage, String baseDirectory) {
         this.maxStorage = maxStorage;
-        this.baseDirectory = baseDirectory + "/" + "Peer" + peerID + "/";
+        this.baseDirectory = baseDirectory + "/" + "peer" + peerID + "/";
 
         this.peerVersion = peerVersion;
         this.peerID = peerID;
 
-        this.backupDirectory = baseDirectory + BACKUP_DIRECTORY;
-        this.restoreDirectory = baseDirectory + RESTORE_DIRECTORY;
+        this.backupDirectory = this.baseDirectory + BACKUP_DIRECTORY;
+        this.restoreDirectory = this.baseDirectory + RESTORE_DIRECTORY;
 
         initDirectories();
     }

@@ -64,7 +64,7 @@ public class PeerController implements Serializable {
             restoreEnhancement = true;
         }
 
-        fileSystem = new FileSystem(version, peerId, Globals.MAX_PEER_STORAGE, Globals.PEER_FILESYSTEM_DIR + "/" + peerId);
+        fileSystem = new FileSystem(version, peerId, Globals.MAX_PEER_STORAGE, Globals.PEER_FILESYSTEM_DIR);
     }
 
     /**
