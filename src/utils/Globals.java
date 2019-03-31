@@ -45,5 +45,5 @@ public class Globals {
     /**
      * Directory where this host's peer files are saved
      */
-    public static String PEER_FILESYSTEM_DIR = "peers";
+    public static String PEER_FILESYSTEM_DIR = "Peers";
 }
