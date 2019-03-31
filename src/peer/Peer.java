@@ -1,10 +1,12 @@
 package peer;
 
+import message.Message;
 import receiver.*;
 import protocol.*;
 import interfaces.RMIProtocol;
 
 import java.io.*;
+import java.net.InetAddress;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
@@ -29,9 +31,9 @@ public class Peer implements RMIProtocol {
     private int peerId;
 
     /**
-     * The protocol protocolVersion being executed
+     * The protocol version being executed
      */
-    private String protocolVersion;
+    private String version;
 
     /**
      * Control channel address
@@ -44,12 +46,12 @@ public class Peer implements RMIProtocol {
     private int MCPort;
 
     /**
-     * Backup channel address
+     * BackupChunk channel address
      */
     private String MDBAddress;
 
     /**
-     * Backup channel port
+     * BackupChunk channel port
      */
     private int MDBPort;
 
@@ -69,7 +71,7 @@ public class Peer implements RMIProtocol {
     private Channel MC;
 
     /**
-     * Backup channel
+     * BackupChunk channel
      */
     private Channel MDB;
 
@@ -86,9 +88,9 @@ public class Peer implements RMIProtocol {
      * @param args initialization arguments
      */
     private Peer(final String args[]) throws IOException {
-        System.out.println("Starting Peer with protocol protocolVersion " + args[0]);
+        System.out.println("Starting Peer with protocol version " + args[0]);
         System.out.println("Starting Peer with ID " + args[1]);
-        protocolVersion = args[0];
+        version = args[0];
         peerId = Integer.parseInt(args[1]);
 
         //Parse RMI address
@@ -109,7 +111,7 @@ public class Peer implements RMIProtocol {
         this.MDRPort = Integer.parseInt(args[8]);
 
         if (!loadPeerController())
-            this.controller = new PeerController(this);
+            this.controller = new PeerController(version, peerId);
 
         // save peerController data every 3 seconds
         threadPool.scheduleAtFixedRate(this::saveController, 0, 3, TimeUnit.SECONDS);
@@ -120,7 +122,7 @@ public class Peer implements RMIProtocol {
     }
 
     // peer.Peer args
-    //<protocol protocolVersion> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>
+    //<protocol version> <peer id> <service access point> <MCReceiver address> <MCReceiver port> <MDBReceiver address> <MDBReceiver port> <MDRReceiver address> <MDRReceiver port>
     public static void main(final String args[]) throws IOException {
         if (args.length != 9) {
             System.out.println("Usage: java peer.Peer" +
@@ -162,7 +164,6 @@ public class Peer implements RMIProtocol {
             FileInputStream controllerFile = new FileInputStream("PeerController" + peerId + ".ser");
             ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
             this.controller = (PeerController) controllerObject.readObject();
-            this.controller.setChannels(this);
             //this.controller.initTransientMethods(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
             controllerObject.close();
             controllerFile.close();
@@ -187,7 +188,7 @@ public class Peer implements RMIProtocol {
      * @param MDRPort restore channel port
      */
     public void initTransientMethods(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
-        this.dispatcher = new Dispatcher(controller, peerId);
+        this.dispatcher = new Dispatcher(this);
         // subscribe to multicast channels
         try {
             this.MCReceiver = new Receiver(MCAddress, MCPort, dispatcher);
@@ -197,7 +198,7 @@ public class Peer implements RMIProtocol {
             e.printStackTrace();
         }
 
-        if(!protocolVersion.equals("1.0"))
+        if(!version.equals("1.0"))
             TCPController = new TCPSocketController(MDRPort);
     }
 
@@ -220,12 +221,12 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Gets the protocol protocolVersion.
+     * Gets the protocol version.
      *
-     * @return the protocol protocolVersion
+     * @return the protocol version
      */
-    public String getProtocolVersion() {
-        return protocolVersion;
+    public String getVersion() {
+        return version;
     }
 
     /**
@@ -265,7 +266,7 @@ public class Peer implements RMIProtocol {
     @Override
     public void restore(String filePath) {
         //TODO: make proper verification
-        if (!protocolVersion.equals("1.0")) {
+        if (!version.equals("1.0")) {
             System.out.println("Starting enhanced restore protocol");
             threadPool.submit(new SocketReceiver(MDRPort, dispatcher));
         }
@@ -290,7 +291,7 @@ public class Peer implements RMIProtocol {
      */
     @Override
     public void reclaim(long space) {
-        threadPool.submit(new ReclaimInitiator(controller, space));
+        threadPool.submit(new ReclaimInitiator(controller, space, MCReceiver));
     }
 
     /**
@@ -299,10 +300,6 @@ public class Peer implements RMIProtocol {
     @Override
     public void state() {
         System.out.println(controller.toString());
-    }
-
-    public Dispatcher getDispatcher() {
-        return dispatcher;
     }
 
     public Receiver getMCReceiver() {
@@ -317,7 +314,13 @@ public class Peer implements RMIProtocol {
         return MDRReceiver;
     }
 
-    public TCPSocketController getTCPController() {
-        return TCPController;
+    public void sendMessage(Message message, InetAddress sourceAddress){
+        if(controller.isRestoreEnhancement() && !message.getVersion().equals("1.0")) {
+            //send chunk via tcp and send header to MDR
+            TCPController.sendMessage(message, sourceAddress);
+            MDRReceiver.sendMessage(message, false);
+        }
+        else
+            MDRReceiver.sendMessage(message);
     }
 }

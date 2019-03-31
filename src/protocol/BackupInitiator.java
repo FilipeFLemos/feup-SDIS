@@ -21,7 +21,7 @@ public class BackupInitiator implements Runnable{
     private Channel channel;
 
     /**
-     * Instantiates a new Backup initiator.
+     * Instantiates a new BackupChunk initiator.
      *
      * @param filePath          the file path
      * @param replicationDegree the replication degree
@@ -51,7 +51,7 @@ public class BackupInitiator implements Runnable{
         int waitTime = 500;
 
         for(Message chunk : chunks)
-            peerController.listenforSTORED(chunk);
+            peerController.listenForSTORED(chunk);
 
         do {
             tries++; waitTime *= 2;

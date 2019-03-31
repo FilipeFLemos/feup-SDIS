@@ -5,28 +5,35 @@ import receiver.Receiver;
 import peer.PeerController;
 import utils.Globals;
 
-public class Backup implements Runnable {
+public class BackupChunk implements Runnable {
 
     private Message message;
     private Receiver receiver;
     private PeerController peerController;
 
     /**
-      * Instantiates a new Backup protocol
+      * Instantiates a new BackupChunk protocol
       *
       * @param peerController the peer's peerController
       * @param chunk the target chunk
-      * @param replicationDegree the desired replication degree
+      * @param replicationDeg the desired replication degree
       * @param receiver the helper receiver
       */
-    public Backup(PeerController peerController, Message chunk, int replicationDegree, Receiver receiver) {
-        //create putchunk message from chunk
-        chunk.setReplicationDeg(replicationDegree);
-        chunk.setMessageType(Message.MessageType.PUTCHUNK);
-
-        message = chunk;
+    public BackupChunk(PeerController peerController, Message chunk, int replicationDeg, Receiver receiver) {
         this.peerController = peerController;
         this.receiver = receiver;
+        createPUTCHANK(chunk, replicationDeg);
+    }
+
+    /**
+     * Create PUTCHUNK message from REMOVED message.
+     * @param chunk
+     * @param replicationDeg
+     */
+    private void createPUTCHANK(Message chunk, int replicationDeg){
+        message = chunk;
+        message.setMessageType(Message.MessageType.PUTCHUNK);
+        message.setReplicationDeg(replicationDeg);
     }
 
     /**
@@ -40,38 +47,35 @@ public class Backup implements Runnable {
             return;
         }
 
-        peerController.listenforSTORED(message);
+        peerController.listenForSTORED(message);
 
         int tries = 0;
         int waitTime = 500;
 
         do {
-            receiver.sendMessage(message);
             tries++; waitTime *= 2;
 
             if(tries > Globals.MAX_PUTCHUNK_TRIES) {
                 System.out.println("Aborting backup, attempt limit reached");
-                return;
+                break;
             }
-        } while(!confirmStoredMessage(message, waitTime));
+            receiver.sendMessage(message);
+        } while(!hasDesiredReplicationDeg(waitTime));
     }
 
     /**
       * Checks if the desired replication degree for the chunk has been met
       *
-      * @param message message containing information about the chunk
       * @param waitTime max delay before checking
       * @return true if desired replication degree has been met, false otherwise
       */
-    private boolean confirmStoredMessage(Message message, int waitTime) {
+    private boolean hasDesiredReplicationDeg(int waitTime) {
         try {
-            //TODO: remove sleeps
             Thread.sleep(waitTime);
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
 
         return peerController.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg();
-
     }
 }

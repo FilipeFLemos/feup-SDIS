@@ -34,7 +34,7 @@ public class DeleteInitiator implements Runnable{
         File file = new File(filePath);
         String fileID = Utils.getFileID(filePath);
 
-        Message message = new Message(peer.getProtocolVersion(),peer.getPeerId(),fileID, null, Message.MessageType.DELETE);
+        Message message = new Message(peer.getVersion(),peer.getPeerId(),fileID, null, Message.MessageType.DELETE);
         channel.sendMessage(message);
     }
 }

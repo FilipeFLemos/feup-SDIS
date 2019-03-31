@@ -3,8 +3,9 @@ package receiver;
 import message.ChunkInfo;
 import message.Message;
 import peer.FileChunk;
+import peer.Peer;
 import peer.PeerController;
-import protocol.Backup;
+import protocol.BackupChunk;
 import utils.Globals;
 import utils.Utils;
 
@@ -17,18 +18,18 @@ public class Dispatcher {
     private final int MAX_DISPATCHER_THREADS = 50;
     private int peerID;
     private PeerController controller;
+    private Peer peer;
 
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_DISPATCHER_THREADS);
 
     /**
      * Instantiates a new Dispatcher.
      *
-     * @param controller the controller
-     * @param peerID     the peer id
      */
-    public Dispatcher(PeerController controller, int peerID) {
-        this.peerID = peerID;
-        this.controller = controller;
+    public Dispatcher(Peer peer) {
+        this.peerID = controller.getPeerId();
+        this.controller = peer.getController();
+        this.peer = peer;
     }
 
     /**
@@ -72,7 +73,7 @@ public class Dispatcher {
         switch(message.getMessageType()) {
             case PUTCHUNK:
                 if(!message.getVersion().equals("1.0")) {
-                    controller.listenForStoredReplies(message);
+                    controller.listenForSTORED_ENH(message);
                     randomWait = Utils.getRandomBetween(0, Globals.MAX_BACKUP_ENH_WAIT_TIME);
                 }
                 else
@@ -116,8 +117,8 @@ public class Dispatcher {
         if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
             //Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
             FileChunk key = new FileChunk(fileID, chunkIndex);
-            //ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
-            ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
+            //ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedRepliesInfo = controller.getStoredChunksInfo_ENH();
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo = controller.getStoredChunksInfo_ENH();
 
             if(storedRepliesInfo.containsKey(key)) {
 
@@ -148,7 +149,7 @@ public class Dispatcher {
 
         Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
 
-        controller.getMCReceiver().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
+        peer.getMCReceiver().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
         System.out.println("Sent Stored Message: " + storedMessage.getChunkNo());
     }
@@ -166,8 +167,8 @@ public class Dispatcher {
         //Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
         FileChunk key = new FileChunk(fileId, chunkNo);
 
-        //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
-        ConcurrentHashMap<FileChunk, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getIsBeingRestoredByFileChunk();
+        ConcurrentHashMap<FileChunk, Boolean> getChunkRequestsInfo = controller.getIsBeingRestoredByFileChunk();
         if(getChunkRequestsInfo.containsKey(key)) {
             controller.addGetChunkRequestInfo(key);
             System.out.println("Added Chunk " + chunkNo + " to requests info.");
@@ -212,8 +213,8 @@ public class Dispatcher {
         //Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
         FileChunk key = new FileChunk(fileId, chunkNo);
 
-        //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
-        ConcurrentHashMap<FileChunk, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getIsBeingRestoredByFileChunk();
+        ConcurrentHashMap<FileChunk, Boolean> getChunkRequestsInfo = controller.getIsBeingRestoredByFileChunk();
         if(getChunkRequestsInfo.containsKey(key)) {
             if(getChunkRequestsInfo.get(key)) {
                 getChunkRequestsInfo.remove(key);
@@ -228,7 +229,7 @@ public class Dispatcher {
         }
 
         Message chunk = controller.getFileSystem().retrieveChunk(fileId, chunkNo);
-        controller.sendMessage(chunk,sourceAddress);
+        peer.sendMessage(chunk,sourceAddress);
     }
 
     /**
@@ -285,7 +286,7 @@ public class Dispatcher {
                 System.out.println("Chunk " + message.getChunkNo() + " not satisfied anymore.");
                 Message chunk = controller.getFileSystem().retrieveChunk(message.getFileId(), message.getChunkNo());
 
-                threadPool.schedule( new Backup(controller, chunk, chunkInfo.getDesiredReplicationDeg(), controller.getMDBReceiver()),
+                threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBReceiver()),
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         }

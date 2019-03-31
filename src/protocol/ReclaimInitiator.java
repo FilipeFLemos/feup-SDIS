@@ -3,21 +3,24 @@ package protocol;
 import message.Message;
 import peer.FileChunk;
 import peer.PeerController;
+import receiver.Receiver;
 import storage.FileSystem;
 
 public class ReclaimInitiator implements Runnable{
 
     private PeerController peerController;
     private long space;
+    private Receiver mcReceiver;
 
     /**
      * Instantiates a new Reclaim initiator.
      *
      * @param space the space
      */
-    public ReclaimInitiator(PeerController peerController, long space) {
+    public ReclaimInitiator(PeerController peerController, long space, Receiver mcReceiver) {
         this.peerController = peerController;
         this.space = space;
+        this.mcReceiver = mcReceiver;
     }
 
     /**
@@ -42,7 +45,6 @@ public class ReclaimInitiator implements Runnable{
         long targetSpace = targetSpaceKb * 1000; //kbs to bytes
 
         while(fileSystem.getUsedStorage() > targetSpace) {
-            //Pair<String, Integer> toDelete = peerController.getMostSatisfiedChunk();
             FileChunk toDelete = peerController.getMostSatisfiedChunk();
 
             // no more chunks to delete
@@ -51,8 +53,6 @@ public class ReclaimInitiator implements Runnable{
                 return fileSystem.getUsedStorage() < targetSpace;
             }
 
-//            String fileID = toDelete.getKey();
-//            int chunkIndex = toDelete.getValue();
             String fileID = toDelete.getFileId();
             int chunkIndex = toDelete.getChunkNo();
 
@@ -60,7 +60,7 @@ public class ReclaimInitiator implements Runnable{
             peerController.deleteChunk(fileID, chunkIndex, true);
 
             Message removedMessage = new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
-            peerController.getMCReceiver().sendMessage(removedMessage);
+            mcReceiver.sendMessage(removedMessage);
         }
 
         return true;

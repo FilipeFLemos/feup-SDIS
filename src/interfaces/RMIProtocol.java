@@ -6,7 +6,7 @@ import java.rmi.RemoteException;
 public interface RMIProtocol extends Remote {
 
     /**
-     * Backup file service.
+     * BackupChunk file service.
      *
      * @param filePath          the file path
      * @param replicationDegree the desired replication degree

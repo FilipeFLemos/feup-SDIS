@@ -1,15 +1,12 @@
 package peer;
 
 import message.*;
-import receiver.Receiver;
-import receiver.TCPSocketController;
 import storage.FileSystem;
 import utils.Globals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
-import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
@@ -22,61 +19,40 @@ public class PeerController implements Serializable {
 
 
     private static final long serialVersionUID = 1L;
-    
-    private transient Peer peer;
-    
     private String version;
-    
     private int peerId;
-
     private FileSystem fileSystem;
 
     private boolean backupEnhancement;
-
     private boolean restoreEnhancement;
 
-    private ConcurrentHashMap<String, FileInfo> backedupFilesByPaths;
+    private ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths;
     private ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunksInfo;
 
     private ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId;
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo;
+    private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo_ENH;
 
-    
-    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile;
     //TODO: nao deveria ser fileinfo pq ele quer guardar o path e nao o id
     private ConcurrentHashMap<String, FileInfo> fileInfoByRestoredFile;
+    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile;
+    private ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredByFileChunk;
 
-    /**
-     * Useful information on files being restored by other peers. Key = fileID, Value = ArrayList of chunk numbers
-     */
-    //private ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo;
-    private ConcurrentHashMap<FileChunk, Boolean> getChunkRequestsInfo;
+    public PeerController(String version, int peerId) {
+        this.version = version;
+        this.peerId = peerId;
 
-    /**
-     * Useful information about received STORED messages. Used in backup protocol enhancement. Key = <fileID, chunkInfo>, Value = Information (observed and desired rep degree)
-     */
-    //private ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedRepliesInfo;
-    private ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo;
-
-    /**
-     * Instantiates a new Peer controller.
-     */
-    public PeerController(Peer peer) {
-        this.version = peer.getProtocolVersion();
-        this.peerId = peer.getPeerId();
+        backedUpFilesByPaths = new ConcurrentHashMap<>();
+        backedUpChunksInfo = new ConcurrentHashMap<>();
 
         storedChunksByFileId = new ConcurrentHashMap<>();
         storedChunksInfo = new ConcurrentHashMap<>();
+        storedChunksInfo_ENH = new ConcurrentHashMap<>();
 
-        backedupFilesByPaths = new ConcurrentHashMap<>();
-        backedUpChunksInfo = new ConcurrentHashMap<>();
-
-        chunksByRestoredFile = new ConcurrentHashMap<>();
         fileInfoByRestoredFile = new ConcurrentHashMap<>();
+        chunksByRestoredFile = new ConcurrentHashMap<>();
+        isBeingRestoredByFileChunk = new ConcurrentHashMap<>();
 
-        getChunkRequestsInfo = new ConcurrentHashMap<>();
-
-        storedRepliesInfo = new ConcurrentHashMap<>();
 
         if(version.equals("1.0")) {
             backupEnhancement = false;
@@ -89,58 +65,24 @@ public class PeerController implements Serializable {
         }
 
         fileSystem = new FileSystem(version, peerId, Globals.MAX_PEER_STORAGE, Globals.PEER_FILESYSTEM_DIR + "/" + peerId);
-
-        setChannels(peer);
-    }
-
-    public void setChannels(Peer peer){
-        this.peer = peer;
-    }
-
-    /**
-      * Initiates fields not retrievable from non-volatile memory
-      *
-      * @param MCAddress control channel address
-      * @param MCPort control channel port
-      * @param MDBAddress backup channel address
-      * @param MDBPort backup channel port
-      * @param MDRAddress restore channel address
-      * @param MDRPort restore channel port
-      */
-    /*public void initTransientMethods(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
-        this.dispatcher = new Dispatcher(this, peerId);
-
-        // subscribe to multicast channels
-        try {
-            this.MCReceiver = new Receiver(MCAddress, MCPort, dispatcher);
-            this.MDBReceiver = new Receiver(MDBAddress, MDBPort, dispatcher);
-            this.MDRReceiver = new Receiver(MDRAddress, MDRPort, dispatcher);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        if(restoreEnhancement)
-            TCPController = new TCPSocketController(MDRPort);
-    }*/
-
-    /**
-     * Starts listening to stored messages for a chunk that the peer is backing up
-     *
-     * @param chunk the chunk
-     */
-    public void listenforSTORED(Message chunk) {
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        backedUpChunksInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**
      * Starts listening to stored messages for a chunk the peer is storing
      * @param chunk
      */
-    public void listenForStoredReplies(Message chunk) {
-        //Pair<String, Integer> key = new Pair<>(chunk.getFileId(), chunk.getChunkNo());
+    public void listenForSTORED_ENH(Message chunk) {
         FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        storedRepliesInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
+        storedChunksInfo_ENH.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
+    }
+
+    /**
+     * Starts listening to stored messages for a chunk that the peer is backing up
+     * @param chunk the chunk
+     */
+    public void listenForSTORED(Message chunk) {
+        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
+        backedUpChunksInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**
@@ -148,9 +90,8 @@ public class PeerController implements Serializable {
      * @param chunk
      */
     public void listenForChunkReplies(Message chunk) {
-        //Pair<String, Integer> key = new Pair<>(chunk.getFileId(), chunk.getChunkNo());
         FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        getChunkRequestsInfo.putIfAbsent(key, false);
+        isBeingRestoredByFileChunk.putIfAbsent(key, false);
     }
 
     /**
@@ -160,7 +101,6 @@ public class PeerController implements Serializable {
      * @return the backed up chunk's observed rep degree
      */
     public int getBackedUpChunkRepDegree(Message chunk) {
-        //Pair<String, Integer> key = new Pair<>(chunk.getFileId(), chunk.getChunkNo());
         FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
 
         int currentDegree = 0;
@@ -178,8 +118,7 @@ public class PeerController implements Serializable {
      * @param chunkAmount the chunk amount
      */
     public void addBackedUpFile(String filePath, String fileID, int chunkAmount) {
-        //backedUpFiles.put(filePath, new Pair<>(fileID, chunkAmount));
-        backedupFilesByPaths.put(filePath, new FileInfo(fileID, chunkAmount));
+        backedUpFilesByPaths.put(filePath, new FileInfo(fileID, chunkAmount));
     }
 
     /**
@@ -189,12 +128,10 @@ public class PeerController implements Serializable {
      * @return the backed up file id
      */
     public String getBackedUpFileID(String filePath) {
-        if(!backedupFilesByPaths.containsKey(filePath))
+        if(!backedUpFilesByPaths.containsKey(filePath))
             return null;
 
-        FileInfo fileInfo = backedupFilesByPaths.get(filePath);
-        //Pair<String, Integer> fileInfo = backedUpFiles.get(filePath);
-        //return fileInfo.getKey();
+        FileInfo fileInfo = backedUpFilesByPaths.get(filePath);
         return fileInfo.getFileId();
     }
 
@@ -205,12 +142,10 @@ public class PeerController implements Serializable {
      * @return the backed up file chunk amount
      */
     public Integer getBackedUpFileChunkAmount(String filePath) {
-        if(!backedupFilesByPaths.containsKey(filePath))
+        if(!backedUpFilesByPaths.containsKey(filePath))
             return 0;
 
-        FileInfo fileInfo = backedupFilesByPaths.get(filePath);
-        //Pair<String, Integer> fileInfo = backedUpFiles.get(filePath);
-        //return fileInfo.getValue();
+        FileInfo fileInfo = backedUpFilesByPaths.get(filePath);
         return fileInfo.getNumberOfChunks();
     }
 
@@ -219,7 +154,6 @@ public class PeerController implements Serializable {
      *
      * @return the most satisfied chunk
      */
-    //public Pair<String, Integer> getMostSatisfiedChunk() {
     public FileChunk getMostSatisfiedChunk() {
         if(storedChunksInfo.isEmpty()) {
             System.out.println("Stored chunks info is empty");
@@ -232,10 +166,6 @@ public class PeerController implements Serializable {
         for(Map.Entry<FileChunk, ChunkInfo> chunk : storedChunksInfo.entrySet())
             if(chunk.getValue() == maxChunk)
                 return chunk.getKey();
-
-//        for(Map.Entry<Pair<String, Integer>, ChunkInfo> chunk : storedChunksInfo.entrySet())
-//            if(chunk.getValue() == maxChunk)
-//                return chunk.getKey();
 
         System.out.println("Didn't find max chunk");
         return null;
@@ -251,7 +181,6 @@ public class PeerController implements Serializable {
     public void deleteChunk(String fileID, int chunkIndex, boolean updateMaxStorage) {
         fileSystem.deleteChunk(fileID, chunkIndex, updateMaxStorage);
 
-        //Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
         FileChunk key = new FileChunk(fileID, chunkIndex);
         storedChunksInfo.remove(key);
 
@@ -268,7 +197,6 @@ public class PeerController implements Serializable {
      */
     public void addToRestoringFiles(String fileID, String filePath, int chunkAmount) {
         chunksByRestoredFile.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
-        //restoringFilesInfo.putIfAbsent(fileID, new Pair<>(filePath, chunkAmount));
         fileInfoByRestoredFile.putIfAbsent(fileID, new FileInfo(filePath, chunkAmount));
     }
 
@@ -317,20 +245,7 @@ public class PeerController implements Serializable {
         output.append("Current Peer state:\n");
 
         output.append("Files whose backup was initiated by this peer:\n");
-//        for (Map.Entry<String, Pair<String, Integer>> entry : backedUpFiles.entrySet()) {
-//            output.append("\tPathname = " + entry.getKey() + ", fileID = " + entry.getValue().getKey()+"\n");
-//
-//            Pair<String, Integer> firstChunkInfo = new Pair<>(entry.getValue().getKey(), 0);
-//            output.append("\t\tDesired replication degree: " + backedUpChunksInfo.get(firstChunkInfo).getDesiredReplicationDeg() + "\n");
-//            output.append("\t\tChunks:\n");
-//
-//            for(int chunkNr = 0; chunkNr < entry.getValue().getValue(); ++chunkNr) {
-//                Pair<String, Integer> chunkEntry = new Pair<>(entry.getValue().getKey(), chunkNr);
-//                output.append("\t\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + backedUpChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
-//            }
-//            output.append("\n");
-//        }
-        for (Map.Entry<String, FileInfo> entry : backedupFilesByPaths.entrySet()) {
+        for (Map.Entry<String, FileInfo> entry : backedUpFilesByPaths.entrySet()) {
             output.append("\tPathname = " + entry.getKey() + ", fileID = " + entry.getValue().getFileId()+"\n");
 
             FileChunk firstChunkInfo = new FileChunk(entry.getValue().getFileId(), 0);
@@ -367,18 +282,6 @@ public class PeerController implements Serializable {
         return fileSystem;
     }
 
-    public Receiver getMCReceiver() {
-        return peer.getMCReceiver();
-    }
-
-    public Receiver getMDBReceiver() {
-        return peer.getMDBReceiver();
-    }
-
-    public Receiver getMDRReceiver() {
-        return peer.getMDRReceiver();
-    }
-
     public String getVersion() {
         return version;
     }
@@ -391,40 +294,30 @@ public class PeerController implements Serializable {
         return backupEnhancement;
     }
 
+    public boolean isRestoreEnhancement() {
+        return restoreEnhancement;
+    }
+
     public ConcurrentHashMap<String, ArrayList<Integer>> getStoredChunks() {
         return storedChunksByFileId;
     }
-
-//    public ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> getStoredChunksInfo() {
-//        return storedChunksInfo;
-//    }
 
     public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo() {
         return storedChunksInfo;
     }
 
-    public ConcurrentHashMap<FileChunk, Boolean> getGetChunkRequestsInfo() {
-        return getChunkRequestsInfo;
+    public ConcurrentHashMap<FileChunk, Boolean> getIsBeingRestoredByFileChunk() {
+        return isBeingRestoredByFileChunk;
     }
 
-//    public ConcurrentHashMap<Pair<String, Integer>, Boolean> getGetChunkRequestsInfo() {
-//        return getChunkRequestsInfo;
-//    }
-
-//    public ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> getStoredRepliesInfo() {
-//        return storedRepliesInfo;
-//    }
-    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredRepliesInfo() {
-        return storedRepliesInfo;
+    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo_ENH() {
+        return storedChunksInfo_ENH;
     }
 
     public ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> getRestoringFiles() {
         return chunksByRestoredFile;
     }
 
-//    public ConcurrentHashMap<String, Pair<String, Integer>> getRestoringFilesInfo() {
-//        return restoringFilesInfo;
-//    }
     public ConcurrentHashMap<String, FileInfo> getRestoringFilesInfo() {
         return fileInfoByRestoredFile;
     }
@@ -432,36 +325,6 @@ public class PeerController implements Serializable {
     public void removeStoredChunksFile(String fileId) {
         storedChunksByFileId.remove(fileId);
     }
-
-    public void sendMessage(Message message, InetAddress sourceAddress){
-        if(restoreEnhancement && !message.getVersion().equals("1.0")) {
-            //send chunk via tcp and send header to MDR
-            peer.getTCPController().sendMessage(message, sourceAddress);
-            getMDRReceiver().sendMessage(message, false);
-        }
-        else
-            getMDRReceiver().sendMessage(message);
-    }
-
-
-//    public void updateChunksInfo(Pair<String, Integer> key, Message message) {
-//        // if this chunk is from a file the peer
-//        // has requested to backup (aka is the
-//        // initiator peer), and hasn't received
-//        // a stored message, update actual rep degree,
-//        // and add peer
-//        updateMapInformation(backedUpChunksInfo, key, message);
-//
-//        // if this peer has this chunk stored,
-//        // and hasn't received stored message
-//        // from this peer yet, update actual
-//        // rep degree, and add peer
-//        updateMapInformation(storedChunksInfo, key, message);
-//
-//        if(backupEnhancement && !message.getVersion().equals("1.0")) {
-//            updateMapInformation(storedRepliesInfo, key, message);
-//        }
-//    }
 
     public void updateChunksInfo(FileChunk key, Message message) {
         // if this chunk is from a file the peer
@@ -480,8 +343,8 @@ public class PeerController implements Serializable {
         updateMapInformation(storedChunksInfo, key, message);
 
         if(backupEnhancement && !message.getVersion().equals("1.0")) {
-            System.out.println("Trying storedRepliesInfo:");
-            updateMapInformation(storedRepliesInfo, key, message);
+            System.out.println("Trying storedChunksInfo_ENH:");
+            updateMapInformation(storedChunksInfo_ENH, key, message);
         }
         System.out.println("Finished updating");
     }
@@ -492,17 +355,6 @@ public class PeerController implements Serializable {
      * @param key the key whose value to update
      * @param message the message whose information the map update is based on
      */
-//    private void updateMapInformation(ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> map, Pair<String, Integer> key, Message message) {
-//        ChunkInfo chunkInfo;
-//
-//        if(map.containsKey(key) && !map.get(key).isBackedUpByPeer(message.getSenderId())) {
-//            chunkInfo = map.get(key);
-//            chunkInfo.incActualReplicationDegree();
-//            chunkInfo.addPeer(message.getSenderId());
-//            map.put(key, chunkInfo);
-//        }
-//    }
-
     private void updateMapInformation(ConcurrentHashMap<FileChunk, ChunkInfo> map, FileChunk key, Message message) {
         ChunkInfo chunkInfo;
         if(map.containsKey(key) && !map.get(key).isBackedUpByPeer(message.getSenderId())) {
@@ -521,11 +373,8 @@ public class PeerController implements Serializable {
         storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(message.getReplicationDeg(), 1));
     }
 
-//    public void addGetChunkRequestInfo(Pair<String, Integer> key) {
-//        getChunkRequestsInfo.put(key, true);
-//    }
     public void addGetChunkRequestInfo(FileChunk key) {
-        getChunkRequestsInfo.put(key, true);
+        isBeingRestoredByFileChunk.put(key, true);
     }
 
     public void stopRestoringFile(String fileId) {
