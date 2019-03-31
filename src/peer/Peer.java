@@ -35,7 +35,7 @@ public class Peer implements RMIProtocol {
      *
      * @param args initialization arguments
      */
-    private Peer(final String args[]) throws IOException {
+    private Peer(final String args[]) {
         System.out.println("Starting Peer with protocol version " + args[0]);
         System.out.println("Starting Peer with ID " + args[1]);
         version = args[0];
