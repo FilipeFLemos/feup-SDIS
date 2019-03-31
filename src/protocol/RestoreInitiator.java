@@ -14,8 +14,7 @@ public class RestoreInitiator implements Runnable{
 
     /**
      * Instantiates a new Restore initiator.
-     *
-     * @param filePath the file path
+     *  @param filePath the file path
      * @param channel  the message
      */
     public RestoreInitiator(PeerController peerController, String filePath, Channel channel) {

@@ -1,11 +1,9 @@
 package protocol;
 
-import receiver.Channel;
 import message.Message;
 import peer.Peer;
+import receiver.Channel;
 import utils.Utils;
-
-import java.io.File;
 
 public class DeleteInitiator implements Runnable{
 
@@ -15,8 +13,7 @@ public class DeleteInitiator implements Runnable{
 
     /**
      * Instantiates a new Delete initiator.
-     *
-     * @param peer     the peer
+     *  @param peer     the peer
      * @param filePath the file path
      * @param channel  the message
      */
@@ -31,7 +28,6 @@ public class DeleteInitiator implements Runnable{
       */
     @Override
     public void run() {
-        File file = new File(filePath);
         String fileID = Utils.getFileID(filePath);
 
         Message message = new Message(peer.getVersion(),peer.getPeerId(),fileID, null, Message.MessageType.DELETE);

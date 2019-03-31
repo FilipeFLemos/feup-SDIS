@@ -2,7 +2,7 @@ package protocol;
 
 import message.Message;
 import peer.PeerController;
-import receiver.Receiver;
+import receiver.Channel;
 import utils.Globals;
 import utils.Utils;
 
@@ -18,7 +18,7 @@ public class BackupInitiator implements Runnable{
     private String fileId;
     private File file;
     private PeerController peerController;
-    private Receiver channel;
+    private Channel channel;
 
     /**
      * Instantiates a new BackupChunk initiator.
@@ -27,7 +27,7 @@ public class BackupInitiator implements Runnable{
      * @param replicationDegree the replication degree
      * @param channel           the message
      */
-    public BackupInitiator(PeerController peerController, String filePath, int replicationDegree, Receiver channel) {
+    public BackupInitiator(PeerController peerController, String filePath, int replicationDegree, Channel channel) {
         this.peerController = peerController;
         this.channel = channel;
         this.filePath = filePath;

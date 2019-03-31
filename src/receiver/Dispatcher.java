@@ -149,7 +149,7 @@ public class Dispatcher {
 
         Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
 
-        peer.getMCReceiver().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
+        peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
         System.out.println("Sent Stored Message: " + storedMessage.getChunkNo());
     }
@@ -286,7 +286,7 @@ public class Dispatcher {
                 System.out.println("Chunk " + message.getChunkNo() + " not satisfied anymore.");
                 Message chunk = controller.getFileSystem().retrieveChunk(message.getFileId(), message.getChunkNo());
 
-                threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBReceiver()),
+                threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBChannel()),
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         }

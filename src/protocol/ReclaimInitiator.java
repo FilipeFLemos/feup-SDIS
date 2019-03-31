@@ -3,24 +3,24 @@ package protocol;
 import message.Message;
 import peer.FileChunk;
 import peer.PeerController;
-import receiver.Receiver;
+import receiver.Channel;
 import storage.FileSystem;
 
 public class ReclaimInitiator implements Runnable{
 
     private PeerController peerController;
     private long space;
-    private Receiver mcReceiver;
+    private Channel mcChannel;
 
     /**
      * Instantiates a new Reclaim initiator.
      *
      * @param space the space
      */
-    public ReclaimInitiator(PeerController peerController, long space, Receiver mcReceiver) {
+    public ReclaimInitiator(PeerController peerController, long space, Channel mcChannel) {
         this.peerController = peerController;
         this.space = space;
-        this.mcReceiver = mcReceiver;
+        this.mcChannel = mcChannel;
     }
 
     /**
@@ -60,7 +60,7 @@ public class ReclaimInitiator implements Runnable{
             peerController.deleteChunk(fileID, chunkIndex, true);
 
             Message removedMessage = new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
-            mcReceiver.sendMessage(removedMessage);
+            mcChannel.sendMessage(removedMessage);
         }
 
         return true;

@@ -1,14 +1,14 @@
 package protocol;
 
 import message.Message;
-import receiver.Receiver;
+import receiver.Channel;
 import peer.PeerController;
 import utils.Globals;
 
 public class BackupChunk implements Runnable {
 
     private Message message;
-    private Receiver receiver;
+    private Channel channel;
     private PeerController peerController;
 
     /**
@@ -17,11 +17,11 @@ public class BackupChunk implements Runnable {
       * @param peerController the peer's peerController
       * @param chunk the target chunk
       * @param replicationDeg the desired replication degree
-      * @param receiver the helper receiver
+      * @param channel the helper channel
       */
-    public BackupChunk(PeerController peerController, Message chunk, int replicationDeg, Receiver receiver) {
+    public BackupChunk(PeerController peerController, Message chunk, int replicationDeg, Channel channel) {
         this.peerController = peerController;
-        this.receiver = receiver;
+        this.channel = channel;
         createPUTCHANK(chunk, replicationDeg);
     }
 
@@ -59,7 +59,7 @@ public class BackupChunk implements Runnable {
                 System.out.println("Aborting backup, attempt limit reached");
                 break;
             }
-            receiver.sendMessage(message);
+            channel.sendMessage(message);
         } while(!hasDesiredReplicationDeg(waitTime));
     }
 
