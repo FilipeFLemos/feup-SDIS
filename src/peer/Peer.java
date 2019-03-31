@@ -1,8 +1,7 @@
 package peer;
 
-import receiver.Channel;
+import receiver.*;
 import protocol.*;
-import receiver.SocketReceiver;
 import interfaces.RMIProtocol;
 
 import java.io.*;
@@ -13,9 +12,16 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static utils.Utils.parseRMI;
+
 public class Peer implements RMIProtocol {
 
     private static final int MAX_INITIATOR_THREADS = 50;
+    private Receiver MCReceiver;
+    private Receiver MDBReceiver;
+    private Receiver MDRReceiver;
+    private Dispatcher dispatcher;
+    private TCPSocketController TCPController;
 
     /**
      * The peer's identifier
@@ -85,7 +91,13 @@ public class Peer implements RMIProtocol {
         protocolVersion = args[0];
         peerId = Integer.parseInt(args[1]);
 
-        initRMI(args[2]);
+        //Parse RMI address
+        //host/ or   //host:port/
+        String[] serviceAccessPoint = parseRMI(true, args[2]);
+        if (serviceAccessPoint == null) {
+            return;
+        }
+
 
         this.MCAddress = args[3];
         this.MCPort = Integer.parseInt(args[4]);
@@ -95,13 +107,26 @@ public class Peer implements RMIProtocol {
         this.MDRPort = Integer.parseInt(args[8]);
 
         if (!loadPeerController())
-            this.controller = new PeerController(protocolVersion, peerId, MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
+            this.controller = new PeerController(this);
 
         // save peerController data every 3 seconds
         threadPool.scheduleAtFixedRate(this::saveController, 0, 3, TimeUnit.SECONDS);
 
         MC = new Channel(args[3], Integer.parseInt(args[4]));
         MDB = new Channel(args[5], Integer.parseInt(args[6]));
+        initTransientMethods(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
+
+        try {
+            RMIProtocol stub = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
+
+            // Get own registry, to rebind to correct stub
+            Registry registry = LocateRegistry.getRegistry();
+            registry.rebind(args[1], stub);
+
+            System.out.println("Server ready!");
+        } catch (Exception e) {
+            System.out.println("Server exception: " + e.toString());
+        }
     }
 
     // peer.Peer args
@@ -148,7 +173,8 @@ public class Peer implements RMIProtocol {
             FileInputStream controllerFile = new FileInputStream("PeerController" + peerId + ".ser");
             ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
             this.controller = (PeerController) controllerObject.readObject();
-            this.controller.initTransientMethods(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
+            this.controller.setChannels(this);
+            //this.controller.initTransientMethods(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
             controllerObject.close();
             controllerFile.close();
             return true;
@@ -159,6 +185,31 @@ public class Peer implements RMIProtocol {
         }
 
         return false;
+    }
+
+    /**
+     * Initiates fields not retrievable from non-volatile memory
+     *
+     * @param MCAddress control channel address
+     * @param MCPort control channel port
+     * @param MDBAddress backup channel address
+     * @param MDBPort backup channel port
+     * @param MDRAddress restore channel address
+     * @param MDRPort restore channel port
+     */
+    public void initTransientMethods(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
+        this.dispatcher = new Dispatcher(controller, peerId);
+        // subscribe to multicast channels
+        try {
+            this.MCReceiver = new Receiver(MCAddress, MCPort, dispatcher);
+            this.MDBReceiver = new Receiver(MDBAddress, MDBPort, dispatcher);
+            this.MDRReceiver = new Receiver(MDRAddress, MDRPort, dispatcher);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        if(!protocolVersion.equals("1.0"))
+            TCPController = new TCPSocketController(MDRPort);
     }
 
     /**
@@ -259,5 +310,25 @@ public class Peer implements RMIProtocol {
     @Override
     public void state() {
         System.out.println(controller.toString());
+    }
+
+    public Dispatcher getDispatcher() {
+        return dispatcher;
+    }
+
+    public Receiver getMCReceiver() {
+        return MCReceiver;
+    }
+
+    public Receiver getMDBReceiver() {
+        return MDBReceiver;
+    }
+
+    public Receiver getMDRReceiver() {
+        return MDRReceiver;
+    }
+
+    public TCPSocketController getTCPController() {
+        return TCPController;
     }
 }

@@ -34,7 +34,7 @@ public class BackupInitiator implements Runnable{
         this.replicationDegree = replicationDegree;
 
         file = new File(filePath);
-        fileID = Utils.getFileID(file);
+        fileID = Utils.getFileID(filePath);
 
         numberChunks = (int) (file.length() / Globals.MAX_CHUNK_SIZE + 1);
         chunks = new ArrayList<>();

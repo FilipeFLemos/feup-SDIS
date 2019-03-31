@@ -1,8 +1,8 @@
 package receiver;
 
-import javafx.util.Pair;
 import message.ChunkInfo;
 import message.Message;
+import peer.ChunkFile;
 import peer.PeerController;
 import protocol.Backup;
 import utils.Globals;
@@ -114,8 +114,10 @@ public class Dispatcher {
         int chunkIndex = message.getChunkNo();
 
         if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
-            Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
-            ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
+            //Pair<String, Integer> key = new Pair<>(fileID, chunkIndex);
+            ChunkFile key = new ChunkFile(fileID, chunkIndex);
+            //ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
+            ConcurrentHashMap<ChunkFile, ChunkInfo> storedRepliesInfo = controller.getStoredRepliesInfo();
 
             if(storedRepliesInfo.containsKey(key)) {
 
@@ -161,9 +163,11 @@ public class Dispatcher {
 
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
-        Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
+        //Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
+        ChunkFile key = new ChunkFile(fileId, chunkNo);
 
-        ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        ConcurrentHashMap<ChunkFile, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
         if(getChunkRequestsInfo.containsKey(key)) {
             controller.addGetChunkRequestInfo(key);
             System.out.println("Added Chunk " + chunkNo + " to requests info.");
@@ -184,7 +188,8 @@ public class Dispatcher {
 
         controller.addRestoredFile(message, fileRestoredChunks);
 
-        int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getValue();
+        //int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getValue();
+        int fileChunkAmount = controller.getRestoringFilesInfo().get(fileId).getChunkNo();
 
         if(fileRestoredChunks.size() == fileChunkAmount) {
             controller.saveRestoredFile(fileId);
@@ -204,9 +209,11 @@ public class Dispatcher {
 
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
-        Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
+        //Pair<String, Integer> key = new Pair<>(fileId, chunkNo);
+        ChunkFile key = new ChunkFile(fileId, chunkNo);
 
-        ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        //ConcurrentHashMap<Pair<String, Integer>, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
+        ConcurrentHashMap<ChunkFile, Boolean> getChunkRequestsInfo = controller.getGetChunkRequestsInfo();
         if(getChunkRequestsInfo.containsKey(key)) {
             if(getChunkRequestsInfo.get(key)) {
                 getChunkRequestsInfo.remove(key);
@@ -231,7 +238,8 @@ public class Dispatcher {
      */
     public void handleSTORED(Message message) {
         System.out.println("Received Stored Message: " + message.getChunkNo());
-        Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
+        //Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
+        ChunkFile key = new ChunkFile(message.getFileId(), message.getChunkNo());
         controller.updateChunksInfo(key,message);
     }
 
@@ -264,9 +272,11 @@ public class Dispatcher {
      */
     public void handleREMOVED(Message message) {
         System.out.println("Received Removed Message: " + message.getChunkNo());
-        ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
+        //ConcurrentHashMap<Pair<String, Integer>, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
+        ConcurrentHashMap<ChunkFile, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
 
-        Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
+        //Pair<String, Integer> key = new Pair<>(message.getFileId(), message.getChunkNo());
+        ChunkFile key = new ChunkFile(message.getFileId(), message.getChunkNo());
         if(storedChunksInfo.containsKey(key)) {
             ChunkInfo chunkInfo = storedChunksInfo.get(key);
             chunkInfo.decreaseCurrentReplicationDeg();

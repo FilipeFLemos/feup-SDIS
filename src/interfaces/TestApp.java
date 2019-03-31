@@ -7,6 +7,9 @@ import java.rmi.registry.Registry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static utils.Utils.getRegistry;
+import static utils.Utils.parseRMI;
+
 public class TestApp {
 
 
@@ -16,11 +19,19 @@ public class TestApp {
     private int port = 1099;
 
     private TestApp(String[] args) throws RemoteException {
-        String[] accessPoint = parseAccessPoint(args[0]);
-        if(accessPoint == null)
+        String[] peer_ap = parseRMI(false, args[0]);
+        if (peer_ap == null) {
             return;
+        }
 
-        RMIProtocol remoteService = initRMI(accessPoint[0], accessPoint[1]);
+        RMIProtocol remoteService = null;
+        try {
+            Registry registry = getRegistry(peer_ap);
+            remoteService = (RMIProtocol) registry.lookup(peer_ap[2]);
+        } catch (Exception e) {
+            System.out.println("Error when opening RMI stub");
+            e.printStackTrace();
+        }
 
         switch(args[1]) {
             case "backup":
@@ -67,8 +78,8 @@ public class TestApp {
         RMIProtocol remoteService = null;
 
         try {
-            Registry registry = LocateRegistry.getRegistry(host, port);
-            remoteService = (RMIProtocol) registry.lookup(name);
+            Registry registry = LocateRegistry.getRegistry("127.0.0.1", 1099);
+            remoteService = (RMIProtocol) registry.lookup("1");
         } catch (Exception e) {
             System.err.println("Error connecting to remote object '" + name + "' on " + host);
             e.printStackTrace();

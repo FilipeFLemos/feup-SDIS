@@ -1,7 +1,7 @@
 package protocol;
 
-import javafx.util.Pair;
 import message.Message;
+import peer.ChunkFile;
 import peer.PeerController;
 import storage.FileSystem;
 
@@ -42,7 +42,8 @@ public class ReclaimInitiator implements Runnable{
         long targetSpace = targetSpaceKb * 1000; //kbs to bytes
 
         while(fileSystem.getUsedStorage() > targetSpace) {
-            Pair<String, Integer> toDelete = peerController.getMostSatisfiedChunk();
+            //Pair<String, Integer> toDelete = peerController.getMostSatisfiedChunk();
+            ChunkFile toDelete = peerController.getMostSatisfiedChunk();
 
             // no more chunks to delete
             if (toDelete == null) {
@@ -50,8 +51,10 @@ public class ReclaimInitiator implements Runnable{
                 return fileSystem.getUsedStorage() < targetSpace;
             }
 
-            String fileID = toDelete.getKey();
-            int chunkIndex = toDelete.getValue();
+//            String fileID = toDelete.getKey();
+//            int chunkIndex = toDelete.getValue();
+            String fileID = toDelete.getFileId();
+            int chunkIndex = toDelete.getChunkNo();
 
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
             peerController.deleteChunk(fileID, chunkIndex, true);
