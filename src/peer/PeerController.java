@@ -148,9 +148,8 @@ public class PeerController implements Serializable {
      * @param chunk the chunk
      */
     public void listenforSTORED(Message chunk) {
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getNumberOfChunks());
+        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
         backedUpChunksInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
-        System.out.println("Placed chunk for listening: " + key.getFileId() + key.getNumberOfChunks());
     }
 
     /**
@@ -159,7 +158,7 @@ public class PeerController implements Serializable {
      */
     public void listenForStoredReplies(Message chunk) {
         //Pair<String, Integer> key = new Pair<>(chunk.getFileId(), chunk.getChunkNo());
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getNumberOfChunks());
+        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
         storedRepliesInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
@@ -169,7 +168,7 @@ public class PeerController implements Serializable {
      */
     public void listenForChunkReplies(Message chunk) {
         //Pair<String, Integer> key = new Pair<>(chunk.getFileId(), chunk.getChunkNo());
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getNumberOfChunks());
+        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
         getChunkRequestsInfo.putIfAbsent(key, false);
     }
 
@@ -181,7 +180,7 @@ public class PeerController implements Serializable {
      */
     public int getBackedUpChunkRepDegree(Message chunk) {
         //Pair<String, Integer> key = new Pair<>(chunk.getFileId(), chunk.getChunkNo());
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getNumberOfChunks());
+        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
 
         int currentDegree = 0;
         if(backedUpChunksInfo.containsKey(key))
@@ -212,7 +211,7 @@ public class PeerController implements Serializable {
         if(!backedupFilesByPaths.containsKey(filePath))
             return null;
 
-        FileChunk fileInfo = backedupFilesByPaths.get(filePath);
+        FileInfo fileInfo = backedupFilesByPaths.get(filePath);
         //Pair<String, Integer> fileInfo = backedUpFiles.get(filePath);
         //return fileInfo.getKey();
         return fileInfo.getFileId();
@@ -228,7 +227,7 @@ public class PeerController implements Serializable {
         if(!backedupFilesByPaths.containsKey(filePath))
             return 0;
 
-        FileChunk fileInfo = backedupFilesByPaths.get(filePath);
+        FileInfo fileInfo = backedupFilesByPaths.get(filePath);
         //Pair<String, Integer> fileInfo = backedUpFiles.get(filePath);
         //return fileInfo.getValue();
         return fileInfo.getNumberOfChunks();
@@ -358,7 +357,7 @@ public class PeerController implements Serializable {
 //            }
 //            output.append("\n");
 //        }
-        for (Map.Entry<String, FileChunk> entry : backedupFilesByPaths.entrySet()) {
+        for (Map.Entry<String, FileInfo> entry : backedupFilesByPaths.entrySet()) {
             output.append("\tPathname = " + entry.getKey() + ", fileID = " + entry.getValue().getFileId()+"\n");
 
             FileChunk firstChunkInfo = new FileChunk(entry.getValue().getFileId(), 0);
@@ -545,7 +544,7 @@ public class PeerController implements Serializable {
     public void startStoringChunks(Message message) {
         storedChunks.putIfAbsent(message.getFileId(), new ArrayList<>());
         //Pair<String, Integer> chunkInfoKey = new Pair<>(message.getFileId(), message.getChunkNo());
-        FileChunk chunkInfoKey = new FileChunk(message.getFileId(), message.getNumberOfChunks());
+        FileChunk chunkInfoKey = new FileChunk(message.getFileId(), message.getChunkNo());
         storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(message.getReplicationDeg(), 1));
     }
 

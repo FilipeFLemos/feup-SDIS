@@ -40,8 +40,7 @@ public class Backup implements Runnable {
             return;
         }
 
-        // notify peerController to listen for this chunk's stored messages
-        peerController.backedUpChunkListenForStored(message);
+        peerController.listenforSTORED(message);
 
         int tries = 0;
         int waitTime = 500;

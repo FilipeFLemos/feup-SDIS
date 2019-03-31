@@ -64,7 +64,7 @@ public class BackupInitiator implements Runnable{
 
             for(Message chunk : chunks){
                 channel.sendMessage(chunk);
-                System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getNumberOfChunks());
+                System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
             }
 
         } while(!wereAllSTOREDReceived(waitTime));
