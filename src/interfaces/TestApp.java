@@ -13,40 +13,28 @@ import static utils.Utils.parseRMI;
 public class TestApp {
 
 
-    /**
-      * The host port where the app will run (default 1099)
-      */
-    private int port = 1099;
-
     private TestApp(String[] args) throws RemoteException {
         String[] peer_ap = parseRMI(false, args[0]);
         if (peer_ap == null) {
             return;
         }
 
-        RMIProtocol remoteService = null;
-        try {
-            Registry registry = getRegistry(peer_ap);
-            remoteService = (RMIProtocol) registry.lookup(peer_ap[2]);
-        } catch (Exception e) {
-            System.out.println("Error when opening RMI stub");
-            e.printStackTrace();
-        }
+        RMIProtocol remoteService = initRMI(peer_ap);
 
         switch(args[1]) {
-            case "backup":
+            case "BACKUP":
                 remoteService.backup(args[2], Integer.parseInt(args[3]));
                 break;
-            case "restore":
+            case "RESTORE":
                 remoteService.restore(args[2]);
                 break;
-            case "delete":
+            case "DELETE":
                 remoteService.delete(args[2]);
                 break;
-            case "reclaim":
+            case "RECLAIM":
                 remoteService.reclaim(Integer.parseInt(args[2]));
                 break;
-            case "state":
+            case "STATE":
                 remoteService.state();
                 break;
         }
@@ -74,35 +62,16 @@ public class TestApp {
       * Initiates the remote service given the host's information.
       * @return remote stub
       */
-    private RMIProtocol initRMI(String host, String name) {
+    private RMIProtocol initRMI(String[] peer_ap) {
         RMIProtocol remoteService = null;
-
         try {
-            Registry registry = LocateRegistry.getRegistry("127.0.0.1", 1099);
-            remoteService = (RMIProtocol) registry.lookup("1");
+            Registry registry = getRegistry(peer_ap);
+            remoteService = (RMIProtocol) registry.lookup(peer_ap[2]);
         } catch (Exception e) {
-            System.err.println("Error connecting to remote object '" + name + "' on " + host);
+            System.out.println("Error when opening RMI stub");
             e.printStackTrace();
         }
 
         return remoteService;
-    }
-
-    /**
-      * Parses the information of the remote access host point
-      * @param peer_ap host peer_ap given as //host[:port]/name
-      * @return [host,name] or null if peer_ap does not match the rmiPattern
-      */
-    private String[] parseAccessPoint(String peer_ap) {
-        Pattern rmiPattern = Pattern.compile("//([\\w.]+)(?::(\\d+))?/(\\w+)");
-        Matcher m = rmiPattern.matcher(peer_ap);
-
-        if(!m.matches())
-            return null;
-
-        if(m.group(2) != null)
-            port = Integer.parseInt(m.group(2));
-
-        return new String[]{m.group(1), m.group(3)};
     }
 }

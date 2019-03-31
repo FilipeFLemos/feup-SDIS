@@ -98,6 +98,8 @@ public class Peer implements RMIProtocol {
             return;
         }
 
+        initRMI(args[1]);
+
 
         this.MCAddress = args[3];
         this.MCPort = Integer.parseInt(args[4]);
@@ -115,18 +117,6 @@ public class Peer implements RMIProtocol {
         MC = new Channel(args[3], Integer.parseInt(args[4]));
         MDB = new Channel(args[5], Integer.parseInt(args[6]));
         initTransientMethods(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
-
-        try {
-            RMIProtocol stub = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
-
-            // Get own registry, to rebind to correct stub
-            Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(args[1], stub);
-
-            System.out.println("Server ready!");
-        } catch (Exception e) {
-            System.out.println("Server exception: " + e.toString());
-        }
     }
 
     // peer.Peer args
@@ -150,16 +140,15 @@ public class Peer implements RMIProtocol {
      */
     private void initRMI(String accessPoint) {
         try {
-            RMIProtocol removeService = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
+            RMIProtocol remoteService = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
 
-            // Bind the remote object's removeService in the registry
+            // Get own registry, to rebind to correct remoteService
             Registry registry = LocateRegistry.getRegistry();
-            registry.rebind(accessPoint, removeService);
+            registry.rebind(accessPoint, remoteService);
 
-            System.err.println("Server ready");
+            System.out.println("Server ready!");
         } catch (Exception e) {
-            System.err.println("Server exception: " + e.toString());
-            e.printStackTrace();
+            System.out.println("Server exception: " + e.toString());
         }
     }
 

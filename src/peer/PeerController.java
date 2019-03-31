@@ -32,21 +32,6 @@ public class PeerController implements Serializable {
     private transient Dispatcher dispatcher;
 
     /**
-     * The control channel receiver
-     */
-    private transient Receiver MCReceiver;
-
-    /**
-     * The backup channel receiver
-     */
-    private transient Receiver MDBReceiver;
-
-    /**
-     * The restore channel receiver
-     */
-    private transient Receiver MDRReceiver;
-
-    /**
      * Peer's file system manager
      */
     private FileSystem fileSystem;
@@ -145,9 +130,6 @@ public class PeerController implements Serializable {
     public void setChannels(Peer peer){
         this.peer = peer;
         dispatcher = peer.getDispatcher();
-        MCReceiver = peer.getMCReceiver();
-        MDBReceiver = peer.getMDBReceiver();
-        MDRReceiver = peer.getMDRReceiver();
     }
 
     /**
@@ -430,11 +412,15 @@ public class PeerController implements Serializable {
     }
 
     public Receiver getMCReceiver() {
-        return MCReceiver;
+        return peer.getMCReceiver();
     }
 
     public Receiver getMDBReceiver() {
-        return MDBReceiver;
+        return peer.getMDBReceiver();
+    }
+
+    public Receiver getMDRReceiver() {
+        return peer.getMDRReceiver();
     }
 
     public String getVersion() {
@@ -495,10 +481,10 @@ public class PeerController implements Serializable {
         if(restoreEnhancement && !message.getVersion().equals("1.0")) {
             //send chunk via tcp and send header to MDR
             peer.getTCPController().sendMessage(message, sourceAddress);
-            MDRReceiver.sendMessage(message, false);
+            getMDRReceiver().sendMessage(message, false);
         }
         else
-            MDRReceiver.sendMessage(message);
+            getMDRReceiver().sendMessage(message);
     }
 
 
@@ -565,6 +551,7 @@ public class PeerController implements Serializable {
             chunkInfo.incActualReplicationDegree();
             chunkInfo.addPeer(message.getSenderId());
             map.put(key, chunkInfo);
+            System.out.println("Updated with received store message");
         }
     }
 
