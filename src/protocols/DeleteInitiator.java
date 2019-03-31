@@ -1,8 +1,8 @@
-package protocol;
+package protocols;
 
 import message.Message;
 import peer.Peer;
-import receiver.Channel;
+import channels.Channel;
 import utils.Utils;
 
 public class DeleteInitiator implements Runnable{
@@ -24,7 +24,7 @@ public class DeleteInitiator implements Runnable{
     }
 
     /**
-      * Method to be executed when thread starts running. Executes the delete protocol as an initiator peer
+      * Method to be executed when thread starts running. Executes the delete protocols as an initiator peer
       */
     @Override
     public void run() {

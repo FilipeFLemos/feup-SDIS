@@ -1,4 +1,4 @@
-package receiver;
+package channels;
 
 import message.Message;
 import utils.Globals;

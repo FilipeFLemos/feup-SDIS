@@ -1,4 +1,4 @@
-package receiver;
+package channels;
 
 import message.Message;
 import utils.Globals;
@@ -16,16 +16,16 @@ public class TCPReceiver implements Runnable {
 
     private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
 
-    private Dispatcher dispatcher;
+    private MessageHandler messageHandler;
 
     /**
-      * Instantiates a socket receiver
+      * Instantiates a socket channels
       *
-      * @param port receiver port
-      * @param dispatcher receiver dispatcher
+      * @param port channels port
+      * @param messageHandler channels messageHandler
       */
-    public TCPReceiver(int port, Dispatcher dispatcher) {
-        this.dispatcher = dispatcher;
+    public TCPReceiver(int port, MessageHandler messageHandler) {
+        this.messageHandler = messageHandler;
         try {
             this.serverSocket = new ServerSocket(port);
         } catch (IOException e) {
@@ -73,7 +73,7 @@ public class TCPReceiver implements Runnable {
 
         Message message;
         while((message = (Message) stream.readObject()) != null) {
-            dispatcher.handleMessage(message, null);
+            messageHandler.handleMessage(message, null);
             System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
 
             try {

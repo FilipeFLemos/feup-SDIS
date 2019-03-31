@@ -1,8 +1,8 @@
-package protocol;
+package protocols;
 
 import message.Message;
 import peer.PeerController;
-import receiver.Channel;
+import channels.Channel;
 
 import java.util.ArrayList;
 
@@ -24,7 +24,7 @@ public class RestoreInitiator implements Runnable{
     }
 
     /**
-      * Method to be executed when thread starts running. Executes the restore protocol as an initiator peer
+      * Method to be executed when thread starts running. Executes the restore protocols as an initiator peer
       */
     @Override
     public void run() {

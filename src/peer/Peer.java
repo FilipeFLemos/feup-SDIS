@@ -1,8 +1,8 @@
 package peer;
 
 import message.Message;
-import receiver.*;
-import protocol.*;
+import channels.*;
+import protocols.*;
 import interfaces.RMIProtocol;
 
 import java.io.*;
@@ -22,7 +22,7 @@ public class Peer implements RMIProtocol {
     private Channel MCChannel;
     private Channel MDBChannel;
     private Channel MDRChannel;
-    private Dispatcher dispatcher;
+    private MessageHandler messageHandler;
     private TCPSender TCPController;
     private int peerId;
     private String version;
@@ -36,7 +36,7 @@ public class Peer implements RMIProtocol {
      * @param args initialization arguments
      */
     private Peer(final String args[]) {
-        System.out.println("Starting Peer with protocol version " + args[0]);
+        System.out.println("Starting Peer with protocols version " + args[0]);
         System.out.println("Starting Peer with ID " + args[1]);
         version = args[0];
         peerId = Integer.parseInt(args[1]);
@@ -51,7 +51,7 @@ public class Peer implements RMIProtocol {
         if (!loadPeerController())
             this.controller = new PeerController(version, peerId);
 
-        this.dispatcher = new Dispatcher(this);
+        this.messageHandler = new MessageHandler(this);
 
         // save peerController data every 3 seconds
         threadPool.scheduleAtFixedRate(this::saveController, 0, 3, TimeUnit.SECONDS);
@@ -61,7 +61,7 @@ public class Peer implements RMIProtocol {
     }
 
     // peer.Peer args
-    //<protocol version> <peer id> <service access point> <MCChannel address> <MCChannel port> <MDBChannel address> <MDBChannel port> <MDRChannel address> <MDRChannel port>
+    //<protocols version> <peer id> <service access point> <MCChannel address> <MCChannel port> <MDBChannel address> <MDBChannel port> <MDRChannel address> <MDRChannel port>
     public static void main(final String args[]) throws IOException {
         if (args.length != 9) {
             System.out.println("Usage: java peer.Peer" +
@@ -129,9 +129,9 @@ public class Peer implements RMIProtocol {
     public void initChannels(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
         // subscribe to multicast channels
         try {
-            this.MCChannel = new Channel(MCAddress, MCPort, dispatcher);
-            this.MDBChannel = new Channel(MDBAddress, MDBPort, dispatcher);
-            this.MDRChannel = new Channel(MDRAddress, MDRPort, dispatcher);
+            this.MCChannel = new Channel(MCAddress, MCPort, messageHandler);
+            this.MDBChannel = new Channel(MDBAddress, MDBPort, messageHandler);
+            this.MDRChannel = new Channel(MDRAddress, MDRPort, messageHandler);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -174,7 +174,7 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Submits an initiator instance of the backup protocol to the thread pool
+     * Submits an initiator instance of the backup protocols to the thread pool
      *
      * @param filePath          filename of file to be backed up
      * @param replicationDegree desired replication degree
@@ -185,22 +185,22 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Submits an initiator instance of the restore protocol to the thread pool
+     * Submits an initiator instance of the restore protocols to the thread pool
      *
      * @param filePath filename of file to be restored
      */
     @Override
     public void restore(String filePath) {
         if (!version.equals("1.0")) {
-            System.out.println("Starting enhanced restore protocol");
-            threadPool.submit(new TCPReceiver(MDRPort, dispatcher));
+            System.out.println("Starting enhanced restore protocols");
+            threadPool.submit(new TCPReceiver(MDRPort, messageHandler));
         }
 
         threadPool.submit(new RestoreInitiator(controller, filePath, MCChannel));
     }
 
     /**
-     * Submits an initiator instance of the delete protocol to the thread pool
+     * Submits an initiator instance of the delete protocols to the thread pool
      *
      * @param filePath filename of file to be deleted
      */
@@ -210,7 +210,7 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Submits an initiator instance of the reclaim protocol to the thread pool
+     * Submits an initiator instance of the reclaim protocols to the thread pool
      *
      * @param space new amount of reserved space for peer, in kB
      */

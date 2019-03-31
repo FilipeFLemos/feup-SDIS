@@ -1,4 +1,4 @@
-package receiver;
+package channels;
 
 import message.Message;
 import utils.Utils;
@@ -31,9 +31,9 @@ public class Channel {
     private MulticastSocket socket;
 
     /**
-     * The Dispatcher.
+     * The MessageHandler.
      */
-    private Dispatcher dispatcher;
+    private MessageHandler messageHandler;
 
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_RECEIVER_SENDING_THREADS);
 
@@ -42,10 +42,10 @@ public class Channel {
      *
      * @param address    the address
      * @param port       the port
-     * @param dispatcher the dispatcher
+     * @param messageHandler the messageHandler
      * @throws IOException the io exception
      */
-    public Channel(String address, int port, Dispatcher dispatcher) throws IOException {
+    public Channel(String address, int port, MessageHandler messageHandler) throws IOException {
         // create multicast socket
         this.socket = new MulticastSocket(port);
         this.socket.setTimeToLive(1);
@@ -53,7 +53,7 @@ public class Channel {
         this.address = InetAddress.getByName(address);
         this.port = port;
 
-        this.dispatcher = dispatcher;
+        this.messageHandler = messageHandler;
 
         //join multicast group
         socket.joinGroup(this.address);
@@ -74,8 +74,9 @@ public class Channel {
                 DatagramPacket multicastPacket = new DatagramPacket(mbuf, mbuf.length);
 
                 try {
-                    this.socket.receive(multicastPacket);
-                    this.dispatcher.handleMessage(multicastPacket.getData(), multicastPacket.getLength(), multicastPacket.getAddress());
+                    socket.receive(multicastPacket);
+                    Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
+                    messageHandler.handleMessage(message, multicastPacket.getAddress());
                 } catch (IOException e) {
                     System.out.println("Error receiving multicast message");
                     e.printStackTrace();

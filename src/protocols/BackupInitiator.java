@@ -1,8 +1,8 @@
-package protocol;
+package protocols;
 
 import message.Message;
 import peer.PeerController;
-import receiver.Channel;
+import channels.Channel;
 import utils.Globals;
 import utils.Utils;
 
@@ -41,7 +41,7 @@ public class BackupInitiator implements Runnable{
     }
 
     /**
-      * Method executed when thread starts running. Executes the backup protocol as an initiator peer.
+      * Method executed when thread starts running. Executes the backup protocols as an initiator peer.
       */
     @Override
     public void run() {

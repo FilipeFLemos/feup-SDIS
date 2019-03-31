@@ -1,7 +1,7 @@
-package protocol;
+package protocols;
 
 import message.Message;
-import receiver.Channel;
+import channels.Channel;
 import peer.PeerController;
 import utils.Globals;
 
@@ -12,7 +12,7 @@ public class BackupChunk implements Runnable {
     private PeerController peerController;
 
     /**
-      * Instantiates a new BackupChunk protocol
+      * Instantiates a new BackupChunk protocols
       *
       * @param peerController the peer's peerController
       * @param chunk the target chunk
@@ -37,7 +37,7 @@ public class BackupChunk implements Runnable {
     }
 
     /**
-      * Method to be executed when thread starts running. Executes the backup protocol for a specific chunk as the initiator peer
+      * Method to be executed when thread starts running. Executes the backup protocols for a specific chunk as the initiator peer
       */
     @Override
     public void run() {

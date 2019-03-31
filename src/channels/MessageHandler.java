@@ -1,11 +1,11 @@
-package receiver;
+package channels;
 
 import message.ChunkInfo;
 import message.Message;
 import peer.FileChunk;
 import peer.Peer;
 import peer.PeerController;
-import protocol.BackupChunk;
+import protocols.BackupChunk;
 import utils.Globals;
 import utils.Utils;
 
@@ -13,61 +13,35 @@ import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.concurrent.*;
 
-public class Dispatcher {
+public class MessageHandler {
 
     private final int MAX_DISPATCHER_THREADS = 50;
-    private int peerID;
     private PeerController controller;
     private Peer peer;
 
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_DISPATCHER_THREADS);
 
     /**
-     * Instantiates a new Dispatcher.
+     * Instantiates a new MessageHandler.
      *
      */
-    public Dispatcher(Peer peer) {
-        this.peerID = peer.getPeerId();
-        this.controller = peer.getController();
+    public MessageHandler(Peer peer) {
         this.peer = peer;
+        this.controller = peer.getController();
     }
 
     /**
-      * Handles a message.
+      * Handles a message and sends it to the thread pool.
+      * Ignores messages sent my itself.
       *
       * @param message message to be handled
-      * @param address address used in getchunk message handling
+      * @param address address used in GETCHUNK message (TCP address). Unless the peer is enhanced, this field is always
+      * null.
       */
     public void handleMessage(Message message, InetAddress address) {
-        //Ignore messages from self
-        if(message.getSenderId().equals(this.peerID))
+        if(message.getSenderId().equals(peer.getPeerId()))
             return;
 
-        dispatchMessage(message, address);
-    }
-
-    /**
-     * Handles a message.
-     *
-     * @param buf  the buf representing the message
-     * @param size the message's size
-     * @param address address used in getchunk message handling
-     */
-    public void handleMessage(byte[] buf, int size, InetAddress address) {
-        Message message = new Message(buf, size);
-
-        if(message.getSenderId().equals(this.peerID))
-            return;
-        dispatchMessage(message, address);
-    }
-
-    /**
-      * Dispatches a message handler to the thread pool
-      *
-      * @param message message to be dispatched
-      * @param address address used in getchunk message dispatch
-      */
-    public void dispatchMessage(Message message, InetAddress address) {
         int randomWait;
 
         switch(message.getMessageType()) {
@@ -147,7 +121,7 @@ public class Dispatcher {
         else
             System.out.println("Already stored chunk, sending STORED anyway.");
 
-        Message storedMessage = new Message(message.getVersion(), peerID, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
+        Message storedMessage = new Message(message.getVersion(), peer.getPeerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
 
         peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
@@ -203,7 +177,7 @@ public class Dispatcher {
      * is aborted. If the peer does not have any or a particular stored CHUNK for this file, the operation is aborted.
      *
      * @param message the message
-     * @param sourceAddress address used for TCP connection in enhanced version of protocol
+     * @param sourceAddress address used for TCP connection in enhanced version of protocols
      */
     public void handleGETCHUNK(Message message, InetAddress sourceAddress) {
         System.out.println("Received GetChunk Message: " + message.getChunkNo());
@@ -265,7 +239,7 @@ public class Dispatcher {
     }
 
     /**
-     * Handles a REMOVED message. If this action leads to an unsatisfied replication degree, a new backup protocol for
+     * Handles a REMOVED message. If this action leads to an unsatisfied replication degree, a new backup protocols for
      * the chunk must be initiated. However, it must wait a random interval of [0-400]ms to check if the degree was
      * satisfied before taking action.
      *

@@ -1,9 +1,9 @@
-package protocol;
+package protocols;
 
 import message.Message;
 import peer.FileChunk;
 import peer.PeerController;
-import receiver.Channel;
+import channels.Channel;
 import storage.FileSystem;
 
 public class ReclaimInitiator implements Runnable{
@@ -24,7 +24,7 @@ public class ReclaimInitiator implements Runnable{
     }
 
     /**
-      * Method to be executed when thred starts running. Executes the reclaim protocol as an initiator peer
+      * Method to be executed when thred starts running. Executes the reclaim protocols as an initiator peer
       */
     @Override
     public void run() {
@@ -35,7 +35,7 @@ public class ReclaimInitiator implements Runnable{
     }
 
     /**
-     * Tries to reclaim some local space (executes the reclaim protocol)
+     * Tries to reclaim some local space (executes the reclaim protocols)
      *
      * @param targetSpaceKb the target space, in kB
      * @return true
