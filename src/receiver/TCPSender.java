@@ -10,20 +10,19 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class TCPSocketController {
-
-    private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
-
-    private ConcurrentHashMap<InetAddress, Socket> sockets;
+public class TCPSender {
 
     private int port;
+    private ConcurrentHashMap<InetAddress, Socket> sockets;
+    private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
+
 
     /**
-      * Instantiates a new TCPSocketController
+      * Instantiates a new TCPSender
       *
       * @param port controller port
       */
-    public TCPSocketController(int port) {
+    public TCPSender(int port) {
         this.port = port;
         sockets = new ConcurrentHashMap<>();
     }
@@ -38,23 +37,35 @@ public class TCPSocketController {
         threadPool.submit(() -> {
             Socket socket = null;
 
-            try {
-                socket = sockets.getOrDefault(address, new Socket(address, port));
-                if(socket.isClosed())
-                    socket = new Socket(address, port);
-            } catch (IOException e) {
-                e.printStackTrace();
+            if(sockets.containsKey(address)){
+                socket = sockets.get(address);
+                if(socket.isClosed()){
+                    sockets.remove(socket);
+                    socket = null;
+                }
             }
 
-            ObjectOutputStream stream = null;
+            if(socket == null){
+                try {
+                    socket = new Socket(address, port);
+                    sockets.put(address, socket);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+
             try {
-                stream = new ObjectOutputStream(socket.getOutputStream());
+                ObjectOutputStream stream = new ObjectOutputStream(socket.getOutputStream());
                 stream.writeObject(message);
                 System.out.println("Sent CHUNK message " + message.getChunkNo() + " via TCP");
             } catch (IOException e) {
                 System.out.println("Closing TCP socket...");
-                try { socket.close(); }
-                catch (IOException e1) { }
+                try {
+                    socket.close();
+                }
+                catch (IOException ex) {
+                    ex.printStackTrace();
+                }
             }
         });
     }

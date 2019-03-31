@@ -10,7 +10,7 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class SocketReceiver implements Runnable {
+public class TCPReceiver implements Runnable {
 
     private ServerSocket serverSocket;
 
@@ -24,7 +24,7 @@ public class SocketReceiver implements Runnable {
       * @param port receiver port
       * @param dispatcher receiver dispatcher
       */
-    public SocketReceiver(int port, Dispatcher dispatcher) {
+    public TCPReceiver(int port, Dispatcher dispatcher) {
         this.dispatcher = dispatcher;
         try {
             this.serverSocket = new ServerSocket(port);
@@ -44,9 +44,7 @@ public class SocketReceiver implements Runnable {
                 threadPool.submit(() -> {
                     try {
                         socketHandler(socket);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
+                    } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
                     }
                 });
