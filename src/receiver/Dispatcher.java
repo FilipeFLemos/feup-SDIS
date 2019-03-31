@@ -27,7 +27,7 @@ public class Dispatcher {
      *
      */
     public Dispatcher(Peer peer) {
-        this.peerID = controller.getPeerId();
+        this.peerID = peer.getPeerId();
         this.controller = peer.getController();
         this.peer = peer;
     }
