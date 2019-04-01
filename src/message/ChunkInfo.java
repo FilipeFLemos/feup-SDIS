@@ -6,53 +6,35 @@ import java.util.ArrayList;
 public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
 
     private static final long serialVersionUID = 1L;
-    
     private int currentReplicationDeg;
     private int desiredReplicationDeg;
     private ArrayList<Integer> peersWithChunk;
 
-    /**
-     * Instantiates a new Chunk info.
-     *
-     * @param desiredReplicationDeg the desired rep degree
-     * @param currentReplicationDeg  the actual rep degree
-     */
     public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg) {
         this.desiredReplicationDeg = desiredReplicationDeg;
         this.currentReplicationDeg = currentReplicationDeg;
         this.peersWithChunk = new ArrayList<>();
     }
 
-    /**
-     * Gets actual replication degree.
-     *
-     * @return the actual replication degree
-     */
+
     public int getCurrentReplicationDeg() {
         return currentReplicationDeg;
     }
 
-    /**
-     * Gets desired replication degree.
-     *
-     * @return the desired replication degree
-     */
     public int getDesiredReplicationDeg() {
         return desiredReplicationDeg;
     }
 
-    /**
-     * Increment actual replication degree.
-     */
-    public void incActualReplicationDegree() {
+    public void increaseCurrentRepDeg() {
         currentReplicationDeg++;
     }
 
-    /**
-     * Decrement actual replication degree.
-     */
-    public void decreaseCurrentReplicationDeg() {
+    public void decreaseCurrentRepDeg() {
         currentReplicationDeg--;
+    }
+
+    public boolean achievedDesiredRepDeg() {
+        return currentReplicationDeg >= desiredReplicationDeg;
     }
 
     /**
@@ -60,17 +42,17 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      *
      * @return the degree satisfaction
      */
-    public int getDegreeSatisfaction() {
+    private int getDegreeSatisfaction() {
         return currentReplicationDeg - desiredReplicationDeg;
     }
 
     /**
-     * Checks if observed replication degree has reached the desired level.
+     * Add peer that backs up the chunk.
      *
-     * @return the boolean
+     * @param peerID the peer id
      */
-    public boolean isDegreeSatisfied() {
-        return currentReplicationDeg >= desiredReplicationDeg;
+    public void addPeer(int peerID) {
+        peersWithChunk.add(peerID);
     }
 
     /**
@@ -81,15 +63,6 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      */
     public boolean isBackedUpByPeer(int peerID) {
         return peersWithChunk.contains(peerID);
-    }
-
-    /**
-     * Add peer that backs up the chunk.
-     *
-     * @param peerID the peer id
-     */
-    public void addPeer(int peerID) {
-        peersWithChunk.add(peerID);
     }
 
     /**

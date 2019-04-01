@@ -24,7 +24,7 @@ public class Peer implements RMIProtocol {
     private Channel MDRChannel;
     private MessageHandler messageHandler;
     private TCPSender TCPController;
-    private int peerId;
+    private int serverId;
     private String version;
     private PeerController controller;
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_INITIATOR_THREADS);
@@ -39,7 +39,7 @@ public class Peer implements RMIProtocol {
         System.out.println("Starting Peer with protocols version " + args[0]);
         System.out.println("Starting Peer with ID " + args[1]);
         version = args[0];
-        peerId = Integer.parseInt(args[1]);
+        serverId = Integer.parseInt(args[1]);
 
         String[] serviceAccessPoint = parseRMI(true, args[2]);
         if (serviceAccessPoint == null) {
@@ -49,7 +49,7 @@ public class Peer implements RMIProtocol {
         initRMI(args[1]);
 
         if (!loadPeerController())
-            this.controller = new PeerController(version, peerId);
+            this.controller = new PeerController(version, serverId);
 
         this.messageHandler = new MessageHandler(this);
 
@@ -100,7 +100,7 @@ public class Peer implements RMIProtocol {
      */
     private boolean loadPeerController() {
         try {
-            FileInputStream controllerFile = new FileInputStream("PeerController" + peerId + ".ser");
+            FileInputStream controllerFile = new FileInputStream("PeerController" + serverId + ".ser");
             ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
             this.controller = (PeerController) controllerObject.readObject();
             //this.controller.initChannels(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
@@ -145,7 +145,7 @@ public class Peer implements RMIProtocol {
      */
     private void saveController() {
         try {
-            FileOutputStream controllerFile = new FileOutputStream("PeerController" + peerId + ".ser");
+            FileOutputStream controllerFile = new FileOutputStream("PeerController" + serverId + ".ser");
             ObjectOutputStream controllerObject = new ObjectOutputStream(controllerFile);
             controllerObject.writeObject(this.controller);
             controllerObject.close();
@@ -164,8 +164,8 @@ public class Peer implements RMIProtocol {
     }
 
 
-    public int getPeerId() {
-        return peerId;
+    public int getServerId() {
+        return serverId;
     }
 
 

@@ -3,14 +3,17 @@ package storage;
 import message.Message;
 import utils.Globals;
 
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.concurrent.ConcurrentSkipListSet;
 
-public class FileSystem implements Serializable {
+public class StorageManager implements Serializable {
 
+    private static final long serialVersionUID = 1L;
     private String version;
     private int peerID;
     private long usedSpace;
@@ -19,7 +22,7 @@ public class FileSystem implements Serializable {
     private String backupDir;
     private String restoreDir;
 
-    public FileSystem(String version, int peerID) {
+    public StorageManager(String version, int peerID) {
         this.version = version;
         this.peerID = peerID;
         this.maxReservedSpace = Globals.MAX_PEER_STORAGE;
@@ -121,9 +124,10 @@ public class FileSystem implements Serializable {
      * Saves a file locally
      *
      * @param filePath the path to save the file
-     * @param body     the content to be saved
      */
-    public synchronized void saveFile(String filePath, byte[] body) {
+    public synchronized void saveFile(String filePath, ConcurrentSkipListSet<Message> fileChunks) {
+        byte[] body = mergeRestoredFile(fileChunks);
+
         Path path = Paths.get(this.restoreDir + "/" + filePath);
         System.out.println("FULL PATH: " + path.toAbsolutePath());
 
@@ -137,6 +141,24 @@ public class FileSystem implements Serializable {
         }
 
         System.out.println("File " + filePath + " restored successfully");
+    }
+
+    /**
+     * Merges a restored file into a single byte[]
+     *
+     * @return the file as a byte[]
+     */
+    public byte[] mergeRestoredFile(ConcurrentSkipListSet<Message> fileChunks) {
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+
+        try {
+            for(Message chunk : fileChunks)
+                stream.write(chunk.getBody());
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return stream.toByteArray();
     }
 
     /**

@@ -4,7 +4,7 @@ import message.Message;
 import peer.FileChunk;
 import peer.PeerController;
 import channels.Channel;
-import storage.FileSystem;
+import storage.StorageManager;
 
 public class ReclaimInitiator implements Runnable{
 
@@ -41,16 +41,16 @@ public class ReclaimInitiator implements Runnable{
      * @return true
      */
     private boolean reclaimSpace(long targetSpaceKb) {
-        FileSystem fileSystem = peerController.getFileSystem();
+        StorageManager storageManager = peerController.getStorageManager();
         long targetSpace = targetSpaceKb * 1000; //kbs to bytes
 
-        while(fileSystem.getUsedStorage() > targetSpace) {
+        while(storageManager.getUsedSpace() > targetSpace) {
             FileChunk toDelete = peerController.getMostSatisfiedChunk();
 
             // no more chunks to delete
             if (toDelete == null) {
                 System.out.println("Nothing to delete");
-                return fileSystem.getUsedStorage() < targetSpace;
+                return storageManager.getUsedSpace() < targetSpace;
             }
 
             String fileID = toDelete.getFileId();
@@ -59,7 +59,7 @@ public class ReclaimInitiator implements Runnable{
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
             peerController.deleteChunk(fileID, chunkIndex, true);
 
-            Message removedMessage = new Message(peerController.getVersion(), peerController.getPeerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
+            Message removedMessage = new Message(peerController.getVersion(), peerController.getServerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
             mcChannel.sendMessage(removedMessage);
         }
 

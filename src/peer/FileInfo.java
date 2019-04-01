@@ -7,10 +7,16 @@ public class FileInfo implements Serializable {
     private static final long serialVersionUID = 1L;
 	private String fileId;
     private Integer numberOfChunks;
+    private String filePath = "";
 
-    public FileInfo(String fileId, Integer numberOfChunks){
-        this.fileId = fileId;
-        this.numberOfChunks = numberOfChunks;
+	public FileInfo(String fileId, Integer numberOfChunks){
+		this.fileId = fileId;
+		this.numberOfChunks = numberOfChunks;
+	}
+
+    public FileInfo(String fileId, Integer numberOfChunks, String filePath){
+        this(fileId, numberOfChunks);
+        this.filePath = filePath;
     }
 
     public String getFileId() {
@@ -20,6 +26,10 @@ public class FileInfo implements Serializable {
     public Integer getNumberOfChunks() {
         return numberOfChunks;
     }
+
+	public String getFilePath() {
+		return filePath;
+	}
 
 	@Override
 	public int hashCode() {

@@ -95,7 +95,7 @@ public class BackupInitiator implements Runnable{
                     body = new byte[Globals.MAX_CHUNK_SIZE];
 
                 System.arraycopy(aux, 0, body, 0, body.length);
-                chunks.add(new Message(peerController.getVersion(), peerController.getPeerId(), fileId, body, Message.MessageType.PUTCHUNK, i, replicationDegree));
+                chunks.add(new Message(peerController.getVersion(), peerController.getServerId(), fileId, body, Message.MessageType.PUTCHUNK, i, replicationDegree));
             }
         } catch (IOException e) {
             e.printStackTrace();

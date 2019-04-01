@@ -1,11 +1,8 @@
 package peer;
 
 import message.*;
-import storage.FileSystem;
-import utils.Globals;
+import storage.StorageManager;
 
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -17,14 +14,10 @@ import java.util.concurrent.*;
  */
 public class PeerController implements Serializable {
 
-
     private static final long serialVersionUID = 1L;
     private String version;
-    private int peerId;
-    private FileSystem fileSystem;
-
-    private boolean backupEnhancement;
-    private boolean restoreEnhancement;
+    private int serverId;
+    private StorageManager storageManager;
 
     private ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths;
     private ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunksInfo;
@@ -33,14 +26,17 @@ public class PeerController implements Serializable {
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo;
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo_ENH;
 
-    //TODO: nao deveria ser fileinfo pq ele quer guardar o path e nao o id
-    private ConcurrentHashMap<String, FileInfo> fileInfoByRestoredFile;
-    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile;
-    private ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredByFileChunk;
 
-    public PeerController(String version, int peerId) {
+    private ConcurrentHashMap<String, FileInfo> restoredFileInfoByFileId;
+    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile;
+    private ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap;
+
+    private boolean backupEnhancement;
+    private boolean restoreEnhancement;
+
+    public PeerController(String version, int serverId) {
         this.version = version;
-        this.peerId = peerId;
+        this.serverId = serverId;
 
         backedUpFilesByPaths = new ConcurrentHashMap<>();
         backedUpChunksInfo = new ConcurrentHashMap<>();
@@ -49,9 +45,9 @@ public class PeerController implements Serializable {
         storedChunksInfo = new ConcurrentHashMap<>();
         storedChunksInfo_ENH = new ConcurrentHashMap<>();
 
-        fileInfoByRestoredFile = new ConcurrentHashMap<>();
+        restoredFileInfoByFileId = new ConcurrentHashMap<>();
         chunksByRestoredFile = new ConcurrentHashMap<>();
-        isBeingRestoredByFileChunk = new ConcurrentHashMap<>();
+        isBeingRestoredChunkMap = new ConcurrentHashMap<>();
 
 
         if(version.equals("1.0")) {
@@ -64,7 +60,7 @@ public class PeerController implements Serializable {
             restoreEnhancement = true;
         }
 
-        fileSystem = new FileSystem(version, peerId, Globals.MAX_PEER_STORAGE, Globals.PEER_FILESYSTEM_DIR);
+        storageManager = new StorageManager(version, serverId);
     }
 
     /**
@@ -91,7 +87,7 @@ public class PeerController implements Serializable {
      */
     public void listenForChunkReplies(Message chunk) {
         FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        isBeingRestoredByFileChunk.putIfAbsent(key, false);
+        isBeingRestoredChunkMap.putIfAbsent(key, false);
     }
 
     /**
@@ -172,23 +168,6 @@ public class PeerController implements Serializable {
     }
 
     /**
-     * Deletes a  chunk.
-     *
-     * @param fileID           the file id
-     * @param chunkIndex       the chunk index
-     * @param updateMaxStorage true if max storage value should be updated in the process
-     */
-    public void deleteChunk(String fileID, int chunkIndex, boolean updateMaxStorage) {
-        fileSystem.deleteChunk(fileID, chunkIndex, updateMaxStorage);
-
-        FileChunk key = new FileChunk(fileID, chunkIndex);
-        storedChunksInfo.remove(key);
-
-        if(storedChunksByFileId.get(fileID).contains(chunkIndex))
-            storedChunksByFileId.get(fileID).remove((Integer) chunkIndex);
-    }
-
-    /**
      * Add file to restoring files structure.
      *
      * @param fileID      the file id
@@ -197,7 +176,7 @@ public class PeerController implements Serializable {
      */
     public void addToRestoringFiles(String fileID, String filePath, int chunkAmount) {
         chunksByRestoredFile.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
-        fileInfoByRestoredFile.putIfAbsent(fileID, new FileInfo(filePath, chunkAmount));
+        restoredFileInfoByFileId.putIfAbsent(fileID, new FileInfo(fileID, chunkAmount, filePath));
     }
 
     /**
@@ -206,124 +185,21 @@ public class PeerController implements Serializable {
      * @param fileID the file id
      */
     public void saveRestoredFile(String fileID) {
-        byte[] fileBody = mergeRestoredFile(fileID);
-        //String filePath = restoringFilesInfo.get(fileID).getKey();
-        String filePath = fileInfoByRestoredFile.get(fileID).getFileId();
-
-        fileSystem.saveFile(filePath, fileBody);
-    }
-
-    /**
-     * Merges a restored file into a single byte[]
-     *
-     * @param fileID the file id
-     * @return the file as a byte[]
-     */
-    public byte[] mergeRestoredFile(String fileID) {
-        // get file's chunks
         ConcurrentSkipListSet<Message> fileChunks = chunksByRestoredFile.get(fileID);
-
-        ByteArrayOutputStream stream = new ByteArrayOutputStream();
-
-        try {
-            for(Message chunk : fileChunks)
-                stream.write(chunk.getBody());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        return stream.toByteArray();
+        String filePath = restoredFileInfoByFileId.get(fileID).getFilePath();
+        storageManager.saveFile(filePath, fileChunks);
     }
 
-
-    /**
-      * Represents the peer's state by printing all the information about the structures it keeps and its file system manager
-      */
-    @Override
-    public String toString() {
-        StringBuilder output = new StringBuilder();
-        output.append("Current Peer state:\n");
-
-        output.append("Files whose backup was initiated by this peer:\n");
-        for (Map.Entry<String, FileInfo> entry : backedUpFilesByPaths.entrySet()) {
-            output.append("\tPathname = " + entry.getKey() + ", fileID = " + entry.getValue().getFileId()+"\n");
-
-            FileChunk firstChunkInfo = new FileChunk(entry.getValue().getFileId(), 0);
-            output.append("\t\tDesired replication degree: " + backedUpChunksInfo.get(firstChunkInfo).getDesiredReplicationDeg() + "\n");
-            output.append("\t\tChunks:\n");
-
-            for(int chunkNr = 0; chunkNr < entry.getValue().getNumberOfChunks(); ++chunkNr) {
-                FileChunk chunkEntry = new FileChunk(entry.getValue().getFileId(), chunkNr);
-                output.append("\t\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + backedUpChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
-            }
-            output.append("\n");
-        }
-
-        output.append("Chunks stored by this peer:\n");
-
-        for (Map.Entry<String, ArrayList<Integer>> entry : storedChunksByFileId.entrySet()) {
-            output.append("\tBacked up chunks of file with fileID " + entry.getKey() + ":\n");
-
-            for (int chunkNr : entry.getValue()) {
-                //Pair<String, Integer> chunkEntry = new Pair<>(entry.getKey(), chunkNr);
-                FileChunk chunkEntry = new FileChunk(entry.getKey(), chunkNr);
-                //TODO: Add chunk size here
-                output.append("\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + storedChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
-            }
-            output.append("\n");
-        }
-
-        output.append("Max storage capacity (in kB): " + fileSystem.getMaxStorage()/1000 + "\n");
-        output.append("Current storage capacity used (in kB): " + fileSystem.getUsedStorage()/1000 + "\n");
-        return output.toString();
+    public void startStoringChunks(Message message) {
+        storedChunksByFileId.putIfAbsent(message.getFileId(), new ArrayList<>());
+        FileChunk chunkInfoKey = new FileChunk(message.getFileId(), message.getChunkNo());
+        storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(message.getReplicationDeg(), 1));
     }
 
-    public FileSystem getFileSystem() {
-        return fileSystem;
-    }
-
-    public String getVersion() {
-        return version;
-    }
-
-    public int getPeerId() {
-        return peerId;
-    }
-
-    public boolean isBackupEnhancement() {
-        return backupEnhancement;
-    }
-
-    public boolean isRestoreEnhancement() {
-        return restoreEnhancement;
-    }
-
-    public ConcurrentHashMap<String, ArrayList<Integer>> getStoredChunks() {
-        return storedChunksByFileId;
-    }
-
-    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo() {
-        return storedChunksInfo;
-    }
-
-    public ConcurrentHashMap<FileChunk, Boolean> getIsBeingRestoredByFileChunk() {
-        return isBeingRestoredByFileChunk;
-    }
-
-    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo_ENH() {
-        return storedChunksInfo_ENH;
-    }
-
-    public ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> getRestoringFiles() {
-        return chunksByRestoredFile;
-    }
-
-    public ConcurrentHashMap<String, FileInfo> getRestoringFilesInfo() {
-        return fileInfoByRestoredFile;
-    }
-
-    public void removeStoredChunksFile(String fileId) {
-        storedChunksByFileId.remove(fileId);
+    public void addStoredChunk(Message message) {
+        ArrayList<Integer> storedChunks = storedChunksByFileId.get(message.getFileId());
+        storedChunks.add(message.getChunkNo());
+        storedChunksByFileId.put(message.getFileId(), storedChunks);
     }
 
     public void updateChunksInfo(FileChunk key, Message message) {
@@ -359,30 +235,140 @@ public class PeerController implements Serializable {
         ChunkInfo chunkInfo;
         if(map.containsKey(key) && !map.get(key).isBackedUpByPeer(message.getSenderId())) {
             chunkInfo = map.get(key);
-            chunkInfo.incActualReplicationDegree();
+            chunkInfo.increaseCurrentRepDeg();
             chunkInfo.addPeer(message.getSenderId());
             map.put(key, chunkInfo);
             System.out.println("Updated with received store message");
         }
     }
 
-    public void startStoringChunks(Message message) {
-        storedChunksByFileId.putIfAbsent(message.getFileId(), new ArrayList<>());
-        //Pair<String, Integer> chunkInfoKey = new Pair<>(message.getFileId(), message.getChunkNo());
-        FileChunk chunkInfoKey = new FileChunk(message.getFileId(), message.getChunkNo());
-        storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(message.getReplicationDeg(), 1));
+    public void setIsBeingRestored(FileChunk key) {
+        isBeingRestoredChunkMap.put(key, true);
     }
 
-    public void addGetChunkRequestInfo(FileChunk key) {
-        isBeingRestoredByFileChunk.put(key, true);
+    public void addRestoredFileChunks(Message message) {
+        String fileId = message.getFileId();
+        ConcurrentSkipListSet<Message> chunks = chunksByRestoredFile.get(fileId);
+        chunks.add(message);
+        chunksByRestoredFile.put(fileId, chunks);
+    }
+
+    public boolean hasRestoredAllChunks(String fileId){
+        int currentSize = chunksByRestoredFile.get(fileId).size();
+        int desiredSize = restoredFileInfoByFileId.get(fileId).getNumberOfChunks();
+
+        return currentSize == desiredSize;
     }
 
     public void stopRestoringFile(String fileId) {
         chunksByRestoredFile.remove(fileId);
-        fileInfoByRestoredFile.remove(fileId);
+        restoredFileInfoByFileId.remove(fileId);
     }
 
-    public void addRestoredFile(Message message, ConcurrentSkipListSet<Message> fileRestoredChunks) {
-        chunksByRestoredFile.put(message.getFileId(), fileRestoredChunks);
+    public void removeChunk(FileChunk fileChunk) {
+        isBeingRestoredChunkMap.remove(fileChunk);
+    }
+
+    /**
+     * Deletes a  chunk.
+     *
+     * @param fileId           the file id
+     * @param chunkNo       the chunk index
+     * @param updateMaxStorage true if max storage value should be updated in the process
+     */
+    public void deleteChunk(String fileId, int chunkNo, boolean updateMaxStorage) {
+        storageManager.deleteChunk(fileId, chunkNo, updateMaxStorage);
+
+        FileChunk fileChunk = new FileChunk(fileId, chunkNo);
+        storedChunksInfo.remove(fileChunk);
+
+        if(storedChunksByFileId.get(fileId).contains(chunkNo)) {
+            storedChunksByFileId.get(fileId).remove((Integer) chunkNo);
+        }
+    }
+
+    public void removeStoredChunksFile(String fileId) {
+        storedChunksByFileId.remove(fileId);
+    }
+
+    public StorageManager getStorageManager() {
+        return storageManager;
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public int getServerId() {
+        return serverId;
+    }
+
+    public boolean isBackupEnhancement() {
+        return backupEnhancement;
+    }
+
+    public boolean isRestoreEnhancement() {
+        return restoreEnhancement;
+    }
+
+    public ConcurrentHashMap<String, ArrayList<Integer>> getStoredChunksByFileId() {
+        return storedChunksByFileId;
+    }
+
+    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo() {
+        return storedChunksInfo;
+    }
+
+    public ConcurrentHashMap<FileChunk, Boolean> getIsBeingRestoredChunkMap() {
+        return isBeingRestoredChunkMap;
+    }
+
+    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo_ENH() {
+        return storedChunksInfo_ENH;
+    }
+
+    public ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> getChunksByRestoredFile() {
+        return chunksByRestoredFile;
+    }
+
+    /**
+     * Represents the peer's state by printing all the information about the structures it keeps and its file system manager
+     */
+    @Override
+    public String toString() {
+        StringBuilder output = new StringBuilder();
+        output.append("Current Peer state:\n");
+
+        output.append("Files whose backup was initiated by this peer:\n");
+        for (Map.Entry<String, FileInfo> entry : backedUpFilesByPaths.entrySet()) {
+            output.append("\tPathname = " + entry.getKey() + ", fileID = " + entry.getValue().getFileId()+"\n");
+
+            FileChunk firstChunkInfo = new FileChunk(entry.getValue().getFileId(), 0);
+            output.append("\t\tDesired replication degree: " + backedUpChunksInfo.get(firstChunkInfo).getDesiredReplicationDeg() + "\n");
+            output.append("\t\tChunks:\n");
+
+            for(int chunkNr = 0; chunkNr < entry.getValue().getNumberOfChunks(); ++chunkNr) {
+                FileChunk chunkEntry = new FileChunk(entry.getValue().getFileId(), chunkNr);
+                output.append("\t\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + backedUpChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
+            }
+            output.append("\n");
+        }
+
+        output.append("Chunks stored by this peer:\n");
+
+        for (Map.Entry<String, ArrayList<Integer>> entry : storedChunksByFileId.entrySet()) {
+            output.append("\tBacked up chunks of file with fileID " + entry.getKey() + ":\n");
+
+            for (int chunkNr : entry.getValue()) {
+                FileChunk chunkEntry = new FileChunk(entry.getKey(), chunkNr);
+                //TODO: Add chunk size here
+                output.append("\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + storedChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
+            }
+            output.append("\n");
+        }
+
+        output.append("Max storage capacity (in kB): " + storageManager.getMaxReservedSpace()/1000 + "\n");
+        output.append("Current storage capacity used (in kB): " + storageManager.getUsedSpace()/1000 + "\n");
+        return output.toString();
     }
 }
