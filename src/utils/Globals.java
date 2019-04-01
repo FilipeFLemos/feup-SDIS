@@ -42,8 +42,4 @@ public class Globals {
      */
     public static int PEER_CONTROLLER_SAVING_RATE = 3;
 
-    /**
-     * Directory where this host's peer files are saved
-     */
-    public static String PEER_FILESYSTEM_DIR = "peers";
 }
