@@ -1,8 +1,8 @@
 package channels;
 
-import message.ChunkInfo;
+import storage.ChunkInfo;
 import message.Message;
-import peer.FileChunk;
+import storage.FileChunk;
 import peer.Peer;
 import peer.PeerController;
 import protocols.BackupChunk;

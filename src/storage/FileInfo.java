@@ -1,4 +1,4 @@
-package peer;
+package storage;
 
 import java.io.Serializable;
 

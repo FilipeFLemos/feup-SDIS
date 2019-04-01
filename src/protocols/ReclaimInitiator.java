@@ -1,7 +1,7 @@
 package protocols;
 
 import message.Message;
-import peer.FileChunk;
+import storage.FileChunk;
 import peer.PeerController;
 import channels.Channel;
 import storage.StorageManager;

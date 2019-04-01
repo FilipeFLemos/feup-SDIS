@@ -1,6 +1,9 @@
 package peer;
 
 import message.*;
+import storage.ChunkInfo;
+import storage.FileChunk;
+import storage.FileInfo;
 import storage.StorageManager;
 import java.io.Serializable;
 import java.util.ArrayList;
