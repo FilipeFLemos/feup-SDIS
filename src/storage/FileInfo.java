@@ -57,15 +57,12 @@ public class FileInfo implements Serializable {
 
 		FileInfo other = (FileInfo) obj;
 
-		if (numberOfChunks != other.numberOfChunks)
+		if (!numberOfChunks.equals(other.numberOfChunks))
 			return false;
 
 		if (fileId == null) {
-			if (other.fileId != null)
-				return false;
-		} else if (!fileId.equals(other.fileId))
-			return false;
+			return other.fileId == null;
+		} else return fileId.equals(other.fileId);
 
-		return true;
 	}
 }

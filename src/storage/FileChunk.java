@@ -47,15 +47,12 @@ public class FileChunk implements Serializable {
 
 		FileChunk other = (FileChunk) obj;
 
-		if (chunkNo != other.chunkNo)
+		if (!chunkNo.equals(other.chunkNo))
 			return false;
 
 		if (fileId == null) {
-			if (other.fileId != null)
-				return false;
-		} else if (!fileId.equals(other.fileId))
-			return false;
+			return other.fileId == null;
+		} else return fileId.equals(other.fileId);
 
-		return true;
 	}
 }
