@@ -59,7 +59,7 @@ public class MessageHandler {
                 threadPool.submit(() -> handleSTORED(message));
                 break;
             case GETCHUNK:
-                controller.listenForChunkReplies(message);
+                controller.listenForCHUNK(message);
                 randomWait = Utils.getRandomBetween(0, Globals.MAX_CHUNK_WAITING_TIME);
                 threadPool.schedule(() -> handleGETCHUNK(message, address), randomWait, TimeUnit.MILLISECONDS);
                 break;

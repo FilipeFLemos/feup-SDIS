@@ -66,8 +66,8 @@ public class PeerController implements Serializable {
      * @param chunk
      */
     public void listenForSTORED_ENH(Message chunk) {
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        storedChunksInfo_ENH.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
+        FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
+        storedChunksInfo_ENH.putIfAbsent(fileChunk, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**
@@ -75,17 +75,17 @@ public class PeerController implements Serializable {
      * @param chunk the chunk
      */
     public void listenForSTORED(Message chunk) {
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        backedUpChunksInfo.putIfAbsent(key, new ChunkInfo(chunk.getReplicationDeg(), 0));
+        FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
+        backedUpChunksInfo.putIfAbsent(fileChunk, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**
-     * Starts listening to generic stored messages
+     * Starts listening to generic chunk messages
      * @param chunk
      */
-    public void listenForChunkReplies(Message chunk) {
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        isBeingRestoredChunkMap.putIfAbsent(key, false);
+    public void listenForCHUNK(Message chunk) {
+        FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
+        isBeingRestoredChunkMap.putIfAbsent(fileChunk, false);
     }
 
     /**
@@ -173,21 +173,10 @@ public class PeerController implements Serializable {
         restoredFileInfoByFileId.putIfAbsent(fileID, new FileInfo(fileID, chunkAmount, filePath));
     }
 
-    /**
-     * Saves a restored file locally.
-     *
-     * @param fileID the file id
-     */
-    public void saveRestoredFile(String fileID) {
-        ConcurrentSkipListSet<Message> fileChunks = chunksByRestoredFile.get(fileID);
-        String filePath = restoredFileInfoByFileId.get(fileID).getFilePath();
-        storageManager.saveFile(filePath, fileChunks);
-    }
-
     public void startStoringChunks(Message message) {
         storedChunksByFileId.putIfAbsent(message.getFileId(), new ArrayList<>());
-        FileChunk chunkInfoKey = new FileChunk(message.getFileId(), message.getChunkNo());
-        storedChunksInfo.putIfAbsent(chunkInfoKey, new ChunkInfo(message.getReplicationDeg(), 1));
+        FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
+        storedChunksInfo.putIfAbsent(fileChunk, new ChunkInfo(message.getReplicationDeg(), 1));
     }
 
     public void addStoredChunk(Message message) {
@@ -252,6 +241,17 @@ public class PeerController implements Serializable {
         int desiredSize = restoredFileInfoByFileId.get(fileId).getNumberOfChunks();
 
         return currentSize == desiredSize;
+    }
+
+    /**
+     * Saves a restored file locally.
+     *
+     * @param fileID the file id
+     */
+    public void saveRestoredFile(String fileID) {
+        ConcurrentSkipListSet<Message> fileChunks = chunksByRestoredFile.get(fileID);
+        String filePath = restoredFileInfoByFileId.get(fileID).getFilePath();
+        storageManager.saveFile(filePath, fileChunks);
     }
 
     public void stopRestoringFile(String fileId) {
