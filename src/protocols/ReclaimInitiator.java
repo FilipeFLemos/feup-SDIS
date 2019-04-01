@@ -45,7 +45,7 @@ public class ReclaimInitiator implements Runnable{
         long targetSpace = targetSpaceKb * 1000; //kbs to bytes
 
         while(storageManager.getUsedSpace() > targetSpace) {
-            FileChunk toDelete = peerController.getMostSatisfiedChunk();
+            FileChunk toDelete = peerController.getMostStoredChunk();
 
             // no more chunks to delete
             if (toDelete == null) {

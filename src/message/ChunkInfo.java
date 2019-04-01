@@ -3,7 +3,7 @@ package message;
 import java.io.Serializable;
 import java.util.ArrayList;
 
-public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
+public class ChunkInfo implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private int currentReplicationDeg;
@@ -38,21 +38,24 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
     }
 
     /**
-     * Gets the chunk's degree satisfaction
-     *
-     * @return the degree satisfaction
+     * Computes the difference between the current and the desired replication degree.
+     * @return The difference value
      */
-    private int getDegreeSatisfaction() {
+    public int getReplicationDegDifference(){
         return currentReplicationDeg - desiredReplicationDeg;
     }
 
     /**
      * Add peer that backs up the chunk.
      *
-     * @param peerID the peer id
+     * @param peerId the peer id
      */
-    public void addPeer(int peerID) {
-        peersWithChunk.add(peerID);
+    public void addPeer(int peerId) {
+        peersWithChunk.add(peerId);
+    }
+
+    public void removePeer(Integer peerId) {
+        peersWithChunk.remove(peerId);
     }
 
     /**
@@ -63,16 +66,6 @@ public class ChunkInfo implements Comparable<ChunkInfo>, Serializable {
      */
     public boolean isBackedUpByPeer(int peerID) {
         return peersWithChunk.contains(peerID);
-    }
-
-    /**
-      * Compares two ChunkInfo objects by their satisfaction degree (difference between actual and desired replication degree)
-      * @param o object to compare to
-      * @return difference between the two satisfaction degrees
-      */
-    @Override
-    public int compareTo(ChunkInfo o) {
-        return this.getDegreeSatisfaction() - o.getDegreeSatisfaction();
     }
 
 }

@@ -2,10 +2,8 @@ package peer;
 
 import message.*;
 import storage.StorageManager;
-
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.*;
 
@@ -16,7 +14,7 @@ public class PeerController implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String version;
-    private int serverId;
+    private Integer serverId;
     private StorageManager storageManager;
 
     private ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths;
@@ -145,26 +143,22 @@ public class PeerController implements Serializable {
         return fileInfo.getNumberOfChunks();
     }
 
-    /**
-     * Gets most satisfied chunk.
-     *
-     * @return the most satisfied chunk
-     */
-    public FileChunk getMostSatisfiedChunk() {
+    public FileChunk getMostStoredChunk() {
         if(storedChunksInfo.isEmpty()) {
             System.out.println("Stored chunks info is empty");
             return null;
         }
 
-        System.out.println("Getting max satisfied chunk");
-        ChunkInfo maxChunk = Collections.max(storedChunksInfo.values());
+        FileChunk bestChunk = null;
+        int max = -1;
 
-        for(Map.Entry<FileChunk, ChunkInfo> chunk : storedChunksInfo.entrySet())
-            if(chunk.getValue() == maxChunk)
-                return chunk.getKey();
-
-        System.out.println("Didn't find max chunk");
-        return null;
+        for (Map.Entry<FileChunk, ChunkInfo> chunk : storedChunksInfo.entrySet()) {
+            if(chunk.getValue().getReplicationDegDifference() > max){
+                max = chunk.getValue().getReplicationDegDifference();
+                bestChunk = chunk.getKey();
+            }
+        }
+        return bestChunk;
     }
 
     /**
@@ -280,7 +274,8 @@ public class PeerController implements Serializable {
         storageManager.deleteChunk(fileId, chunkNo, updateMaxStorage);
 
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
-        storedChunksInfo.remove(fileChunk);
+        ChunkInfo chunkInfo = storedChunksInfo.remove(fileChunk);
+        chunkInfo.removePeer(serverId);
 
         if(storedChunksByFileId.get(fileId).contains(chunkNo)) {
             storedChunksByFileId.get(fileId).remove((Integer) chunkNo);
