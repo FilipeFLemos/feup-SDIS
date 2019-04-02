@@ -8,12 +8,18 @@ public class ChunkInfo implements Serializable {
     private static final long serialVersionUID = 1L;
     private int currentReplicationDeg;
     private int desiredReplicationDeg;
+    private int size = 0;
     private ArrayList<Integer> peersWithChunk;
 
     public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg) {
         this.desiredReplicationDeg = desiredReplicationDeg;
         this.currentReplicationDeg = currentReplicationDeg;
         this.peersWithChunk = new ArrayList<>();
+    }
+
+    public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg, int size) {
+        this(desiredReplicationDeg, currentReplicationDeg);
+        this.size = size;
     }
 
 
@@ -43,6 +49,10 @@ public class ChunkInfo implements Serializable {
      */
     public int getReplicationDegDifference(){
         return currentReplicationDeg - desiredReplicationDeg;
+    }
+
+    public int getSize() {
+        return size;
     }
 
     /**

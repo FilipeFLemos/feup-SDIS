@@ -179,7 +179,7 @@ public class PeerState implements Serializable {
     public void startStoringChunks(Message message) {
         storedChunksByFileId.putIfAbsent(message.getFileId(), new ArrayList<>());
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
-        storedChunksInfo.putIfAbsent(fileChunk, new ChunkInfo(message.getReplicationDeg(), 1));
+        storedChunksInfo.putIfAbsent(fileChunk, new ChunkInfo(message.getReplicationDeg(), 1, message.getBody().length));
     }
 
     public void addStoredChunk(Message message) {
@@ -352,8 +352,7 @@ public class PeerState implements Serializable {
             output += "\n\t FileId: " + entry.getKey();
             for(int chunkNo : entry.getValue()){
                 ChunkInfo chunkInfo = storedChunksInfo.get(new FileChunk(entry.getKey(), chunkNo));
-                //TODO chunkSize
-                output += "\n\t\t Chunk No " + chunkNo + " - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
+                output += "\n\t\t Chunk No " + chunkNo + " (" + chunkInfo.getSize() +" kB) - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
             }
         }
 
