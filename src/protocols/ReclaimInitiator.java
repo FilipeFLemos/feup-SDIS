@@ -1,14 +1,14 @@
 package protocols;
 
 import message.Message;
+import peer.PeerState;
 import storage.FileChunk;
-import peer.PeerController;
 import channels.Channel;
 import storage.StorageManager;
 
 public class ReclaimInitiator implements Runnable{
 
-    private PeerController peerController;
+    private PeerState peerState;
     private long space;
     private Channel mcChannel;
 
@@ -17,8 +17,8 @@ public class ReclaimInitiator implements Runnable{
      *
      * @param space the space
      */
-    public ReclaimInitiator(PeerController peerController, long space, Channel mcChannel) {
-        this.peerController = peerController;
+    public ReclaimInitiator(PeerState peerState, long space, Channel mcChannel) {
+        this.peerState = peerState;
         this.space = space;
         this.mcChannel = mcChannel;
     }
@@ -41,11 +41,11 @@ public class ReclaimInitiator implements Runnable{
      * @return true
      */
     private boolean reclaimSpace(long targetSpaceKb) {
-        StorageManager storageManager = peerController.getStorageManager();
+        StorageManager storageManager = peerState.getStorageManager();
         long targetSpace = targetSpaceKb * 1000; //kbs to bytes
 
         while(storageManager.getUsedSpace() > targetSpace) {
-            FileChunk toDelete = peerController.getMostStoredChunk();
+            FileChunk toDelete = peerState.getMostStoredChunk();
 
             // no more chunks to delete
             if (toDelete == null) {
@@ -57,9 +57,9 @@ public class ReclaimInitiator implements Runnable{
             int chunkIndex = toDelete.getChunkNo();
 
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
-            peerController.deleteChunk(fileID, chunkIndex, true);
+            peerState.deleteChunk(fileID, chunkIndex, true);
 
-            Message removedMessage = new Message(peerController.getVersion(), peerController.getServerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
+            Message removedMessage = new Message(peerState.getVersion(), peerState.getServerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
             mcChannel.sendMessage(removedMessage);
         }
 

@@ -26,7 +26,7 @@ public class Peer implements RMIProtocol {
     private TCPSender TCPController;
     private int serverId;
     private String version;
-    private PeerController controller;
+    private PeerState controller;
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_INITIATOR_THREADS);
     private int MDRPort;
 
@@ -49,7 +49,7 @@ public class Peer implements RMIProtocol {
         initRMI(args[1]);
 
         if (!loadPeerController())
-            this.controller = new PeerController(version, serverId);
+            this.controller = new PeerState(version, serverId);
 
         this.messageHandler = new MessageHandler(this);
 
@@ -100,15 +100,15 @@ public class Peer implements RMIProtocol {
      */
     private boolean loadPeerController() {
         try {
-            FileInputStream controllerFile = new FileInputStream("PeerController" + serverId + ".ser");
+            FileInputStream controllerFile = new FileInputStream("PeerState" + serverId + ".ser");
             ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
-            this.controller = (PeerController) controllerObject.readObject();
+            this.controller = (PeerState) controllerObject.readObject();
             //this.controller.initChannels(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
             controllerObject.close();
             controllerFile.close();
             return true;
         } catch (FileNotFoundException e) {
-            System.out.println("No pre-existing PeerController found, starting new one");
+            System.out.println("No pre-existing PeerState found, starting new one");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -145,13 +145,13 @@ public class Peer implements RMIProtocol {
      */
     private void saveController() {
         try {
-            FileOutputStream controllerFile = new FileOutputStream("PeerController" + serverId + ".ser");
+            FileOutputStream controllerFile = new FileOutputStream("PeerState" + serverId + ".ser");
             ObjectOutputStream controllerObject = new ObjectOutputStream(controllerFile);
             controllerObject.writeObject(this.controller);
             controllerObject.close();
             controllerFile.close();
         } catch (FileNotFoundException e) {
-            System.out.println("PeerController not found");
+            System.out.println("PeerState not found");
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
@@ -169,7 +169,7 @@ public class Peer implements RMIProtocol {
     }
 
 
-    public PeerController getController() {
+    public PeerState getController() {
         return controller;
     }
 
@@ -224,7 +224,7 @@ public class Peer implements RMIProtocol {
      */
     @Override
     public void state() {
-        System.out.println(controller.toString());
+        System.out.println(controller.getPeerState());
     }
 
     public Channel getMCChannel() {

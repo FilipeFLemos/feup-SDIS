@@ -1,10 +1,10 @@
 package channels;
 
+import peer.PeerState;
 import storage.ChunkInfo;
 import message.Message;
 import storage.FileChunk;
 import peer.Peer;
-import peer.PeerController;
 import protocols.BackupChunk;
 import utils.Globals;
 import utils.Utils;
@@ -16,7 +16,7 @@ import java.util.concurrent.*;
 public class MessageHandler {
 
     private final int MAX_DISPATCHER_THREADS = 50;
-    private PeerController controller;
+    private PeerState controller;
     private Peer peer;
 
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_DISPATCHER_THREADS);

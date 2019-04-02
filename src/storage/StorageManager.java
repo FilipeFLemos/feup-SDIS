@@ -175,8 +175,8 @@ public class StorageManager implements Serializable {
         return usedSpace;
     }
 
-    public long getMaxReservedSpace() {
-        return maxReservedSpace;
+    public long getAvailableSpace() {
+        return maxReservedSpace - usedSpace;
     }
 
     public void increaseUsedSpace(long amount){

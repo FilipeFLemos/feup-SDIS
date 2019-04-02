@@ -13,7 +13,7 @@ import java.util.concurrent.*;
 /**
   * Peer controller, where the peer's state is kept
  */
-public class PeerController implements Serializable {
+public class PeerState implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String version;
@@ -35,7 +35,7 @@ public class PeerController implements Serializable {
     private boolean backupEnhancement;
     private boolean restoreEnhancement;
 
-    public PeerController(String version, int serverId) {
+    public PeerState(String version, int serverId) {
         this.version = version;
         this.serverId = serverId;
 
@@ -329,44 +329,35 @@ public class PeerController implements Serializable {
         return chunksByRestoredFile;
     }
 
-    /**
-     * Represents the peer's state by printing all the information about the structures it keeps and its file system manager
-     */
-    @Override
-    public String toString() {
-        StringBuilder output = new StringBuilder();
-        output.append("Current Peer state:\n");
-
-        output.append("Files whose backup was initiated by this peer:\n");
+    public String getPeerState(){
+        String output = "";
+        output += "Files backed up:";
         for (Map.Entry<String, FileInfo> entry : backedUpFilesByPaths.entrySet()) {
-            output.append("\tPathname = " + entry.getKey() + ", fileID = " + entry.getValue().getFileId()+"\n");
+            FileInfo fileInfo = entry.getValue();
+            output += "\n\t FileId: " + entry.getKey();
+            output += "\n\t Path: " + fileInfo.getFilePath();
 
-            FileChunk firstChunkInfo = new FileChunk(entry.getValue().getFileId(), 0);
-            output.append("\t\tDesired replication degree: " + backedUpChunksInfo.get(firstChunkInfo).getDesiredReplicationDeg() + "\n");
-            output.append("\t\tChunks:\n");
+            for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
+                ChunkInfo chunkInfo =  backedUpChunksInfo.get(new FileChunk(fileInfo.getFileId(), i));
+                if(i == 0){
+                    output += "\n\t Desired Replication Degree: " + chunkInfo.getDesiredReplicationDeg() + "\n Chunks:";
+                }
+                output += "\n\t\t Chunk No " + i + " - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
 
-            for(int chunkNr = 0; chunkNr < entry.getValue().getNumberOfChunks(); ++chunkNr) {
-                FileChunk chunkEntry = new FileChunk(entry.getValue().getFileId(), chunkNr);
-                output.append("\t\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + backedUpChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
             }
-            output.append("\n");
         }
 
-        output.append("Chunks stored by this peer:\n");
-
+        output += "\nChunks stored:";
         for (Map.Entry<String, ArrayList<Integer>> entry : storedChunksByFileId.entrySet()) {
-            output.append("\tBacked up chunks of file with fileID " + entry.getKey() + ":\n");
-
-            for (int chunkNr : entry.getValue()) {
-                FileChunk chunkEntry = new FileChunk(entry.getKey(), chunkNr);
-                //TODO: Add chunk size here
-                output.append("\t\tChunk nr. " + chunkNr + " | Perceived replication degree: " + storedChunksInfo.get(chunkEntry).getCurrentReplicationDeg() + "\n");
+            output += "\n\t FileId: " + entry.getKey();
+            for(int chunkNo : entry.getValue()){
+                ChunkInfo chunkInfo = storedChunksInfo.get(new FileChunk(entry.getKey(), chunkNo));
+                //TODO chunkSize
+                output += "\n\t\t Chunk No " + chunkNo + " - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
             }
-            output.append("\n");
         }
 
-        output.append("Max storage capacity (in kB): " + storageManager.getMaxReservedSpace()/1000 + "\n");
-        output.append("Current storage capacity used (in kB): " + storageManager.getUsedSpace()/1000 + "\n");
-        return output.toString();
+        output += "\nStorage: \n\t Available Memory(kB): "+ storageManager.getAvailableSpace()/1000 + "\n\t Used Memory(kB): " + storageManager.getUsedSpace()/1000;
+        return output;
     }
 }

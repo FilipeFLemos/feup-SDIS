@@ -2,25 +2,25 @@ package protocols;
 
 import message.Message;
 import channels.Channel;
-import peer.PeerController;
+import peer.PeerState;
 import utils.Globals;
 
 public class BackupChunk implements Runnable {
 
     private Message message;
     private Channel channel;
-    private PeerController peerController;
+    private PeerState peerState;
 
     /**
       * Instantiates a new BackupChunk protocols
       *
-      * @param peerController the peer's peerController
+      * @param peerState the peer's peerState
       * @param chunk the target chunk
       * @param replicationDeg the desired replication degree
       * @param channel the helper channel
       */
-    public BackupChunk(PeerController peerController, Message chunk, int replicationDeg, Channel channel) {
-        this.peerController = peerController;
+    public BackupChunk(PeerState peerState, Message chunk, int replicationDeg, Channel channel) {
+        this.peerState = peerState;
         this.channel = channel;
         createPUTCHANK(chunk, replicationDeg);
     }
@@ -42,12 +42,12 @@ public class BackupChunk implements Runnable {
     @Override
     public void run() {
         //if chunk degree was satisfied meanwhile, cancel
-        if(peerController.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg()) {
+        if(peerState.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg()) {
             System.out.println("Chunk " + message.getChunkNo() + " satisfied meanwhile, canceling");
             return;
         }
 
-        peerController.listenForSTORED(message);
+        peerState.listenForSTORED(message);
 
         int tries = 0;
         int waitTime = 500;
@@ -76,6 +76,6 @@ public class BackupChunk implements Runnable {
             e.printStackTrace();
         }
 
-        return peerController.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg();
+        return peerState.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg();
     }
 }
