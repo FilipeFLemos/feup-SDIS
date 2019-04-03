@@ -130,7 +130,7 @@ public class StorageManager implements Serializable {
     public synchronized void saveFile(String filePath, ConcurrentSkipListSet<Message> fileChunks) {
         byte[] body = mergeRestoredFile(fileChunks);
 
-        Path path = Paths.get(this.restoreDir + "/" + filePath);
+        Path path = Paths.get(this.restoreDir + "/" + cropFilesDir(filePath));
         System.out.println("FULL PATH: " + path.toAbsolutePath());
 
         try {
@@ -143,6 +143,11 @@ public class StorageManager implements Serializable {
         }
 
         System.out.println("File " + filePath + " restored successfully");
+    }
+
+    private String cropFilesDir(String filePath){
+        String dir = "files/";
+        return filePath.substring(dir.length());
     }
 
     /**
