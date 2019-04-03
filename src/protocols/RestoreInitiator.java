@@ -3,8 +3,10 @@ package protocols;
 import message.Message;
 import peer.PeerState;
 import channels.Channel;
+import storage.FileInfo;
 
 import java.util.ArrayList;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class RestoreInitiator implements Runnable{
 
@@ -28,25 +30,23 @@ public class RestoreInitiator implements Runnable{
       */
     @Override
     public void run() {
-        String fileID = peerState.getBackedUpFileID(filePath);
-        if(fileID == null) {
-            System.out.println("Restore Error: file " + filePath + " is not backed up.");
+        ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths = peerState.getBackedUpFilesByPaths();
+        if(!backedUpFilesByPaths.containsKey(filePath)) {
+            System.out.println("File " + filePath + " is not backed up.");
             return;
         }
 
-        int chunkAmount = peerState.getBackedUpFileChunkAmount(filePath);
-        if(chunkAmount == 0) {
-            System.out.println("Restore Error: error retrieving chunk ammount.");
-            return;
-        }
+        FileInfo fileInfo = backedUpFilesByPaths.get(filePath);
+        String fileId = fileInfo.getFileId();
+        int numberOfChunks = fileInfo.getNumberOfChunks();
 
         ArrayList<Message> chunks = new ArrayList<>();
-        for(int i = 0; i < chunkAmount; i++) {
-            chunks.add(new Message(peerState.getVersion(), peerState.getServerId(), fileID, null, Message.MessageType.GETCHUNK, i));
+        for(int i = 0; i < numberOfChunks; i++) {
+            chunks.add(new Message(peerState.getVersion(), peerState.getServerId(), fileId, null, Message.MessageType.GETCHUNK, i));
         }
 
-        peerState.addToRestoringFiles(fileID, filePath, chunkAmount);
-        System.out.println("Restoring file with " + chunkAmount + " chunks");
+        peerState.addToRestoringFiles(fileId, fileInfo);
+        System.out.println("Restoring file with " + numberOfChunks + " chunks");
 
         for(Message chunk : chunks){
             channel.sendMessage(chunk);

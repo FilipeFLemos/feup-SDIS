@@ -118,34 +118,6 @@ public class PeerState implements Serializable {
         backedUpFilesByPaths.put(filePath, new FileInfo(fileID, chunkAmount));
     }
 
-    /**
-     * Gets backed up file id.
-     *
-     * @param filePath the file path
-     * @return the backed up file id
-     */
-    public String getBackedUpFileID(String filePath) {
-        if(!backedUpFilesByPaths.containsKey(filePath))
-            return null;
-
-        FileInfo fileInfo = backedUpFilesByPaths.get(filePath);
-        return fileInfo.getFileId();
-    }
-
-    /**
-     * Gets backed up file chunk amount.
-     *
-     * @param filePath the file path
-     * @return the backed up file chunk amount
-     */
-    public Integer getBackedUpFileChunkAmount(String filePath) {
-        if(!backedUpFilesByPaths.containsKey(filePath))
-            return 0;
-
-        FileInfo fileInfo = backedUpFilesByPaths.get(filePath);
-        return fileInfo.getNumberOfChunks();
-    }
-
     public FileChunk getMostStoredChunk() {
         if(storedChunksInfo.isEmpty()) {
             System.out.println("Stored chunks info is empty");
@@ -168,12 +140,10 @@ public class PeerState implements Serializable {
      * Add file to restoring files structure.
      *
      * @param fileID      the file id
-     * @param filePath    the file path
-     * @param chunkAmount the chunk amount
      */
-    public void addToRestoringFiles(String fileID, String filePath, int chunkAmount) {
+    public void addToRestoringFiles(String fileID, FileInfo fileInfo) {
         chunksByRestoredFile.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
-        restoredFileInfoByFileId.putIfAbsent(fileID, new FileInfo(fileID, chunkAmount, filePath));
+        restoredFileInfoByFileId.putIfAbsent(fileID, fileInfo);
     }
 
     public void startStoringChunks(Message message) {
@@ -329,6 +299,10 @@ public class PeerState implements Serializable {
 
     public ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> getChunksByRestoredFile() {
         return chunksByRestoredFile;
+    }
+
+    public ConcurrentHashMap<String, FileInfo> getBackedUpFilesByPaths() {
+        return backedUpFilesByPaths;
     }
 
     public String getPeerState(){
