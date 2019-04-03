@@ -130,6 +130,7 @@ public class StorageManager implements Serializable {
         byte[] body = mergeRestoredFile(fileChunks);
 
         Path path = Paths.get(this.restoreDir + "/" + filePath);
+        System.out.println(filePath);
         System.out.println("FULL PATH: " + path.toAbsolutePath());
 
         try {
