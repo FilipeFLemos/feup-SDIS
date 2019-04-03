@@ -99,7 +99,6 @@ public class PeerState implements Serializable {
     public void addToRestoringFiles(String fileID, FileInfo fileInfo) {
         chunksByRestoredFile.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
         restoredFileInfoByFileId.putIfAbsent(fileID, fileInfo);
-        UI.printInfo("----The path will be : " + fileInfo.getFilePath());
     }
 
     /**

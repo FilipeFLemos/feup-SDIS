@@ -5,7 +5,6 @@ import utils.Globals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -125,7 +124,7 @@ public class StorageManager implements Serializable {
      * @param filePath the path to save the file
      */
     public synchronized void saveFile(String filePath, ConcurrentSkipListSet<Message> fileChunks) {
-        byte[] body = mergeRestoredFile(fileChunks);
+        byte[] body = mergeChunks(fileChunks);
 
         Path path = Paths.get(this.restoreDir + "/" + cropFilesDir(filePath));
         UI.printInfo("FULL PATH: " + path.toAbsolutePath());
@@ -149,11 +148,10 @@ public class StorageManager implements Serializable {
     }
 
     /**
-     * Merges a restored file into a single byte[]
-     *
-     * @return the file as a byte[]
+     * Merges all the files from a given file.
+     * @return the file data
      */
-    public byte[] mergeRestoredFile(ConcurrentSkipListSet<Message> fileChunks) {
+    private byte[] mergeChunks(ConcurrentSkipListSet<Message> fileChunks) {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         try {
