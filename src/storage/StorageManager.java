@@ -5,6 +5,7 @@ import utils.Globals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.io.Serializable;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -129,16 +130,28 @@ public class StorageManager implements Serializable {
     public synchronized void saveFile(String filePath, ConcurrentSkipListSet<Message> fileChunks) {
         byte[] body = mergeRestoredFile(fileChunks);
 
-        Path path = Paths.get(this.restoreDir + "/" + filePath);
-        System.out.println("FULL PATH: " + path.toAbsolutePath());
-        System.out.println("body: " + body);
+        String path = this.restoreDir + "/" + filePath;
+//        Path path = Paths.get(this.restoreDir + "/" + filePath);
+//        System.out.println("FULL PATH: " + path.toAbsolutePath());
+//
+//        try {
+//            if(!Files.exists(path)) {
+//                Files.createFile(path);
+//            }
+//            System.out.println("Vou merdar agora");
+//            Files.write(path, body);
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        }
+        if(Files.exists(Paths.get(path))){
+            System.out.println("File already restored");
+            return;
+        }
 
         try {
-            if(!Files.exists(path)) {
-                Files.createFile(path);
-            }
-
-            Files.write(path, body);
+            OutputStream outputStream = Files.newOutputStream(Paths.get(path));
+            outputStream.write(body);
+            outputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
