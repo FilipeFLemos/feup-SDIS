@@ -145,6 +145,7 @@ public class StorageManager implements Serializable {
         System.out.println("File " + filePath + " restored successfully");
     }
 
+    //TODO isto nao podia ser mais feio, arranjar melhor maneira
     private String cropFilesDir(String filePath){
         String dir = "files/";
         return filePath.substring(dir.length());
