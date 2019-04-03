@@ -16,80 +16,76 @@ public class StorageManager implements Serializable {
 
     private static final long serialVersionUID = 1L;
     private String version;
-    private int peerID;
+    private int peerId;
     private long usedSpace;
     private long maxReservedSpace;
 
     private String backupDir;
     private String restoreDir;
 
-    public StorageManager(String version, int peerID) {
+    public StorageManager(String version, int peerId) {
         this.version = version;
-        this.peerID = peerID;
-        this.maxReservedSpace = Globals.MAX_PEER_STORAGE;
-        this.usedSpace = 0;
+        this.peerId = peerId;
+        usedSpace = 0;
+        maxReservedSpace = Globals.MAX_PEER_STORAGE;
 
-        this.backupDir = "localData/backup/peer" + peerID;
-        this.restoreDir = "localData/restore/peer" + peerID + "/files";
-        initDirectories();
+        backupDir = "localData/backup/peer" + peerId;
+        restoreDir = "localData/restore/peer" + peerId + "/files";
+        initDirectory(backupDir);
+        initDirectory(restoreDir);
     }
 
     /**
-     * Initiates local directories to structure saved data
+     * Creates the directory with the given path if it does not exist.
      */
-    private void initDirectories() {
-        Path backupPath = Paths.get(backupDir);
-        Path restorePath = Paths.get(restoreDir);
+    private void initDirectory(String path) {
+        Path dirPath = Paths.get(path);
 
         try {
-            if (!Files.exists(backupPath))
-                Files.createDirectories(backupPath);
-
-            if (!Files.exists(restorePath))
-                Files.createDirectories(restorePath);
+            if (!Files.exists(dirPath)) {
+                Files.createDirectories(dirPath);
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * Tries to save a chunk
-     *
-     * @param chunk the chunk to store
+     * Saves the chunk locally if there is enough free space.
+     * @param message - the chunk message
      * @return true if successful, false otherwise
      */
-    public synchronized boolean saveChunk(Message chunk) {
-        if(!hasFreeSpace(chunk.getBody().length))
+    public synchronized boolean saveChunk(Message message) {
+        if(usedSpace + message.getBody().length > maxReservedSpace)
             return false;
 
         try {
-            Path chunkPath = Paths.get(this.backupDir + "/"+chunk.getFileId()+"_"+chunk.getChunkNo());
+            Path chunkPath = Paths.get(this.backupDir + "/" +message.getFileId() + "-" + message.getChunkNo());
 
-            if(!Files.exists(chunkPath))
+            if(!Files.exists(chunkPath)) {
                 Files.createFile(chunkPath);
-
-            Files.write(chunkPath, chunk.getBody());
+            }
+            Files.write(chunkPath, message.getBody());
         }
         catch(IOException e){
             e.printStackTrace();
         }
 
-        increaseUsedSpace(chunk.getBody().length);
+        increaseUsedSpace(message.getBody().length);
         return true;
     }
 
     /**
-     * Deletes a chunk (if present).
-     *  @param fileId           the file id
-     * @param chunkNo       the chunk index
+     * Deletes the chunk provided if it is stored locally.
+     *  @param fileId - the file id
+     * @param chunkNo - the chunk number
      */
     public synchronized void deleteChunk(String fileId, int chunkNo) {
-        Path path = Paths.get(this.backupDir +"/"+fileId+"_"+chunkNo);
+        Path path = Paths.get(this.backupDir + "/" + fileId + "-" + chunkNo);
 
         try {
             if(Files.exists(path)) {
-                long chunkBytes = Files.size(path);
-                decreaseUsedSpace(chunkBytes);
+                decreaseUsedSpace(Files.size(path));
                 Files.delete(path);
             }
         } catch (IOException e) {
@@ -98,14 +94,13 @@ public class StorageManager implements Serializable {
     }
 
     /**
-     * Retrieves a chunk stored locally.
-     *
-     * @param fileID     the original file's id
-     * @param chunkIndex the chunk index
-     * @return message with the chunk
+     * Loads a chunk stored locally.
+     * @param fileId - the file id
+     * @param chunkNo - the chunk number
+     * @return The chunk message
      */
-    public synchronized Message retrieveChunk(String fileID, int chunkIndex) {
-        Path chunkPath = Paths.get(this.backupDir + "/"+fileID+"_"+chunkIndex);
+    public synchronized Message loadChunk(String fileId, int chunkNo) {
+        Path chunkPath = Paths.get(this.backupDir + "/"+fileId+"_"+chunkNo);
 
         byte[] body = null;
         try {
@@ -114,17 +109,15 @@ public class StorageManager implements Serializable {
             e.printStackTrace();
         }
 
-        Message chunk = new Message(version, peerID, fileID, body, Message.MessageType.CHUNK, chunkIndex);
-        return chunk;
+        return new Message(version, peerId, fileId, body, Message.MessageType.CHUNK, chunkNo);
     }
 
     /**
      * Saves a file locally
-     *
-     * @param filePath the path to save the file
+     * @param filePath - the original file path
      */
     public synchronized void saveFile(String filePath, ConcurrentSkipListSet<Message> fileChunks) {
-        byte[] body = mergeChunks(fileChunks);
+        byte[] fileData = mergeChunks(fileChunks);
 
         Path path = Paths.get(this.restoreDir + "/" + cropFilesDir(filePath));
         UI.printInfo("FULL PATH: " + path.toAbsolutePath());
@@ -133,7 +126,7 @@ public class StorageManager implements Serializable {
             if(!Files.exists(path)) {
                 Files.createFile(path);
             }
-            Files.write(path, body);
+            Files.write(path, fileData);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -155,24 +148,15 @@ public class StorageManager implements Serializable {
         ByteArrayOutputStream stream = new ByteArrayOutputStream();
 
         try {
-            for(Message chunk : fileChunks)
+            for(Message chunk : fileChunks) {
                 stream.write(chunk.getBody());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
 
         return stream.toByteArray();
     }
-
-    /**
-      * Checks if peer still has free space to backup a specific chunk
-      * @param size size of chunk to be stored
-      * @return true if usedSpace + size <= maxReservedSpace, false otherwise
-      */
-    private boolean hasFreeSpace(long size) {
-        return usedSpace + size <= maxReservedSpace;
-    }
-
 
     public long getUsedSpace() {
         return usedSpace;
@@ -182,11 +166,11 @@ public class StorageManager implements Serializable {
         return maxReservedSpace - usedSpace;
     }
 
-    public void increaseUsedSpace(long amount){
+    private void increaseUsedSpace(long amount){
         this.usedSpace += amount;
     }
 
-    public void decreaseUsedSpace(long amount){
+    private void decreaseUsedSpace(long amount){
         this.usedSpace -= amount;
     }
 }

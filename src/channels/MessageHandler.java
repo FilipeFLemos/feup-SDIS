@@ -174,7 +174,7 @@ public class MessageHandler {
             return;
         }
 
-        Message chunk = controller.getStorageManager().retrieveChunk(fileId, chunkNo);
+        Message chunk = controller.getStorageManager().loadChunk(fileId, chunkNo);
         peer.sendMessage(chunk,sourceAddress);
         UI.printOK("Sent CHUNK Message: " + message.getChunkNo());
         UI.printBoot("------------------------------------------------------");
@@ -269,7 +269,7 @@ public class MessageHandler {
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 System.out.println("Chunk " + message.getChunkNo() + " not satisfied anymore.");
-                Message chunk = controller.getStorageManager().retrieveChunk(message.getFileId(), message.getChunkNo());
+                Message chunk = controller.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
 
                 threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBChannel()),
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
