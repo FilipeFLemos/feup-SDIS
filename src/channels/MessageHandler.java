@@ -129,7 +129,7 @@ public class MessageHandler {
         System.out.println("Received Stored Message: " + message.getChunkNo());
 
         FileChunk key = new FileChunk(message.getFileId(), message.getChunkNo());
-        controller.updateChunksInfo(key,message);
+        controller.updateChunkInfo(key,message);
     }
 
     /**

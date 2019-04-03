@@ -159,42 +159,37 @@ public class PeerState implements Serializable {
         storedChunksByFileId.put(message.getFileId(), storedChunks);
     }
 
-    public void updateChunksInfo(FileChunk key, Message message) {
-        // if this chunk is from a file the peer
-        // has requested to backup (aka is the
-        // initiator peer), and hasn't received
-        // a stored message, update actual rep degree,
-        // and add peer
-        System.out.println("Trying backUpChunksInfo:");
-        updateMapInformation(backedUpChunksInfo, key, message);
-
-        // if this peer has this chunk stored,
-        // and hasn't received stored message
-        // from this peer yet, update actual
-        // rep degree, and add peer
-        System.out.println("Trying storedChunksInfo:");
-        updateMapInformation(storedChunksInfo, key, message);
+    /**
+     * Updates stored and backed up Chunk information.
+     * @param fileChunk - the chunk
+     * @param message - the STORED message
+     */
+    public void updateChunkInfo(FileChunk fileChunk, Message message) {
+        updateContainer(storedChunksInfo, fileChunk, message);
+        updateContainer(backedUpChunksInfo, fileChunk, message);
 
         if(backupEnhancement && !message.getVersion().equals("1.0")) {
-            System.out.println("Trying storedChunksInfo_ENH:");
-            updateMapInformation(storedChunksInfo_ENH, key, message);
+            updateContainer(storedChunksInfo_ENH, fileChunk, message);
         }
         System.out.println("Finished updating");
     }
 
     /**
-     * Updates a given ConcurrentHashMaps information at a given key
-     * @param map the map to update
-     * @param key the key whose value to update
-     * @param message the message whose information the map update is based on
+     * Updates map container at given key with the received STORED message IF:
+     * 1) Chunk is stored by the peer and received this message from a new peer
+     * 2) Chunk was requested by the peer and hasn't received it yet - backup initiator peer
+     * In both cases, the replication degree of the chunk is increased and the sender peer is added to the chunks mirrors.
+     * @param map - The map container
+     * @param fileChunk - The chunk
+     * @param message - The STORED message
      */
-    private void updateMapInformation(ConcurrentHashMap<FileChunk, ChunkInfo> map, FileChunk key, Message message) {
+    private void updateContainer(ConcurrentHashMap<FileChunk, ChunkInfo> map, FileChunk fileChunk, Message message) {
         ChunkInfo chunkInfo;
-        if(map.containsKey(key) && !map.get(key).isBackedUpByPeer(message.getSenderId())) {
-            chunkInfo = map.get(key);
+        if(map.containsKey(fileChunk) && !map.get(fileChunk).isBackedUpByPeer(message.getSenderId())) {
+            chunkInfo = map.get(fileChunk);
             chunkInfo.increaseCurrentRepDeg();
             chunkInfo.addPeer(message.getSenderId());
-            map.put(key, chunkInfo);
+            map.put(fileChunk, chunkInfo);
             System.out.println("Updated with received store message");
         }
     }
