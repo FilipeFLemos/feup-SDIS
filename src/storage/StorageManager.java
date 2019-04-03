@@ -30,7 +30,7 @@ public class StorageManager implements Serializable {
         this.usedSpace = 0;
 
         this.backupDir = "localData/backup/peer" + peerID;
-        this.restoreDir = "localData/restore/peer" + peerID;
+        this.restoreDir = "localData/restore/peer" + peerID + "/files";
         initDirectories();
     }
 
@@ -130,29 +130,14 @@ public class StorageManager implements Serializable {
     public synchronized void saveFile(String filePath, ConcurrentSkipListSet<Message> fileChunks) {
         byte[] body = mergeRestoredFile(fileChunks);
 
-        String path = this.restoreDir + "/" + filePath;
-//        Path path = Paths.get(this.restoreDir + "/" + filePath);
-//        System.out.println("FULL PATH: " + path.toAbsolutePath());
-//
-//        try {
-//            if(!Files.exists(path)) {
-//                Files.createFile(path);
-//            }
-//            System.out.println("Vou merdar agora");
-//            Files.write(path, body);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-        if(Files.exists(Paths.get(path))){
-            System.out.println("File already restored");
-            return;
-        }
+        Path path = Paths.get(this.restoreDir + "/" + filePath);
+        System.out.println("FULL PATH: " + path.toAbsolutePath());
 
         try {
-            OutputStream outputStream = Files.newOutputStream(Paths.get(path));
-            String autismo = "autismo";
-            outputStream.write(autismo.getBytes());
-            outputStream.close();
+            if(!Files.exists(path)) {
+                Files.createFile(path);
+            }
+            Files.write(path, body);
         } catch (IOException e) {
             e.printStackTrace();
         }
