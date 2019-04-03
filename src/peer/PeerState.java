@@ -18,16 +18,16 @@ public class PeerState implements Serializable {
     private Integer serverId;
     private StorageManager storageManager;
 
-    private ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths;
-    private ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunksInfo;
+    private ConcurrentHashMap<String, FileInfo> backedUpFiles;
+    private ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunks;
 
     private ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId;
-    private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo;
-    private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo_ENH;
+    private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks;
+    private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH;
 
 
-    private ConcurrentHashMap<String, FileInfo> restoredFileInfoByFileId;
-    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile;
+    private ConcurrentHashMap<String, FileInfo> filesBeingRestored;
+    private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoredChunks;
     private ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap;
 
     private boolean backupEnhancement;
@@ -38,15 +38,15 @@ public class PeerState implements Serializable {
         this.serverId = serverId;
         storageManager = new StorageManager(version, serverId);
 
-        backedUpFilesByPaths = new ConcurrentHashMap<>();
-        backedUpChunksInfo = new ConcurrentHashMap<>();
+        backedUpFiles = new ConcurrentHashMap<>();
+        backedUpChunks = new ConcurrentHashMap<>();
 
         storedChunksByFileId = new ConcurrentHashMap<>();
-        storedChunksInfo = new ConcurrentHashMap<>();
-        storedChunksInfo_ENH = new ConcurrentHashMap<>();
+        storedChunks = new ConcurrentHashMap<>();
+        storedChunks_ENH = new ConcurrentHashMap<>();
 
-        restoredFileInfoByFileId = new ConcurrentHashMap<>();
-        chunksByRestoredFile = new ConcurrentHashMap<>();
+        filesBeingRestored = new ConcurrentHashMap<>();
+        restoredChunks = new ConcurrentHashMap<>();
         isBeingRestoredChunkMap = new ConcurrentHashMap<>();
 
 
@@ -68,7 +68,7 @@ public class PeerState implements Serializable {
      */
     public void listenForSTORED_ENH(Message chunk) {
         FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        storedChunksInfo_ENH.putIfAbsent(fileChunk, new ChunkInfo(chunk.getReplicationDeg(), 0));
+        storedChunks_ENH.putIfAbsent(fileChunk, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**
@@ -78,7 +78,7 @@ public class PeerState implements Serializable {
      */
     public void listenForSTORED(Message chunk) {
         FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-        backedUpChunksInfo.putIfAbsent(fileChunk, new ChunkInfo(chunk.getReplicationDeg(), 0));
+        backedUpChunks.putIfAbsent(fileChunk, new ChunkInfo(chunk.getReplicationDeg(), 0));
     }
 
     /**
@@ -97,8 +97,8 @@ public class PeerState implements Serializable {
      * @param fileID      the file id
      */
     public void addToRestoringFiles(String fileID, FileInfo fileInfo) {
-        chunksByRestoredFile.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
-        restoredFileInfoByFileId.putIfAbsent(fileID, fileInfo);
+        restoredChunks.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
+        filesBeingRestored.putIfAbsent(fileID, fileInfo);
     }
 
     /**
@@ -108,7 +108,7 @@ public class PeerState implements Serializable {
     public void startStoringChunks(Message message) {
         storedChunksByFileId.putIfAbsent(message.getFileId(), new ArrayList<>());
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
-        storedChunksInfo.putIfAbsent(fileChunk, new ChunkInfo(message.getReplicationDeg(), 1, message.getBody().length));
+        storedChunks.putIfAbsent(fileChunk, new ChunkInfo(message.getReplicationDeg(), 1, message.getBody().length));
     }
 
     /**
@@ -127,11 +127,11 @@ public class PeerState implements Serializable {
      * @param message - the STORED message
      */
     public void updateChunkInfo(FileChunk fileChunk, Message message) {
-        updateContainer(storedChunksInfo, fileChunk, message);
-        updateContainer(backedUpChunksInfo, fileChunk, message);
+        updateContainer(storedChunks, fileChunk, message);
+        updateContainer(backedUpChunks, fileChunk, message);
 
         if(backupEnhancement && !message.getVersion().equals("1.0")) {
-            updateContainer(storedChunksInfo_ENH, fileChunk, message);
+            updateContainer(storedChunks_ENH, fileChunk, message);
         }
         UI.printOK("Finished updating");
     }
@@ -170,9 +170,9 @@ public class PeerState implements Serializable {
      */
     public void addRestoredFileChunks(Message message) {
         String fileId = message.getFileId();
-        ConcurrentSkipListSet<Message> chunks = chunksByRestoredFile.get(fileId);
+        ConcurrentSkipListSet<Message> chunks = restoredChunks.get(fileId);
         chunks.add(message);
-        chunksByRestoredFile.put(fileId, chunks);
+        restoredChunks.put(fileId, chunks);
     }
 
     /**
@@ -181,8 +181,8 @@ public class PeerState implements Serializable {
      * @return true if the chunks were all restored or false if otherwise
      */
     public boolean hasRestoredAllChunks(String fileId){
-        int currentSize = chunksByRestoredFile.get(fileId).size();
-        int desiredSize = restoredFileInfoByFileId.get(fileId).getNumberOfChunks();
+        int currentSize = restoredChunks.get(fileId).size();
+        int desiredSize = filesBeingRestored.get(fileId).getNumberOfChunks();
 
         return currentSize == desiredSize;
     }
@@ -192,8 +192,8 @@ public class PeerState implements Serializable {
      * @param fileId - the id of the file to be saved
      */
     public void saveFileToRestoredFolder(String fileId) {
-        String filePath = restoredFileInfoByFileId.get(fileId).getFilePath();
-        ConcurrentSkipListSet<Message> chunks = chunksByRestoredFile.get(fileId);
+        String filePath = filesBeingRestored.get(fileId).getFilePath();
+        ConcurrentSkipListSet<Message> chunks = restoredChunks.get(fileId);
         storageManager.saveFile(filePath, chunks);
     }
 
@@ -202,8 +202,8 @@ public class PeerState implements Serializable {
      * @param fileId - the id of the file to be removed
      */
     public void stopRestoringFile(String fileId) {
-        chunksByRestoredFile.remove(fileId);
-        restoredFileInfoByFileId.remove(fileId);
+        restoredChunks.remove(fileId);
+        filesBeingRestored.remove(fileId);
     }
 
     /**
@@ -223,7 +223,7 @@ public class PeerState implements Serializable {
         storageManager.deleteChunk(fileId, chunkNo);
 
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
-        ChunkInfo chunkInfo = storedChunksInfo.remove(fileChunk);
+        ChunkInfo chunkInfo = storedChunks.remove(fileChunk);
         chunkInfo.removePeer(serverId);
 
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
@@ -257,24 +257,24 @@ public class PeerState implements Serializable {
         return storedChunksByFileId;
     }
 
-    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo() {
-        return storedChunksInfo;
+    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunks() {
+        return storedChunks;
     }
 
     public ConcurrentHashMap<FileChunk, Boolean> getIsBeingRestoredChunkMap() {
         return isBeingRestoredChunkMap;
     }
 
-    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunksInfo_ENH() {
-        return storedChunksInfo_ENH;
+    public ConcurrentHashMap<FileChunk, ChunkInfo> getStoredChunks_ENH() {
+        return storedChunks_ENH;
     }
 
-    public ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> getChunksByRestoredFile() {
-        return chunksByRestoredFile;
+    public ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> getRestoredChunks() {
+        return restoredChunks;
     }
 
-    public ConcurrentHashMap<String, FileInfo> getBackedUpFilesByPaths() {
-        return backedUpFilesByPaths;
+    public ConcurrentHashMap<String, FileInfo> getBackedUpFiles() {
+        return backedUpFiles;
     }
 
     /******************************************************************************************************
@@ -289,8 +289,8 @@ public class PeerState implements Serializable {
     public int getChunkRepDeg(Message message) {
         int currentDegree = 0;
         FileChunk fileChunk = new FileChunk(message.getFileId(),message.getChunkNo());
-        if(backedUpChunksInfo.containsKey(fileChunk)) {
-            currentDegree = backedUpChunksInfo.get(fileChunk).getCurrentReplicationDeg();
+        if(backedUpChunks.containsKey(fileChunk)) {
+            currentDegree = backedUpChunks.get(fileChunk).getCurrentReplicationDeg();
         }
 
         return currentDegree;
@@ -303,7 +303,7 @@ public class PeerState implements Serializable {
      * @param numberOfChunks - the number of chunks
      */
     public void backUpFile(String filePath, String fileId, int numberOfChunks) {
-        backedUpFilesByPaths.put(filePath, new FileInfo(fileId, numberOfChunks, filePath));
+        backedUpFiles.put(filePath, new FileInfo(fileId, numberOfChunks, filePath));
     }
 
     /**
@@ -311,7 +311,7 @@ public class PeerState implements Serializable {
      * @return the computed chunk
      */
     public FileChunk getMostStoredChunk() {
-        if(storedChunksInfo.isEmpty()) {
+        if(storedChunks.isEmpty()) {
             UI.printWarning("Stored chunks info is empty");
             return null;
         }
@@ -319,7 +319,7 @@ public class PeerState implements Serializable {
         FileChunk bestChunk = null;
         int max = -1;
 
-        for (Map.Entry<FileChunk, ChunkInfo> chunk : storedChunksInfo.entrySet()) {
+        for (Map.Entry<FileChunk, ChunkInfo> chunk : storedChunks.entrySet()) {
             if(chunk.getValue().getReplicationDegDifference() > max){
                 max = chunk.getValue().getReplicationDegDifference();
                 bestChunk = chunk.getKey();
@@ -335,13 +335,13 @@ public class PeerState implements Serializable {
     public String getPeerState(){
         String output = "";
         output += "Files backed up:";
-        for (Map.Entry<String, FileInfo> entry : backedUpFilesByPaths.entrySet()) {
+        for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
             FileInfo fileInfo = entry.getValue();
             output += "\n\t FileId: " + entry.getKey();
             output += "\n\t Path: " + fileInfo.getFilePath();
 
             for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
-                ChunkInfo chunkInfo =  backedUpChunksInfo.get(new FileChunk(fileInfo.getFileId(), i));
+                ChunkInfo chunkInfo =  backedUpChunks.get(new FileChunk(fileInfo.getFileId(), i));
                 if(i == 0){
                     output += "\n\t Desired Replication Degree: " + chunkInfo.getDesiredReplicationDeg() + "\n Chunks:";
                 }
@@ -354,7 +354,7 @@ public class PeerState implements Serializable {
         for (Map.Entry<String, ArrayList<Integer>> entry : storedChunksByFileId.entrySet()) {
             output += "\n\t FileId: " + entry.getKey();
             for(int chunkNo : entry.getValue()){
-                ChunkInfo chunkInfo = storedChunksInfo.get(new FileChunk(entry.getKey(), chunkNo));
+                ChunkInfo chunkInfo = storedChunks.get(new FileChunk(entry.getKey(), chunkNo));
                 output += "\n\t\t Chunk No " + chunkNo + " (" + chunkInfo.getSize()/1000 +" kB) - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
             }
         }

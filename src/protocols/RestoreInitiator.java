@@ -31,7 +31,7 @@ public class RestoreInitiator implements Runnable{
       */
     @Override
     public void run() {
-        ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths = peerState.getBackedUpFilesByPaths();
+        ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths = peerState.getBackedUpFiles();
         if(!backedUpFilesByPaths.containsKey(filePath)) {
             UI.printWarning("File " + filePath + " is not backed up.");
             return;

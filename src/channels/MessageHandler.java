@@ -94,7 +94,7 @@ public class MessageHandler {
 
         if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
             FileChunk key = new FileChunk(fileId, chunkNo);
-            ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo = controller.getStoredChunksInfo_ENH();
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo = controller.getStoredChunks_ENH();
 
             if(storedRepliesInfo.containsKey(key)) {
                 if(storedRepliesInfo.get(key).achievedDesiredRepDeg()) {
@@ -198,7 +198,7 @@ public class MessageHandler {
             UI.printOK("Added Chunk " + message.getChunkNo() + " to requests info.");
         }
 
-        ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = controller.getChunksByRestoredFile();
+        ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = controller.getRestoredChunks();
         if(!chunksByRestoredFile.containsKey(fileId)) {
             UI.printBoot("------------------------------------------------------");
             return;
@@ -262,7 +262,7 @@ public class MessageHandler {
         //System.out.println("Received Removed Message: " + message.getChunkNo());
 
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
-        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
+        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo = controller.getStoredChunks();
         if(storedChunksInfo.containsKey(fileChunk)) {
             ChunkInfo chunkInfo = storedChunksInfo.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
