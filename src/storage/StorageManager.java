@@ -150,7 +150,8 @@ public class StorageManager implements Serializable {
 
         try {
             OutputStream outputStream = Files.newOutputStream(Paths.get(path));
-            outputStream.write(body);
+            String autismo = "autismo";
+            outputStream.write(autismo.getBytes());
             outputStream.close();
         } catch (IOException e) {
             e.printStackTrace();
