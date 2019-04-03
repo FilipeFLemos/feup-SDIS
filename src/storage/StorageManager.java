@@ -26,6 +26,7 @@ public class StorageManager implements Serializable {
         this.version = version;
         this.peerID = peerID;
         this.maxReservedSpace = Globals.MAX_PEER_STORAGE;
+        this.usedSpace = 0;
 
         this.backupDir = "localData/backup/peer" + peerID;
         this.restoreDir = "localData/restore/peer" + peerID;

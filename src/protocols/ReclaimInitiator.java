@@ -44,20 +44,20 @@ public class ReclaimInitiator implements Runnable{
         StorageManager storageManager = peerState.getStorageManager();
         long targetSpace = targetSpaceKb * 1000; //kbs to bytes
 
-        while(storageManager.getUsedSpace() > targetSpace) {
+        while(storageManager.getAvailableSpace() > targetSpace) {
             FileChunk toDelete = peerState.getMostStoredChunk();
 
             // no more chunks to delete
             if (toDelete == null) {
                 System.out.println("Nothing to delete");
-                return storageManager.getUsedSpace() < targetSpace;
+                return storageManager.getAvailableSpace() < targetSpace;
             }
 
             String fileID = toDelete.getFileId();
             int chunkIndex = toDelete.getChunkNo();
 
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
-            peerState.deleteChunk(fileID, chunkIndex, true);
+            peerState.deleteChunk(fileID, chunkIndex, false);
 
             Message removedMessage = new Message(peerState.getVersion(), peerState.getServerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
             mcChannel.sendMessage(removedMessage);

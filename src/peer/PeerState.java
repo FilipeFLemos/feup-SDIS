@@ -352,7 +352,7 @@ public class PeerState implements Serializable {
             output += "\n\t FileId: " + entry.getKey();
             for(int chunkNo : entry.getValue()){
                 ChunkInfo chunkInfo = storedChunksInfo.get(new FileChunk(entry.getKey(), chunkNo));
-                output += "\n\t\t Chunk No " + chunkNo + " (" + chunkInfo.getSize() +" kB) - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
+                output += "\n\t\t Chunk No " + chunkNo + " (" + chunkInfo.getSize()/1000 +" kB) - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
             }
         }
 
