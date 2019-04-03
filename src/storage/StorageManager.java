@@ -11,6 +11,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentSkipListSet;
+import user_interface.UI;
 
 public class StorageManager implements Serializable {
 
@@ -127,7 +128,7 @@ public class StorageManager implements Serializable {
         byte[] body = mergeRestoredFile(fileChunks);
 
         Path path = Paths.get(this.restoreDir + "/" + cropFilesDir(filePath));
-        System.out.println("FULL PATH: " + path.toAbsolutePath());
+        UI.printInfo("FULL PATH: " + path.toAbsolutePath());
 
         try {
             if(!Files.exists(path)) {
@@ -138,7 +139,7 @@ public class StorageManager implements Serializable {
             e.printStackTrace();
         }
 
-        System.out.println("File " + filePath + " restored successfully");
+        UI.printOK("File " + filePath + " restored successfully");
     }
 
     //TODO isto nao podia ser mais feio, arranjar melhor maneira

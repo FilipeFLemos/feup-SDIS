@@ -9,6 +9,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.*;
+import user_interface.UI;
 
 public class PeerState implements Serializable {
 
@@ -54,7 +55,7 @@ public class PeerState implements Serializable {
             restoreEnhancement = false;
         }
         else {
-            System.out.println("Enhancements activated");
+            UI.printInfo("Enhancements activated");
             backupEnhancement = true;
             restoreEnhancement = true;
         }
@@ -98,7 +99,7 @@ public class PeerState implements Serializable {
     public void addToRestoringFiles(String fileID, FileInfo fileInfo) {
         chunksByRestoredFile.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
         restoredFileInfoByFileId.putIfAbsent(fileID, fileInfo);
-        System.out.println("----The path will be : " + fileInfo.getFilePath());
+        UI.printInfo("----The path will be : " + fileInfo.getFilePath());
     }
 
     /**
@@ -133,7 +134,7 @@ public class PeerState implements Serializable {
         if(backupEnhancement && !message.getVersion().equals("1.0")) {
             updateContainer(storedChunksInfo_ENH, fileChunk, message);
         }
-        System.out.println("Finished updating");
+        UI.printOK("Finished updating");
     }
 
     /**
@@ -152,7 +153,7 @@ public class PeerState implements Serializable {
             chunkInfo.increaseCurrentRepDeg();
             chunkInfo.addPeer(message.getSenderId());
             map.put(fileChunk, chunkInfo);
-            System.out.println("Updated with received store message");
+            UI.printOK("Updated with received store message");
         }
     }
 
@@ -312,7 +313,7 @@ public class PeerState implements Serializable {
      */
     public FileChunk getMostStoredChunk() {
         if(storedChunksInfo.isEmpty()) {
-            System.out.println("Stored chunks info is empty");
+            UI.printWarning("Stored chunks info is empty");
             return null;
         }
 
