@@ -10,9 +10,6 @@ import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.*;
 
-/**
-  * Peer controller, where the peer's state is kept
- */
 public class PeerState implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -38,6 +35,7 @@ public class PeerState implements Serializable {
     public PeerState(String version, int serverId) {
         this.version = version;
         this.serverId = serverId;
+        storageManager = new StorageManager(version, serverId);
 
         backedUpFilesByPaths = new ConcurrentHashMap<>();
         backedUpChunksInfo = new ConcurrentHashMap<>();
@@ -60,13 +58,12 @@ public class PeerState implements Serializable {
             backupEnhancement = true;
             restoreEnhancement = true;
         }
-
-        storageManager = new StorageManager(version, serverId);
     }
 
     /**
-     * Starts listening to stored messages for a chunk the peer is storing
-     * @param chunk
+     * Initiates the stored chunks container for enhanced peers. This informs the peer to start listening for STORED
+     * messages of the provided chunk No.
+     * @param chunk - the received chunk
      */
     public void listenForSTORED_ENH(Message chunk) {
         FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
@@ -74,8 +71,9 @@ public class PeerState implements Serializable {
     }
 
     /**
-     * Starts listening to stored messages for a chunk that the peer is backing up
-     * @param chunk the chunk
+     * Initiates the stored chunks container. This informs the peer to start listening for STORED
+     * messages of the provided chunk No.
+     * @param chunk - the received chunk
      */
     public void listenForSTORED(Message chunk) {
         FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
@@ -83,57 +81,13 @@ public class PeerState implements Serializable {
     }
 
     /**
-     * Starts listening to generic chunk messages
-     * @param chunk
+     * Initiates the being restored chunks container. This informs the peer to start listening for CHUNK
+     * messages of the provided chunk No.
+     * @param chunk - the received chunk
      */
     public void listenForCHUNK(Message chunk) {
         FileChunk fileChunk = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
         isBeingRestoredChunkMap.putIfAbsent(fileChunk, false);
-    }
-
-    /**
-     * Gets backed up chunk's observed rep degree.
-     *
-     * @param chunk the chunk
-     * @return the backed up chunk's observed rep degree
-     */
-    public int getBackedUpChunkRepDegree(Message chunk) {
-        FileChunk key = new FileChunk(chunk.getFileId(),chunk.getChunkNo());
-
-        int currentDegree = 0;
-        if(backedUpChunksInfo.containsKey(key))
-            currentDegree = backedUpChunksInfo.get(key).getCurrentReplicationDeg();
-
-        return currentDegree;
-    }
-
-    /**
-     * Add backed up file.
-     *
-     * @param filePath    the file path
-     * @param fileID      the file id
-     * @param chunkAmount the chunk amount
-     */
-    public void addBackedUpFile(String filePath, String fileID, int chunkAmount) {
-        backedUpFilesByPaths.put(filePath, new FileInfo(fileID, chunkAmount, filePath));
-    }
-
-    public FileChunk getMostStoredChunk() {
-        if(storedChunksInfo.isEmpty()) {
-            System.out.println("Stored chunks info is empty");
-            return null;
-        }
-
-        FileChunk bestChunk = null;
-        int max = -1;
-
-        for (Map.Entry<FileChunk, ChunkInfo> chunk : storedChunksInfo.entrySet()) {
-            if(chunk.getValue().getReplicationDegDifference() > max){
-                max = chunk.getValue().getReplicationDegDifference();
-                bestChunk = chunk.getKey();
-            }
-        }
-        return bestChunk;
     }
 
     /**
@@ -147,12 +101,20 @@ public class PeerState implements Serializable {
         System.out.println("----The path will be : " + fileInfo.getFilePath());
     }
 
+    /**
+     * Initializes the stored chunk maps
+     * @param message - the PUTCHUNK message
+     */
     public void startStoringChunks(Message message) {
         storedChunksByFileId.putIfAbsent(message.getFileId(), new ArrayList<>());
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
         storedChunksInfo.putIfAbsent(fileChunk, new ChunkInfo(message.getReplicationDeg(), 1, message.getBody().length));
     }
 
+    /**
+     * Add chunk to the file list of stored chunks
+     * @param message - the received chunk message
+     */
     public void addStoredChunk(Message message) {
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(message.getFileId());
         storedChunks.add(message.getChunkNo());
@@ -194,10 +156,18 @@ public class PeerState implements Serializable {
         }
     }
 
-    public void setIsBeingRestored(FileChunk key) {
-        isBeingRestoredChunkMap.put(key, true);
+    /**
+     * Marks the received CHUNK message as being restored.
+     * @param fileChunk - the received Chunk
+     */
+    public void setIsBeingRestored(FileChunk fileChunk) {
+        isBeingRestoredChunkMap.put(fileChunk, true);
     }
 
+    /**
+     * Adds the chunk to the list of chunks being restored by the message file id
+     * @param message - the message
+     */
     public void addRestoredFileChunks(Message message) {
         String fileId = message.getFileId();
         ConcurrentSkipListSet<Message> chunks = chunksByRestoredFile.get(fileId);
@@ -205,6 +175,11 @@ public class PeerState implements Serializable {
         chunksByRestoredFile.put(fileId, chunks);
     }
 
+    /**
+     * Checks if all the chunks from the given file were restored.
+     * @param fileId - the provided file id
+     * @return true if the chunks were all restored or false if otherwise
+     */
     public boolean hasRestoredAllChunks(String fileId){
         int currentSize = chunksByRestoredFile.get(fileId).size();
         int desiredSize = restoredFileInfoByFileId.get(fileId).getNumberOfChunks();
@@ -213,34 +188,39 @@ public class PeerState implements Serializable {
     }
 
     /**
-     * Saves a restored file locally.
-     *
-     * @param fileID the file id
+     * Saves the restored file in the restored peer folder
+     * @param fileId - the id of the file to be saved
      */
-    public void saveRestoredFile(String fileID) {
-        ConcurrentSkipListSet<Message> fileChunks = chunksByRestoredFile.get(fileID);
-        String filePath = restoredFileInfoByFileId.get(fileID).getFilePath();
-        storageManager.saveFile(filePath, fileChunks);
+    public void saveFileToRestoredFolder(String fileId) {
+        String filePath = restoredFileInfoByFileId.get(fileId).getFilePath();
+        ConcurrentSkipListSet<Message> chunks = chunksByRestoredFile.get(fileId);
+        storageManager.saveFile(filePath, chunks);
     }
 
+    /**
+     * Removes the file from the containers responsible for restoring files.
+     * @param fileId - the id of the file to be removed
+     */
     public void stopRestoringFile(String fileId) {
         chunksByRestoredFile.remove(fileId);
         restoredFileInfoByFileId.remove(fileId);
     }
 
+    /**
+     * Chunk was already being restored by another peer. Therefore it is removed from the being restored chunks map
+     * @param fileChunk - the chunk being restored
+     */
     public void removeChunk(FileChunk fileChunk) {
         isBeingRestoredChunkMap.remove(fileChunk);
     }
 
     /**
-     * Deletes a  chunk.
-     *
-     * @param fileId           the file id
-     * @param chunkNo       the chunk index
-     * @param updateMaxStorage true if max storage value should be updated in the process
+     * Deletes a chunk that was saved locally.
+     * @param fileId - the file id where the chunk belongs
+     * @param chunkNo - the chunk number
      */
-    public void deleteChunk(String fileId, int chunkNo, boolean updateMaxStorage) {
-        storageManager.deleteChunk(fileId, chunkNo, updateMaxStorage);
+    public void deleteChunk(String fileId, int chunkNo) {
+        storageManager.deleteChunk(fileId, chunkNo);
 
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
         ChunkInfo chunkInfo = storedChunksInfo.remove(fileChunk);
@@ -251,10 +231,6 @@ public class PeerState implements Serializable {
         if(storedChunks.isEmpty()) {
             storedChunksByFileId.remove(fileId);
         }
-    }
-
-    public void removeStoredChunksFile(String fileId) {
-        storedChunksByFileId.remove(fileId);
     }
 
     public StorageManager getStorageManager() {
@@ -301,6 +277,61 @@ public class PeerState implements Serializable {
         return backedUpFilesByPaths;
     }
 
+    /******************************************************************************************************
+     *                                        Initiators methods
+     *******************************************************************************************************/
+
+    /**
+     * Calculates the current replication degree of the backed up chunk.
+     * @param message - the provided chunk message
+     * @return the computed replication degree or 0 if the chunk isn't backed up by the peer.
+     */
+    public int getChunkRepDeg(Message message) {
+        int currentDegree = 0;
+        FileChunk fileChunk = new FileChunk(message.getFileId(),message.getChunkNo());
+        if(backedUpChunksInfo.containsKey(fileChunk)) {
+            currentDegree = backedUpChunksInfo.get(fileChunk).getCurrentReplicationDeg();
+        }
+
+        return currentDegree;
+    }
+
+    /**
+     * Adds file to the backed up files container.
+     * @param filePath  - the file path
+     * @param fileId - the id of the file
+     * @param numberOfChunks - the number of chunks
+     */
+    public void backUpFile(String filePath, String fileId, int numberOfChunks) {
+        backedUpFilesByPaths.put(filePath, new FileInfo(fileId, numberOfChunks, filePath));
+    }
+
+    /**
+     * Computes the best chunk for being removed.
+     * @return the computed chunk
+     */
+    public FileChunk getMostStoredChunk() {
+        if(storedChunksInfo.isEmpty()) {
+            System.out.println("Stored chunks info is empty");
+            return null;
+        }
+
+        FileChunk bestChunk = null;
+        int max = -1;
+
+        for (Map.Entry<FileChunk, ChunkInfo> chunk : storedChunksInfo.entrySet()) {
+            if(chunk.getValue().getReplicationDegDifference() > max){
+                max = chunk.getValue().getReplicationDegDifference();
+                bestChunk = chunk.getKey();
+            }
+        }
+        return bestChunk;
+    }
+
+    /**
+     * Retrieves the peer state.
+     * @return - the string that describes it.
+     */
     public String getPeerState(){
         String output = "";
         output += "Files backed up:";

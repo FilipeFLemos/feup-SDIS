@@ -69,7 +69,7 @@ public class BackupInitiator implements Runnable{
 
         } while(!wereAllSTOREDReceived(waitTime));
 
-        peerState.addBackedUpFile(filePath, fileId, numberChunks);
+        peerState.backUpFile(filePath, fileId, numberChunks);
         System.out.println("File " + filePath + " backed up");
     }
 
@@ -114,7 +114,7 @@ public class BackupInitiator implements Runnable{
             e.printStackTrace();
         }
 
-        chunks.removeIf( chunk -> peerState.getBackedUpChunkRepDegree(chunk) >= chunk.getReplicationDeg());
+        chunks.removeIf( chunk -> peerState.getChunkRepDeg(chunk) >= chunk.getReplicationDeg());
 
         return chunks.isEmpty();
     }

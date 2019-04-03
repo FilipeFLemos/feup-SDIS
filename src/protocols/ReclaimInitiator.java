@@ -57,7 +57,7 @@ public class ReclaimInitiator implements Runnable{
             int chunkIndex = toDelete.getChunkNo();
 
             System.out.println("Deleting " + fileID + " - " + chunkIndex);
-            peerState.deleteChunk(fileID, chunkIndex, false);
+            peerState.deleteChunk(fileID, chunkIndex);
 
             Message removedMessage = new Message(peerState.getVersion(), peerState.getServerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
             mcChannel.sendMessage(removedMessage);

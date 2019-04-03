@@ -80,20 +80,16 @@ public class StorageManager implements Serializable {
 
     /**
      * Deletes a chunk (if present).
-     *
-     * @param fileId           the file id
+     *  @param fileId           the file id
      * @param chunkNo       the chunk index
-     * @param updateMaxStorage true if maxReservedSpace should be updated, false otherwise
      */
-    public synchronized void deleteChunk(String fileId, int chunkNo, boolean updateMaxStorage) {
+    public synchronized void deleteChunk(String fileId, int chunkNo) {
         Path path = Paths.get(this.backupDir +"/"+fileId+"_"+chunkNo);
 
         try {
             if(Files.exists(path)) {
                 long chunkBytes = Files.size(path);
                 decreaseUsedSpace(chunkBytes);
-                if(updateMaxStorage)
-                    maxReservedSpace -= chunkBytes;
                 Files.delete(path);
             }
         } catch (IOException e) {

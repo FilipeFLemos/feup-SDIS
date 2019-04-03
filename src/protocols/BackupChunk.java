@@ -42,7 +42,7 @@ public class BackupChunk implements Runnable {
     @Override
     public void run() {
         //if chunk degree was satisfied meanwhile, cancel
-        if(peerState.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg()) {
+        if(peerState.getChunkRepDeg(message) >= message.getReplicationDeg()) {
             System.out.println("Chunk " + message.getChunkNo() + " satisfied meanwhile, canceling");
             return;
         }
@@ -76,6 +76,6 @@ public class BackupChunk implements Runnable {
             e.printStackTrace();
         }
 
-        return peerState.getBackedUpChunkRepDegree(message) >= message.getReplicationDeg();
+        return peerState.getChunkRepDeg(message) >= message.getReplicationDeg();
     }
 }

@@ -195,7 +195,7 @@ public class MessageHandler {
         controller.addRestoredFileChunks(message);
 
         if(controller.hasRestoredAllChunks(fileId)) {
-            controller.saveRestoredFile(fileId);
+            controller.saveFileToRestoredFolder(fileId);
             controller.stopRestoringFile(fileId);
         }
     }
@@ -216,7 +216,7 @@ public class MessageHandler {
 
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
         while(!storedChunks.isEmpty()) {
-            controller.deleteChunk(fileId, storedChunks.get(0), false);
+            controller.deleteChunk(fileId, storedChunks.get(0));
         }
 
         //controller.removeStoredChunksFile(fileId);
