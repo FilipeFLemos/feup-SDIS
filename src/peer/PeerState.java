@@ -280,7 +280,11 @@ public class PeerState implements Serializable {
         ChunkInfo chunkInfo = storedChunksInfo.remove(fileChunk);
         chunkInfo.removePeer(serverId);
 
-        storedChunksByFileId.get(fileId).remove((Integer) chunkNo);
+        ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
+        storedChunks.remove((Integer) chunkNo);
+        if(storedChunks.isEmpty()) {
+            storedChunksByFileId.remove(fileId);
+        }
     }
 
     public void removeStoredChunksFile(String fileId) {
