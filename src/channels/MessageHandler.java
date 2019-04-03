@@ -40,11 +40,11 @@ public class MessageHandler {
       * null.
       */
     void handleMessage(Message message, InetAddress address) {
+
         if(message.getSenderId().equals(peer.getServerId()))
             return;
 
         int randomWait;
-
         switch(message.getMessageType()) {
             case PUTCHUNK:
                 if(!message.getVersion().equals("1.0")) {
@@ -76,6 +76,7 @@ public class MessageHandler {
             default:
                 UI.printError("No valid type");
         }
+
     }
 
     /**
@@ -84,7 +85,9 @@ public class MessageHandler {
      * @param message the message
      */
     private void handlePUTCHUNK(Message message) {
-        System.out.println("Received Putchunk: " + message.getChunkNo());
+        UI.printBoot("------------- Received Putchunk Message: "+message.getChunkNo()+" -----------");
+
+        //System.out.println("Received Putchunk: " + message.getChunkNo());
 
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
@@ -95,7 +98,8 @@ public class MessageHandler {
 
             if(storedRepliesInfo.containsKey(key)) {
                 if(storedRepliesInfo.get(key).achievedDesiredRepDeg()) {
-                    System.out.println("Received enough STORED messages for " + message.getChunkNo() + " meanwhile, ignoring request");
+                    UI.printWarning("Received enough STORED messages for " + message.getChunkNo() + " meanwhile, ignoring request");
+                    UI.printBoot("------------------------------------------------------");
                     return;
                 }
             }
@@ -105,11 +109,12 @@ public class MessageHandler {
         ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = controller.getStoredChunksByFileId();
 
         if(storedChunksByFileId.get(fileId).contains(message.getChunkNo())) {
-            System.out.println("Already stored chunk, sending STORED anyway.");
+            UI.printWarning("Already stored chunk, sending STORED anyway.");
         }
         else {
             if (!controller.getStorageManager().saveChunk(message)) {
                 UI.printError("Not enough space to save chunk " + message.getChunkNo() + " of file " + message.getFileId());
+                UI.printBoot("------------------------------------------------------");
                 return;
             }
             controller.addStoredChunk(message);
@@ -118,7 +123,8 @@ public class MessageHandler {
         Message storedMessage = new Message(message.getVersion(), peer.getServerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
         peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
-        System.out.println("Sent Stored Message: " + storedMessage.getChunkNo());
+        UI.printOK("Sent Stored Message: " + storedMessage.getChunkNo());
+        UI.printBoot("------------------------------------------------------");
     }
 
     /**
@@ -127,10 +133,13 @@ public class MessageHandler {
      * @param message the message
      */
     private void handleSTORED(Message message) {
-        System.out.println("Received Stored Message: " + message.getChunkNo());
+        UI.printBoot("-------------- Received Stored Message: "+ message.getChunkNo() +" ------------");
+
+        //System.out.println("Received Stored Message: " + message.getChunkNo());
 
         FileChunk key = new FileChunk(message.getFileId(), message.getChunkNo());
         controller.updateChunkInfo(key,message);
+        UI.printBoot("------------------------------------------------------");
     }
 
     /**
@@ -141,7 +150,9 @@ public class MessageHandler {
      * @param sourceAddress address used for TCP connection in enhanced version of protocols
      */
     private void handleGETCHUNK(Message message, InetAddress sourceAddress) {
-        System.out.println("Received GetChunk Message: " + message.getChunkNo());
+        UI.printBoot("------------ Received GetChunk Message: "+message.getChunkNo()+" ------------");
+
+        //System.out.println("Received GetChunk Message: " + message.getChunkNo());
 
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
@@ -151,19 +162,22 @@ public class MessageHandler {
         if(isBeingRestoredChunkMap.containsKey(fileChunk)) {
             if(isBeingRestoredChunkMap.get(fileChunk)) {
                 controller.removeChunk(fileChunk);
-                System.out.println("Received a CHUNK message for " + chunkNo + " meanwhile, ignoring request");
+                UI.printWarning("Received a CHUNK message for " + chunkNo + " meanwhile, ignoring request");
+                UI.printBoot("------------------------------------------------------");
                 return;
             }
         }
 
         ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = controller.getStoredChunksByFileId();
         if(!storedChunksByFileId.containsKey(fileId) || !storedChunksByFileId.get(fileId).contains(chunkNo)) {
+            UI.printBoot("------------------------------------------------------");
             return;
         }
 
         Message chunk = controller.getStorageManager().retrieveChunk(fileId, chunkNo);
         peer.sendMessage(chunk,sourceAddress);
-        System.out.println("Sent CHUNK Message: " + message.getChunkNo());
+        UI.printOK("Sent CHUNK Message: " + message.getChunkNo());
+        UI.printBoot("------------------------------------------------------");
     }
 
     /**
@@ -172,7 +186,8 @@ public class MessageHandler {
      * @param message the message
      */
     private void handleCHUNK(Message message) {
-        System.out.println("Received Chunk Message: " + message.getChunkNo());
+        UI.printBoot("-------------- Received Chunk Message: "+ message.getChunkNo() +" -------------");
+        //System.out.println("Received Chunk Message: " + message.getChunkNo());
 
         String fileId = message.getFileId();
         FileChunk fileChunk = new FileChunk(fileId, message.getChunkNo());
@@ -180,18 +195,22 @@ public class MessageHandler {
         ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap = controller.getIsBeingRestoredChunkMap();
         if(isBeingRestoredChunkMap.containsKey(fileChunk)) {
             controller.setIsBeingRestored(fileChunk);
-            System.out.println("Added Chunk " + message.getChunkNo() + " to requests info.");
+            UI.printOK("Added Chunk " + message.getChunkNo() + " to requests info.");
         }
 
         ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = controller.getChunksByRestoredFile();
-        if(!chunksByRestoredFile.containsKey(fileId))
+        if(!chunksByRestoredFile.containsKey(fileId)) {
+            UI.printBoot("------------------------------------------------------");
             return;
+        }
 
         // if an enhanced chunk message is sent via multicast
         // channel, it only contains a header, don't restore
         //TODO: this verification isn't right
-        if(!message.getVersion().equals("1.0") && !message.hasBody())
+        if(!message.getVersion().equals("1.0") && !message.hasBody()) {
+            UI.printBoot("------------------------------------------------------");
             return;
+        }
 
         controller.addRestoredFileChunks(message);
 
@@ -199,6 +218,7 @@ public class MessageHandler {
             controller.saveFileToRestoredFolder(fileId);
             controller.stopRestoringFile(fileId);
         }
+        UI.printBoot("------------------------------------------------------");
     }
 
     /**
@@ -207,13 +227,17 @@ public class MessageHandler {
      * @param message the message
      */
     private void handleDELETE(Message message) {
-        System.out.println("Received Delete Message");
+        UI.printBoot("-------------- Received Delete Message ---------------");
+
+        //System.out.println("Received Delete Message");
 
         String fileId = message.getFileId();
 
         ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = controller.getStoredChunksByFileId();
-        if(!storedChunksByFileId.containsKey(fileId))
+        if(!storedChunksByFileId.containsKey(fileId)) {
+            UI.printBoot("------------------------------------------------------");
             return;
+        }
 
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
         while(!storedChunks.isEmpty()) {
@@ -221,7 +245,8 @@ public class MessageHandler {
         }
 
         //controller.removeStoredChunksFile(fileId);
-        System.out.println("Delete Success: file deleted.");
+        UI.printOK("Delete Success: file deleted.");
+        UI.printBoot("------------------------------------------------------");
     }
 
     /**
@@ -232,7 +257,9 @@ public class MessageHandler {
      * @param message the message
      */
     private void handleREMOVED(Message message) {
-        System.out.println("Received Removed Message: " + message.getChunkNo());
+        UI.printBoot("------------- Received Removed Message: "+message.getChunkNo()+" ------------");
+
+        //System.out.println("Received Removed Message: " + message.getChunkNo());
 
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
         ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo = controller.getStoredChunksInfo();
@@ -248,5 +275,6 @@ public class MessageHandler {
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         }
+        UI.printBoot("------------------------------------------------------");
     }
 }

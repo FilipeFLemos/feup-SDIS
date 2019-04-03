@@ -37,6 +37,8 @@ public class Peer implements RMIProtocol {
      * @param args initialization arguments
      */
     private Peer(final String args[]) {
+        UI.printBoot("-------------------- Booting Peer --------------------");
+        UI.nl();
         UI.printBoot("Starting Peer with protocols version " + args[0]);
         UI.printBoot("Starting Peer with ID " + args[1]);
         version = args[0];
@@ -52,6 +54,9 @@ public class Peer implements RMIProtocol {
         if (!loadPeerController())
             this.controller = new PeerState(version, serverId);
 
+        UI.printBoot("------------- Booting Multicast Channels -------------");
+        UI.nl();
+
         this.messageHandler = new MessageHandler(this);
 
         // save peerController data every 3 seconds
@@ -59,6 +64,9 @@ public class Peer implements RMIProtocol {
 
         MDRPort = Integer.parseInt(args[8]);
         initChannels(args[3], Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]), args[7], MDRPort);
+
+        UI.nl();
+        UI.printBoot("-------------------- Peer "+args[1]+" Ready --------------------");
     }
 
     // peer.Peer args
@@ -89,6 +97,7 @@ public class Peer implements RMIProtocol {
             registry.rebind(accessPoint, remoteService);
 
             UI.printBoot("Server ready!");
+            UI.nl();
         } catch (Exception e) {
             UI.printError("Server exception: " + e.toString());
         }

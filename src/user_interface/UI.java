@@ -35,4 +35,8 @@ public class UI{
     public static void printOK(String s){
         System.out.println(ANSI_GREEN + s + ANSI_RESET);
     }
+    public static void nl(){
+        System.out.println();
+    }
+
 }

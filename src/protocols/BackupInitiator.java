@@ -72,7 +72,7 @@ public class BackupInitiator implements Runnable{
         } while(!wereAllSTOREDReceived(waitTime));
 
         peerState.backUpFile(filePath, fileId, numberChunks);
-        System.out.println("File " + filePath + " backed up");
+        UI.printOK("File " + filePath + " backed up");
     }
 
 
