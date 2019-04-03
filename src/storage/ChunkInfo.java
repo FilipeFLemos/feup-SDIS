@@ -56,26 +56,28 @@ public class ChunkInfo implements Serializable {
     }
 
     /**
-     * Add peer that backs up the chunk.
-     *
-     * @param peerId the peer id
+     * Adds a peer that backs up the chunk.
+     * @param peerId - the peer id
      */
     public void addPeer(int peerId) {
         peersWithChunk.add(peerId);
     }
 
+    /**
+     * Removes a peer that stopped backing up the chunk.
+     * @param peerId - the peer id
+     */
     public void removePeer(Integer peerId) {
         peersWithChunk.remove(peerId);
     }
 
     /**
-     * Checks if the chunk is being backed up by a particular peer.
-     *
-     * @param peerID the peer id
-     * @return the boolean
+     * Checks if the chunk is being backed up by a peer.
+     * @param peerId - the peer id
+     * @return true if positive and false otherwise
      */
-    public boolean isBackedUpByPeer(int peerID) {
-        return peersWithChunk.contains(peerID);
+    public boolean isBackedUpByPeer(int peerId) {
+        return peersWithChunk.contains(peerId);
     }
 
 }
