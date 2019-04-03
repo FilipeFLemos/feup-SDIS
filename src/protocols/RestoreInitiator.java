@@ -4,6 +4,7 @@ import message.Message;
 import peer.PeerState;
 import channels.Channel;
 import storage.FileInfo;
+import user_interface.UI;
 
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
@@ -32,7 +33,7 @@ public class RestoreInitiator implements Runnable{
     public void run() {
         ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths = peerState.getBackedUpFilesByPaths();
         if(!backedUpFilesByPaths.containsKey(filePath)) {
-            System.out.println("File " + filePath + " is not backed up.");
+            UI.printWarning("File " + filePath + " is not backed up.");
             return;
         }
 

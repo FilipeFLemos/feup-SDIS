@@ -1,6 +1,8 @@
 package message;
 
 import java.io.Serializable;
+import user_interface.UI;
+
 
 public class Message implements Comparable, Serializable {
 

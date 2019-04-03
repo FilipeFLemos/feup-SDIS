@@ -4,6 +4,7 @@ import message.Message;
 import channels.Channel;
 import peer.PeerState;
 import utils.Globals;
+import user_interface.UI;
 
 public class BackupChunk implements Runnable {
 
@@ -56,7 +57,7 @@ public class BackupChunk implements Runnable {
             tries++; waitTime *= 2;
 
             if(tries > Globals.MAX_PUTCHUNK_TRIES) {
-                System.out.println("Aborting backup, attempt limit reached");
+                UI.printError("Aborting backup, attempt limit reached");
                 break;
             }
             channel.sendMessage(message);

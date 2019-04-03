@@ -2,6 +2,7 @@ package channels;
 
 import message.Message;
 import utils.Utils;
+import user_interface.UI;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -60,7 +61,7 @@ public class Channel {
 
         startListening();
 
-        System.out.println("Joined Multicast Channel " + address + ":" + port);
+        UI.printBoot("Joined Multicast Channel " + address + ":" + port);
     }
 
     /**
@@ -78,7 +79,7 @@ public class Channel {
                     Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
                     messageHandler.handleMessage(message, multicastPacket.getAddress());
                 } catch (IOException e) {
-                    System.out.println("Error receiving multicast message");
+                    UI.printError("Error receiving multicast message");
                     e.printStackTrace();
                 }
             }

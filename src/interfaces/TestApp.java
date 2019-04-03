@@ -6,6 +6,8 @@ import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import user_interface.UI;
+
 
 import static utils.Utils.getRegistry;
 import static utils.Utils.parseRMI;
@@ -47,7 +49,7 @@ public class TestApp {
         }
 
         if(!(args[1].equals("BACKUP") || args[1].equals("RESTORE") || args[1].equals("DELETE") || args[1].equals("RECLAIM") || args[1].equals("STATE"))){
-            System.out.println("Invalid sub_protocol. (BACKUP, RESTORE, DELETE, RECLAIM, STATE)");
+            UI.printError("Invalid sub_protocol. (BACKUP, RESTORE, DELETE, RECLAIM, STATE)");
             return;
         }
 
@@ -68,7 +70,7 @@ public class TestApp {
             Registry registry = getRegistry(peer_ap);
             remoteService = (RMIProtocol) registry.lookup(peer_ap[2]);
         } catch (Exception e) {
-            System.out.println("Error when opening RMI stub");
+            UI.printError("Error when opening RMI stub");
             e.printStackTrace();
         }
 

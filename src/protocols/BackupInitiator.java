@@ -5,9 +5,11 @@ import peer.PeerState;
 import channels.Channel;
 import utils.Globals;
 import utils.Utils;
+import user_interface.UI;
 
 import java.io.*;
 import java.util.ArrayList;
+
 
 public class BackupInitiator implements Runnable{
 
@@ -58,7 +60,7 @@ public class BackupInitiator implements Runnable{
             System.out.println("Sent " + filePath + " PUTCHUNK messages " + tries + " times");
 
             if(tries > Globals.MAX_PUTCHUNK_TRIES) {
-                System.out.println("Aborting backup, attempt limit reached");
+                UI.printError("Aborting backup, attempt limit reached");
                 return;
             }
 

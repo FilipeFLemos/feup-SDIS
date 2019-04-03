@@ -5,6 +5,7 @@ import peer.PeerState;
 import storage.FileChunk;
 import channels.Channel;
 import storage.StorageManager;
+import user_interface.UI;
 
 public class ReclaimInitiator implements Runnable{
 
@@ -31,7 +32,7 @@ public class ReclaimInitiator implements Runnable{
         if(reclaimSpace(space))
             System.out.println("Successfully reclaimed down to " + space + " kB");
         else
-            System.out.println("Couldn't reclaim down to " + space + " kB");
+            UI.printError("Couldn't reclaim down to " + space + " kB");
     }
 
     /**
@@ -49,7 +50,7 @@ public class ReclaimInitiator implements Runnable{
 
             // no more chunks to delete
             if (toDelete == null) {
-                System.out.println("Nothing to delete");
+                UI.printWarning("Nothing to delete");
                 return storageManager.getAvailableSpace() < targetSpace;
             }
 

@@ -2,6 +2,8 @@ package channels;
 
 import message.Message;
 import utils.Globals;
+import user_interface.UI;
+
 
 import java.io.IOException;
 import java.io.ObjectInputStream;
@@ -67,7 +69,7 @@ public class TCPReceiver implements Runnable {
         try {
             stream = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
-            System.out.println("Error creating Object Input Stream");
+            UI.printError("Error creating Object Input Stream");
             e.printStackTrace();
         }
 

@@ -8,6 +8,7 @@ import peer.Peer;
 import protocols.BackupChunk;
 import utils.Globals;
 import utils.Utils;
+import user_interface.UI;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
@@ -73,7 +74,7 @@ public class MessageHandler {
                 threadPool.submit(() -> handleREMOVED(message));
                 break;
             default:
-                System.out.println("No valid type");
+                UI.printError("No valid type");
         }
     }
 
@@ -108,7 +109,7 @@ public class MessageHandler {
         }
         else {
             if (!controller.getStorageManager().saveChunk(message)) {
-                System.out.println("Not enough space to save chunk " + message.getChunkNo() + " of file " + message.getFileId());
+                UI.printError("Not enough space to save chunk " + message.getChunkNo() + " of file " + message.getFileId());
                 return;
             }
             controller.addStoredChunk(message);

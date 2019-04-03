@@ -4,6 +4,7 @@ import message.Message;
 import channels.*;
 import protocols.*;
 import interfaces.RMIProtocol;
+import user_interface.UI;
 
 import java.io.*;
 import java.net.InetAddress;
@@ -36,8 +37,8 @@ public class Peer implements RMIProtocol {
      * @param args initialization arguments
      */
     private Peer(final String args[]) {
-        System.out.println("Starting Peer with protocols version " + args[0]);
-        System.out.println("Starting Peer with ID " + args[1]);
+        UI.printBoot("Starting Peer with protocols version " + args[0]);
+        UI.printBoot("Starting Peer with ID " + args[1]);
         version = args[0];
         serverId = Integer.parseInt(args[1]);
 
@@ -87,9 +88,9 @@ public class Peer implements RMIProtocol {
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind(accessPoint, remoteService);
 
-            System.out.println("Server ready!");
+            UI.printBoot("Server ready!");
         } catch (Exception e) {
-            System.out.println("Server exception: " + e.toString());
+            UI.printError("Server exception: " + e.toString());
         }
     }
 
@@ -108,7 +109,7 @@ public class Peer implements RMIProtocol {
             controllerFile.close();
             return true;
         } catch (FileNotFoundException e) {
-            System.out.println("No pre-existing PeerState found, starting new one");
+            UI.printWarning("No pre-existing PeerState found, starting new one");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -151,7 +152,7 @@ public class Peer implements RMIProtocol {
             controllerObject.close();
             controllerFile.close();
         } catch (FileNotFoundException e) {
-            System.out.println("PeerState not found");
+            UI.printError("PeerState not found");
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
