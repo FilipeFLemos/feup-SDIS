@@ -115,7 +115,7 @@ public class PeerState implements Serializable {
      * @param chunkAmount the chunk amount
      */
     public void addBackedUpFile(String filePath, String fileID, int chunkAmount) {
-        backedUpFilesByPaths.put(filePath, new FileInfo(fileID, chunkAmount));
+        backedUpFilesByPaths.put(filePath, new FileInfo(fileID, chunkAmount, filePath));
     }
 
     public FileChunk getMostStoredChunk() {
