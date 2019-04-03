@@ -218,7 +218,7 @@ public class MessageHandler {
             controller.deleteChunk(fileId, storedChunks.get(0), false);
         }
 
-        controller.removeStoredChunksFile(fileId);
+        //controller.removeStoredChunksFile(fileId);
         System.out.println("Delete Success: file deleted.");
     }
 
