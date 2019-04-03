@@ -165,10 +165,10 @@ public class StorageManager implements Serializable {
     /**
       * Checks if peer still has free space to backup a specific chunk
       * @param size size of chunk to be stored
-      * @return true if usedSpace + size > maxReservedSpace, false otherwise
+      * @return true if usedSpace + size <= maxReservedSpace, false otherwise
       */
     private boolean hasFreeSpace(long size) {
-        return usedSpace + size > maxReservedSpace;
+        return usedSpace + size <= maxReservedSpace;
     }
 
 

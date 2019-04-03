@@ -25,7 +25,7 @@ public class Globals {
     /**
      * A peer's maximum storage space
      */
-    public static long MAX_PEER_STORAGE = 8*10^9;
+    public static long MAX_PEER_STORAGE = (long) (8*Math.pow(10,9));
 
     /**
      * Numbers of tries on the backup protocl
