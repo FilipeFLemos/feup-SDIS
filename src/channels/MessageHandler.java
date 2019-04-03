@@ -162,6 +162,7 @@ public class MessageHandler {
 
         Message chunk = controller.getStorageManager().retrieveChunk(fileId, chunkNo);
         peer.sendMessage(chunk,sourceAddress);
+        System.out.println("Sent CHUNK Message: " + message.getChunkNo());
     }
 
     /**
