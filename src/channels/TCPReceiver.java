@@ -43,10 +43,11 @@ public class TCPReceiver implements Runnable {
         while (true) {
             try {
                 Socket client = serverSocket.accept();
+                ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
                 System.out.println("TCP Client joined");
                 threadPool.submit(() -> {
                     try {
-                        socketHandler(client);
+                        socketHandler(objectInputStream);
                     } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -60,14 +61,13 @@ public class TCPReceiver implements Runnable {
     /**
       * Socket handler.
       *
-      * @param client - the client socket
       * @throws IOException
       * @throws ClassNotFoundException
       */
-    private void socketHandler(Socket client) throws IOException, ClassNotFoundException {
+    private void socketHandler(ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
         Message message = null;
+        objectInputStream.reset();
         try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
             message = (Message) objectInputStream.readObject();
             objectInputStream.close();
         } catch (IOException | ClassNotFoundException e) {
@@ -82,7 +82,7 @@ public class TCPReceiver implements Runnable {
         messageHandler.handleMessage(message, null);
         threadPool.submit(() -> {
             try {
-                socketHandler(client);
+                socketHandler(objectInputStream);
             } catch (IOException | ClassNotFoundException e) {
                 e.printStackTrace();
             }
