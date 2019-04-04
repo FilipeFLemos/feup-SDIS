@@ -71,6 +71,7 @@ public class TCPReceiver implements Runnable {
             message = (Message) objectInputStream.readObject();
             objectInputStream.close();
         } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
             System.out.println("Error reading message from TCP Server");
         }
 
