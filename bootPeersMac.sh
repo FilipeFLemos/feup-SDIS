@@ -8,22 +8,22 @@ sleep 1
 
 osascript -e 'tell app "Terminal"
     do script "cd ~/FEUP/SDIS/SDIS/
-                sh run.sh 1.0 1"
+                sh run.sh 2.0 1"
 end tell'
 
 osascript -e 'tell app "Terminal"
     do script "cd ~/FEUP/SDIS/SDIS/
-                sh run.sh 1.0 2"
+                sh run.sh 2.0 2"
 end tell'
 
 osascript -e 'tell app "Terminal"
     do script "cd ~/FEUP/SDIS/SDIS/
-                sh run.sh 1.0 3"
+                sh run.sh 2.0 3"
 end tell'
 
 osascript -e 'tell app "Terminal"
     do script "cd ~/FEUP/SDIS/SDIS/
-                sh run.sh 1.0 4"
+                sh run.sh 2.0 4"
 end tell'
 
 osascript -e 'tell app "Terminal"

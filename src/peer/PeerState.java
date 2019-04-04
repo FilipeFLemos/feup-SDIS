@@ -6,8 +6,7 @@ import storage.FileChunk;
 import storage.FileInfo;
 import storage.StorageManager;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.*;
 
 import user_interface.UI;
@@ -386,6 +385,7 @@ public class PeerState implements Serializable {
         output += "\nChunks stored:";
         for (Map.Entry<String, ArrayList<Integer>> entry : storedChunksByFileId.entrySet()) {
             output += "\n  FileId: " + entry.getKey();
+            Collections.sort(entry.getValue());
             for(int chunkNo : entry.getValue()){
                 ChunkInfo chunkInfo = storedChunks.get(new FileChunk(entry.getKey(), chunkNo));
                 output += "\n     Chunk No " + chunkNo + " (" + chunkInfo.getSize()/1000 +" kB) - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
