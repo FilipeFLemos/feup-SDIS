@@ -4,6 +4,7 @@ import message.Message;
 import peer.Peer;
 import channels.Channel;
 import utils.Utils;
+import user_interface.UI;
 
 public class DeleteInitiator implements Runnable{
 
@@ -28,10 +29,17 @@ public class DeleteInitiator implements Runnable{
       */
     @Override
     public void run() {
+
+        UI.printInfo("-------------- Executing Delete Protocol -------------");
+
         String fileId = Utils.getFileID(filePath);
 
         Message message = new Message(peer.getVersion(),peer.getServerId(),fileId, null, Message.MessageType.DELETE);
         channel.sendMessage(message);
         peer.getController().deleteBackedUp(filePath);
+        UI.printOK("Deleted file " + filePath);
+        UI.printInfo("------------------------------------------------------");
+
+
     }
 }

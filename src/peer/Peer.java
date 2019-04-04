@@ -234,7 +234,9 @@ public class Peer implements RMIProtocol {
      */
     @Override
     public void state() {
+        UI.printInfo("-------------------- Peer "+serverId+" State --------------------");
         System.out.println(controller.getPeerState());
+        UI.printInfo("------------------------------------------------------");
     }
 
     public Channel getMCChannel() {

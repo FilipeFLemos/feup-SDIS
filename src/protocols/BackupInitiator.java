@@ -47,6 +47,10 @@ public class BackupInitiator implements Runnable{
       */
     @Override
     public void run() {
+
+        UI.printInfo("-------------- Executing Backup Protocol -------------");
+
+
         splitIntoChunks();
 
         int tries = 0;
@@ -61,6 +65,7 @@ public class BackupInitiator implements Runnable{
 
             if(tries > Globals.MAX_PUTCHUNK_TRIES) {
                 UI.printError("Aborting backup, attempt limit reached");
+                UI.printInfo("------------------------------------------------------");
                 return;
             }
 
@@ -73,6 +78,7 @@ public class BackupInitiator implements Runnable{
 
         peerState.backUpFile(filePath, fileId, numberChunks);
         UI.printOK("File " + filePath + " backed up");
+        UI.printInfo("------------------------------------------------------");
     }
 
 

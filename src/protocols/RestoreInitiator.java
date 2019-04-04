@@ -31,9 +31,11 @@ public class RestoreInitiator implements Runnable{
       */
     @Override
     public void run() {
+        UI.printInfo("------------- Executing Restore Protocol -------------");
         ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths = peerState.getBackedUpFiles();
         if(!backedUpFilesByPaths.containsKey(filePath)) {
             UI.printWarning("File " + filePath + " is not backed up.");
+            UI.printInfo("------------------------------------------------------");
             return;
         }
 
@@ -53,5 +55,6 @@ public class RestoreInitiator implements Runnable{
             channel.sendMessage(chunk);
             System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
         }
+        UI.printInfo("------------------------------------------------------");
     }
 }

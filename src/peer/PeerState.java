@@ -346,29 +346,29 @@ public class PeerState implements Serializable {
         output += "Files backed up:";
         for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
             FileInfo fileInfo = entry.getValue();
-            output += "\n\t FileId: " + fileInfo.getFileId();
-            output += "\n\t Path: " + fileInfo.getFilePath();
+            output += "\n  FileId: " + fileInfo.getFileId();
+            output += "\n  Path: " + fileInfo.getFilePath();
 
             for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
                 ChunkInfo chunkInfo =  backedUpChunks.get(new FileChunk(fileInfo.getFileId(), i));
                 if(i == 0){
-                    output += "\n\t Desired Replication Degree: " + chunkInfo.getDesiredReplicationDeg() + "\n Chunks:";
+                    output += "\n  Desired Replication Degree: " + chunkInfo.getDesiredReplicationDeg() + "\n Chunks:";
                 }
-                output += "\n\t\t Chunk No " + i + " - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
+                output += "\n    Chunk No " + i + " - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
 
             }
         }
 
         output += "\nChunks stored:";
         for (Map.Entry<String, ArrayList<Integer>> entry : storedChunksByFileId.entrySet()) {
-            output += "\n\t FileId: " + entry.getKey();
+            output += "\n  FileId: " + entry.getKey();
             for(int chunkNo : entry.getValue()){
                 ChunkInfo chunkInfo = storedChunks.get(new FileChunk(entry.getKey(), chunkNo));
-                output += "\n\t\t Chunk No " + chunkNo + " (" + chunkInfo.getSize()/1000 +" kB) - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
+                output += "\n     Chunk No " + chunkNo + " (" + chunkInfo.getSize()/1000 +" kB) - Current replication degree: " + chunkInfo.getCurrentReplicationDeg();
             }
         }
 
-        output += "\nStorage: \n\t Available Memory(kB): "+ storageManager.getAvailableSpace()/1000 + "\n\t Used Memory(kB): " + storageManager.getUsedSpace()/1000;
+        output += "\nStorage: \n  Available Memory(kB): "+ storageManager.getAvailableSpace()/1000 + "\n  Used Memory(kB): " + storageManager.getUsedSpace()/1000;
         return output;
     }
 }
