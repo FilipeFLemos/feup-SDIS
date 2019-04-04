@@ -3,8 +3,12 @@ package protocols;
 import message.Message;
 import channels.Channel;
 import peer.PeerState;
+import storage.ChunkInfo;
+import storage.FileChunk;
 import utils.Globals;
 import user_interface.UI;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 public class BackupChunk implements Runnable {
 
@@ -24,7 +28,7 @@ public class BackupChunk implements Runnable {
         this.peerState = peerState;
         this.channel = channel;
         if(chunk.getSenderId() == -1) {
-            peerState.setAtomicBoolean();
+            peerState.setAtomicBoolean(true);
         }
         createPUTCHANK(chunk, replicationDeg);
     }
@@ -74,6 +78,10 @@ public class BackupChunk implements Runnable {
             }
             channel.sendMessage(message);
         } while(!hasDesiredReplicationDeg(waitTime));
+
+        if(peerState.isPermformingBackUpChunk()) {
+            peerState.setAtomicBoolean(false);
+        }
         UI.printInfo("------------------------------------------------------");
     }
 
@@ -88,6 +96,16 @@ public class BackupChunk implements Runnable {
             Thread.sleep(waitTime);
         } catch (InterruptedException e) {
             e.printStackTrace();
+        }
+
+        if(peerState.isPermformingBackUpChunk()){
+            int currentDegree = 0;
+            FileChunk fileChunk = new FileChunk(message.getFileId(),message.getChunkNo());
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = peerState.getStoredChunks();
+            if(storedChunks.containsKey(fileChunk)) {
+                currentDegree = storedChunks.get(fileChunk).getCurrentReplicationDeg();
+            }
+            return currentDegree >= message.getReplicationDeg();
         }
 
         return peerState.getChunkRepDeg(message) >= message.getReplicationDeg();

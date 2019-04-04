@@ -367,12 +367,12 @@ public class PeerState implements Serializable {
         }
     }
 
-    public void setAtomicBoolean(){
-        isPerformingBackUpCunk.getAndSet(true);
+    public void setAtomicBoolean(boolean value){
+        isPerformingBackUpCunk.getAndSet(value);
     }
 
     public boolean isPermformingBackUpChunk(){
-        return isPerformingBackUpCunk.getAndSet(false);
+        return isPerformingBackUpCunk.get();
     }
 
     /**

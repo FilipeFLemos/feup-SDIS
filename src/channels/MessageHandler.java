@@ -43,7 +43,7 @@ public class MessageHandler {
       */
     void handleMessage(Message message, InetAddress address) {
 
-        if(message.getMessageType()!= Message.MessageType.REMOVED && message.getMessageType()!= Message.MessageType.STORED
+        if(message.getMessageType()!= Message.MessageType.REMOVED
          && message.getSenderId().equals(peer.getServerId())) {
             return;
         }
@@ -158,10 +158,6 @@ public class MessageHandler {
             if(fileInfo.getFileId().equals(message.getFileId())){
                 return;
             }
-        }
-
-        if(peer.getServerId() == message.getSenderId() && !controller.isPermformingBackUpChunk()){
-            return;
         }
 
         UI.printBoot("-------------- Received Stored Message: "+ message.getChunkNo() +" ------------");
