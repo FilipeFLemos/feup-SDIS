@@ -9,6 +9,8 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Map;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicBoolean;
+
 import user_interface.UI;
 
 public class PeerState implements Serializable {
@@ -33,6 +35,7 @@ public class PeerState implements Serializable {
 
     private boolean backupEnhancement;
     private boolean restoreEnhancement;
+    private AtomicBoolean isPerformingBackUpCunk;
 
     public PeerState(String version, int serverId) {
         this.version = version;
@@ -52,6 +55,8 @@ public class PeerState implements Serializable {
 
         chunksReclaimed = new ConcurrentHashMap<>();
 
+        isPerformingBackUpCunk = new AtomicBoolean();
+        isPerformingBackUpCunk.set(false);
 
         if(version.equals("1.0")) {
             backupEnhancement = false;
@@ -360,6 +365,14 @@ public class PeerState implements Serializable {
             ChunkInfo chunkInfo =  backedUpChunks.get(new FileChunk(fileInfo.getFileId(), i));
             backedUpChunks.remove(chunkInfo);
         }
+    }
+
+    public void setAtomicBoolean(){
+        isPerformingBackUpCunk.getAndSet(true);
+    }
+
+    public boolean isPermformingBackUpChunk(){
+        return isPerformingBackUpCunk.getAndSet(false);
     }
 
     /**
