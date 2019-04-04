@@ -30,12 +30,10 @@ public class StorageManager implements Serializable {
         maxReservedSpace = Globals.MAX_PEER_STORAGE;
 
         backupDir = "peers/peer" + peerId + "/backup";
-        restoreDir = "peers/peer" + peerId + "/restore/files";
+        restoreDir = "peers/peer" + peerId + "/restore";
         initDirectory(backupDir);
         initDirectory(restoreDir);
     }
-
-    //TODO dentro de cada backup/restore folder têm de ter um fileId
 
     /**
      * Creates the directory with the given path if it does not exist.
@@ -97,6 +95,8 @@ public class StorageManager implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        UI.printOK("Chunk " + chunkNo + " (from file " + fileId + ") deleted successfully");
     }
 
     public synchronized void deleteFileFolder(String fileId) {
@@ -108,6 +108,8 @@ public class StorageManager implements Serializable {
         } catch (IOException e) {
             e.printStackTrace();
         }
+
+        UI.printOK("File " + fileId + " deleted successfully");
     }
 
     /**
