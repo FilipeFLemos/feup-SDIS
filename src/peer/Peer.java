@@ -147,7 +147,7 @@ public class Peer implements RMIProtocol {
         }
 
         if(!version.equals("1.0"))
-            TCPController = new TCPSender(MDRPort);
+            TCPController = new TCPSender(3);
     }
 
     /**
