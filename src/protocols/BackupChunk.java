@@ -97,7 +97,6 @@ public class BackupChunk implements Runnable {
         }
 
         if(selfDoing){
-            System.out.println("Entrei aqui");
             int currentDegree = 0;
             FileChunk fileChunk = new FileChunk(message.getFileId(),message.getChunkNo());
             ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = peerState.getStoredChunks();
