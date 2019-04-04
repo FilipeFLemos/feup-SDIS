@@ -77,8 +77,8 @@ public class TCPReceiver implements Runnable {
         if(message == null)
             return;
 
-        messageHandler.handleMessage(message, null);
         System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
+        messageHandler.handleMessage(message, null);
         threadPool.submit(() -> {
             try {
                 socketHandler(client);
