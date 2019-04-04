@@ -221,6 +221,7 @@ public class MessageHandler {
 
         ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = controller.getRestoredChunks();
         if(!chunksByRestoredFile.containsKey(fileId)) {
+            System.out.println("File is not being restored");
             UI.printBoot("------------------------------------------------------");
             return;
         }
@@ -229,6 +230,7 @@ public class MessageHandler {
         // channel, it only contains a header, don't restore
         //TODO: this verification isn't right
         if(!message.getVersion().equals("1.0") && !message.hasBody()) {
+            System.out.println("Only header");
             UI.printBoot("------------------------------------------------------");
             return;
         }
