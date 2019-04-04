@@ -240,7 +240,9 @@ public class PeerState implements Serializable {
             storageManager.deleteFileFolder(fileId);
         }
 
+        System.out.println("outside of adding + " + chunkInfo.getCurrentReplicationDeg());
         if(isReclaiming && !chunkInfo.achievedDesiredRepDeg()){
+            System.out.println("Adding reclaimed chunk");
             chunkInfo.setBody(chunkBeingDeleted.getBody());
             chunksReclaimed.putIfAbsent(fileChunk,chunkInfo);
         }
