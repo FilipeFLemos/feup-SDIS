@@ -40,7 +40,7 @@ public class TCPSender {
             if(sockets.containsKey(address)){
                 socket = sockets.get(address);
                 if(socket.isClosed()){
-                    sockets.remove(socket);
+                    sockets.remove(address);
                     socket = null;
                 }
             }
@@ -54,15 +54,18 @@ public class TCPSender {
                 }
             }
 
-            ObjectOutputStream stream = null;
+            ObjectOutputStream stream;
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
                 stream.writeObject(message);
                 System.out.println("Sent CHUNK message " + message.getChunkNo() + " via TCP");
             } catch (IOException e) {
                 System.out.println("Closing TCP socket...");
-                try { socket.close(); }
-                catch (IOException e1) { }
+                try {
+                    socket.close();
+                } catch (IOException e1) {
+                    e.printStackTrace();
+                }
             }
         });
     }
