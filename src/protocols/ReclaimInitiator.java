@@ -29,6 +29,8 @@ public class ReclaimInitiator implements Runnable{
       */
     @Override
     public void run() {
+        UI.printInfo("------------- Executing Reclaim Protocol -------------");
+
         StorageManager storageManager = peerState.getStorageManager();
         long targetSpace = space * 1000; //kbs to bytes
         if(targetSpace == 0){
@@ -45,6 +47,7 @@ public class ReclaimInitiator implements Runnable{
             else
                 UI.printError("Couldn't reclaim down to " + space + " kB");
         }
+        UI.printInfo("------------------------------------------------------");
     }
 
     /**
