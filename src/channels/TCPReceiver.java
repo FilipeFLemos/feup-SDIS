@@ -14,11 +14,10 @@ import java.util.concurrent.Executors;
 
 public class TCPReceiver implements Runnable {
 
-    private ServerSocket serverSocket;
-
-    private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
-
     private MessageHandler messageHandler;
+    private ServerSocket serverSocket;
+    private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
+    private boolean isRestoring;
 
     /**
       * Instantiates a socket channels
@@ -33,6 +32,7 @@ public class TCPReceiver implements Runnable {
         } catch (IOException e) {
             System.out.println("ServerSocket already working, no need to open again");
         }
+        isRestoring = true;
     }
 
     /**
@@ -40,15 +40,15 @@ public class TCPReceiver implements Runnable {
       */
     @Override
     public void run() {
-        while (true) {
+        while (isRestoring) {
             try {
-                Socket client = serverSocket.accept();
-                ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
-                System.out.println("TCP Client joined");
+                Socket socket = serverSocket.accept();
                 threadPool.submit(() -> {
                     try {
-                        socketHandler(client,objectInputStream);
-                    } catch (IOException | ClassNotFoundException e) {
+                        socketHandler(socket);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    } catch (ClassNotFoundException e) {
                         e.printStackTrace();
                     }
                 });
@@ -58,37 +58,44 @@ public class TCPReceiver implements Runnable {
         }
     }
 
+    public void close(){
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("Error Closing TCP Socket");
+        }
+    }
+
     /**
       * Socket handler.
       *
       * @throws IOException
       * @throws ClassNotFoundException
       */
-    private void socketHandler(Socket client, ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
-        Message message = null;
-        if(client.isClosed()){
-            objectInputStream.close();
-            return;
-        }
+    private void socketHandler(Socket socket) throws IOException, ClassNotFoundException {
+        Message message;
+        ObjectInputStream stream = null;
+
         try {
-            message = (Message) objectInputStream.readObject();
-            objectInputStream.close();
-        } catch (IOException | ClassNotFoundException e) {
+            stream = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
             e.printStackTrace();
             System.out.println("Error reading message from TCP Server");
         }
 
-        if(message == null)
-            return;
+        while((message = (Message) stream.readObject()) != null) {
+            messageHandler.handleMessage(message, null);
+            System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
 
-        System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
-        messageHandler.handleMessage(message, null);
-        threadPool.submit(() -> {
             try {
-                socketHandler(client, objectInputStream);
-            } catch (IOException | ClassNotFoundException e) {
-                e.printStackTrace();
+                stream = new ObjectInputStream(socket.getInputStream());
             }
-        });
+            catch (IOException e) {
+                System.out.println("Closing TCP socket...");
+                socket.close();
+                break;
+            }
+        }
     }
 }

@@ -206,8 +206,8 @@ public class Peer implements RMIProtocol {
     public void restore(String filePath) {
         if (!version.equals("1.0")) {
             System.out.println("Starting enhanced restore protocols");
-            //threadPool.submit(new TCPReceiver(MDRPort, messageHandler));
-            threadPool.submit(new SocketReceiver(MDRPort, messageHandler));
+            threadPool.submit(new TCPReceiver(MDRPort, messageHandler));
+            //threadPool.submit(new SocketReceiver(MDRPort, messageHandler));
         }
 
         threadPool.submit(new RestoreInitiator(controller, filePath, MCChannel));
