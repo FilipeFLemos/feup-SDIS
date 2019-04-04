@@ -74,7 +74,6 @@ public class TCPReceiver implements Runnable {
       * @throws ClassNotFoundException
       */
     private void socketHandler(Socket socket) throws IOException, ClassNotFoundException {
-        Message message;
         ObjectInputStream stream = null;
 
         try {
@@ -84,7 +83,11 @@ public class TCPReceiver implements Runnable {
             System.out.println("Error reading message from TCP Server");
         }
 
-        while((message = (Message) stream.readObject()) != null) {
+        while(true) {
+            Message message = (Message) stream.readObject();
+            if(message == null){
+                break;
+            }
             messageHandler.handleMessage(message, null);
             System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
 
