@@ -230,6 +230,7 @@ public class PeerState implements Serializable {
         storedChunks.remove((Integer) chunkNo);
         if(storedChunks.isEmpty()) {
             storedChunksByFileId.remove(fileId);
+            storageManager.deleteFileFolder(fileId);
         }
     }
 
