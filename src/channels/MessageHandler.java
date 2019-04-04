@@ -98,6 +98,9 @@ public class MessageHandler {
         ConcurrentHashMap<String, FileInfo> backedUpFiles = controller.getBackedUpFiles();
         for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
             FileInfo fileInfo = entry.getValue();
+            System.out.println("------Fileid1: " + fileId);
+            System.out.println("------Fileid2: " + fileInfo.getFileId());
+            System.out.println("------Result: " + fileInfo.getFileId().equals(fileId));
             if(fileInfo.getFileId().equals(fileId)){
                 return;
             }
