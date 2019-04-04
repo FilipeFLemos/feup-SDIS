@@ -23,6 +23,9 @@ public class BackupChunk implements Runnable {
     public BackupChunk(PeerState peerState, Message chunk, int replicationDeg, Channel channel) {
         this.peerState = peerState;
         this.channel = channel;
+        if(chunk.getSenderId() == -1) {
+            peerState.setAtomicBoolean();
+        }
         createPUTCHANK(chunk, replicationDeg);
     }
 
