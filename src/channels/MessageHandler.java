@@ -131,7 +131,7 @@ public class MessageHandler {
             controller.addStoredChunk(message);
         }
 
-        Message storedMessage = new Message(message.getVersion(), -1, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
+        Message storedMessage = new Message(message.getVersion(), peer.getServerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
         peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
         UI.printOK("Sent Stored Message: " + storedMessage.getChunkNo());
@@ -291,7 +291,7 @@ public class MessageHandler {
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
             System.out.println("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
-            Message PUTCHUNK = new Message(peer.getVersion(), peer.getServerId(), message.getFileId(), chunkInfo.getBody(),
+            Message PUTCHUNK = new Message(peer.getVersion(), -1, message.getFileId(), chunkInfo.getBody(),
                     Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
 
             threadPool.schedule( new BackupChunk(controller, PUTCHUNK, peer.getMDBChannel()),
