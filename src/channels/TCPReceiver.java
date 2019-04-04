@@ -42,10 +42,11 @@ public class TCPReceiver implements Runnable {
     public void run() {
         while (true) {
             try {
-                Socket socket = serverSocket.accept();
+                Socket client = serverSocket.accept();
+                System.out.println("TCP Client joined");
                 threadPool.submit(() -> {
                     try {
-                        socketHandler(socket);
+                        socketHandler(client);
                     } catch (IOException | ClassNotFoundException e) {
                         e.printStackTrace();
                     }
@@ -59,33 +60,31 @@ public class TCPReceiver implements Runnable {
     /**
       * Socket handler.
       *
-      * @param socket the socket
+      * @param client - the client socket
       * @throws IOException
       * @throws ClassNotFoundException
       */
-    private void socketHandler(Socket socket) throws IOException, ClassNotFoundException {
-        ObjectInputStream stream = null;
-
+    private void socketHandler(Socket client) throws IOException, ClassNotFoundException {
+        Message message = null;
         try {
-            stream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            UI.printError("Error creating Object Input Stream");
-            e.printStackTrace();
+            ObjectInputStream objectInputStream = new ObjectInputStream(client.getInputStream());
+            message = (Message) objectInputStream.readObject();
+            objectInputStream.close();
+        } catch (IOException | ClassNotFoundException e) {
+            System.out.println("Error reading message from TCP Server");
         }
 
-        Message message;
-        while((message = (Message) stream.readObject()) != null) {
-            messageHandler.handleMessage(message, null);
-            System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
+        if(message == null)
+            return;
 
+        messageHandler.handleMessage(message, null);
+        System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
+        threadPool.submit(() -> {
             try {
-                stream = new ObjectInputStream(socket.getInputStream());
+                socketHandler(client);
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
             }
-            catch (IOException e) {
-                System.out.println("Closing TCP socket");
-                socket.close();
-                break;
-            }
-        }
+        });
     }
 }
