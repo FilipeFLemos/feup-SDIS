@@ -24,7 +24,8 @@ public class Peer implements RMIProtocol {
     private Channel MDBChannel;
     private Channel MDRChannel;
     private MessageHandler messageHandler;
-    private TCPSender TCPController;
+    //private TCPSender TCPController;
+    private SocketController TCPController;
     private int serverId;
     private String version;
     private PeerState controller;
@@ -146,8 +147,10 @@ public class Peer implements RMIProtocol {
             e.printStackTrace();
         }
 
-        if(!version.equals("1.0"))
-            TCPController = new TCPSender(MDRPort);
+        if(!version.equals("1.0")) {
+            //TCPController = new TCPSender(MDRPort);
+            TCPController = new SocketController(MDRPort);
+        }
     }
 
     /**
@@ -203,7 +206,8 @@ public class Peer implements RMIProtocol {
     public void restore(String filePath) {
         if (!version.equals("1.0")) {
             System.out.println("Starting enhanced restore protocols");
-            threadPool.submit(new TCPReceiver(MDRPort, messageHandler));
+            //threadPool.submit(new TCPReceiver(MDRPort, messageHandler));
+            threadPool.submit(new SocketReceiver(MDRPort, messageHandler));
         }
 
         threadPool.submit(new RestoreInitiator(controller, filePath, MCChannel));
