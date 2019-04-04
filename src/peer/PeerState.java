@@ -329,6 +329,14 @@ public class PeerState implements Serializable {
         return bestChunk;
     }
 
+    public void deleteBackedUp(String filePath) {
+        FileInfo fileInfo = backedUpFiles.remove(filePath);
+        for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
+            ChunkInfo chunkInfo =  backedUpChunks.get(new FileChunk(fileInfo.getFileId(), i));
+            backedUpChunks.remove(chunkInfo);
+        }
+    }
+
     /**
      * Retrieves the peer state.
      * @return - the string that describes it.
@@ -338,7 +346,7 @@ public class PeerState implements Serializable {
         output += "Files backed up:";
         for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
             FileInfo fileInfo = entry.getValue();
-            output += "\n\t FileId: " + entry.getKey();
+            output += "\n\t FileId: " + fileInfo.getFileId();
             output += "\n\t Path: " + fileInfo.getFilePath();
 
             for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
