@@ -29,11 +29,13 @@ public class StorageManager implements Serializable {
         usedSpace = 0;
         maxReservedSpace = Globals.MAX_PEER_STORAGE;
 
-        backupDir = "localData/backup/peer" + peerId;
-        restoreDir = "localData/restore/peer" + peerId + "/files";
+        backupDir = "peers/peer/" + peerId + "/backup";
+        restoreDir = "peers/peer/" + peerId + "/restore/files";
         initDirectory(backupDir);
         initDirectory(restoreDir);
     }
+
+    //TODO dentro de cada backup/restore folder têm de ter um fileId
 
     /**
      * Creates the directory with the given path if it does not exist.
@@ -60,8 +62,13 @@ public class StorageManager implements Serializable {
             return false;
 
         try {
-            Path chunkPath = Paths.get(this.backupDir + "/" +message.getFileId() + "-" + message.getChunkNo());
+            //Path chunkPath = Paths.get(this.backupDir + "/" +message.getFileId() + "-" + message.getChunkNo());
+            Path fileDir = Paths.get(backupDir + "/" + message.getFileId());
+            if(!Files.exists(fileDir)) {
+                Files.createDirectories(fileDir);
+            }
 
+            Path chunkPath = Paths.get(this.backupDir + "/" +message.getFileId() + "/" + message.getChunkNo());
             if(!Files.exists(chunkPath)) {
                 Files.createFile(chunkPath);
             }
@@ -81,7 +88,8 @@ public class StorageManager implements Serializable {
      * @param chunkNo - the chunk number
      */
     public synchronized void deleteChunk(String fileId, int chunkNo) {
-        Path path = Paths.get(this.backupDir + "/" + fileId + "-" + chunkNo);
+        //Path path = Paths.get(this.backupDir + "/" + fileId + "-" + chunkNo);
+        Path path = Paths.get(this.backupDir + "/" + fileId + "/" + chunkNo);
 
         try {
             if(Files.exists(path)) {

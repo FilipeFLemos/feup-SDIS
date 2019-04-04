@@ -33,15 +33,9 @@ public class FileInfo implements Serializable {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-
-		int result = 1;
-
-		result = prime * result + numberOfChunks;
-
-		result = prime * result + ((fileId == null) ? 0 : fileId.hashCode());
-
-		return result;
+        int hash = (numberOfChunks ^ (numberOfChunks >>> 8));
+        hash = 31 * hash + fileId.hashCode();
+        return hash;
 	}
 
     @Override

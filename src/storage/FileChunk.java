@@ -2,6 +2,9 @@ package storage;
 
 import java.io.Serializable;
 
+/**
+ * Represents a file's chunk
+ */
 public class FileChunk implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -23,18 +26,12 @@ public class FileChunk implements Serializable {
 
 	@Override
 	public int hashCode() {
-		final int prime = 31;
-
-		int result = 1;
-
-		result = prime * result + chunkNo;
-
-		result = prime * result + ((fileId == null) ? 0 : fileId.hashCode());
-
-		return result;
+		int hash = (chunkNo ^ (chunkNo >>> 8));
+		hash = 31 * hash + fileId.hashCode();
+		return hash;
 	}
 
-    @Override
+	@Override
 	public boolean equals(Object obj) {
 		if (this == obj)
 			return true;
