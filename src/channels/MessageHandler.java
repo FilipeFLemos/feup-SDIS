@@ -43,9 +43,7 @@ public class MessageHandler {
       */
     void handleMessage(Message message, InetAddress address) {
 
-        if(message.getMessageType()!= Message.MessageType.REMOVED && message.getSenderId().equals(peer.getServerId()))
-            return;
-        else if(message.getMessageType()== Message.MessageType.STORED && message.getSenderId().equals(peer.getServerId())){
+        if(message.getMessageType()!= Message.MessageType.REMOVED && message.getSenderId().equals(peer.getServerId())) {
             return;
         }
 
