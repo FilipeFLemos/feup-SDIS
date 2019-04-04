@@ -3,8 +3,11 @@ package protocols;
 import message.Message;
 import peer.Peer;
 import channels.Channel;
+import storage.FileInfo;
 import utils.Utils;
 import user_interface.UI;
+
+import java.util.concurrent.ConcurrentHashMap;
 
 public class DeleteInitiator implements Runnable{
 
@@ -33,6 +36,10 @@ public class DeleteInitiator implements Runnable{
         UI.printInfo("-------------- Executing Delete Protocol -------------");
 
         String fileId = Utils.getFileID(filePath);
+        ConcurrentHashMap<String, FileInfo> backedUpFiles = peer.getController().getBackedUpFiles();
+        if(!backedUpFiles.containsKey(filePath)){
+            return;
+        }
 
         Message message = new Message(peer.getVersion(),peer.getServerId(),fileId, null, Message.MessageType.DELETE);
         channel.sendMessage(message);
