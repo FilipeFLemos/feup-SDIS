@@ -138,6 +138,7 @@ public class MessageHandler {
         if(message.getSenderId() == -1){
             senderId = -1;
         }
+
         Message storedMessage = new Message(message.getVersion(), peer.getServerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
         peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
