@@ -90,21 +90,21 @@ public class MessageHandler {
      * @param message the message
      */
     private void handlePUTCHUNK(Message message) {
+        //Ignora putchunks dum fichieor que ele esta a fazer backup
+        ConcurrentHashMap<String, FileInfo> backedUpFiles = controller.getBackedUpFiles();
+        for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
+            FileInfo fileInfo = entry.getValue();
+            if(fileInfo.getFileId().equals(message.getFileId())){
+                return;
+            }
+        }
+
         UI.printBoot("------------- Received Putchunk Message: "+message.getChunkNo()+" -----------");
 
         //System.out.println("Received Putchunk: " + message.getChunkNo());
 
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
-
-        //Ignora putchunks dum fichieor que ele esta a fazer backup
-        ConcurrentHashMap<String, FileInfo> backedUpFiles = controller.getBackedUpFiles();
-        for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
-            FileInfo fileInfo = entry.getValue();
-            if(fileInfo.getFileId().equals(fileId)){
-                return;
-            }
-        }
 
         if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
             FileChunk key = new FileChunk(fileId, chunkNo);
@@ -151,6 +151,15 @@ public class MessageHandler {
      * @param message the message
      */
     private void handleSTORED(Message message) {
+        //Ignora stores de ficheiros que ja fez backup
+        ConcurrentHashMap<String, FileInfo> backedUpFiles = controller.getBackedUpFiles();
+        for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
+            FileInfo fileInfo = entry.getValue();
+            if(fileInfo.getFileId().equals(message.getFileId())){
+                return;
+            }
+        }
+
         UI.printBoot("-------------- Received Stored Message: "+ message.getChunkNo() +" ------------");
 
         //System.out.println("Received Stored Message: " + message.getChunkNo());

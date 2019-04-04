@@ -25,7 +25,6 @@ public class PeerState implements Serializable {
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks;
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH;
 
-
     private ConcurrentHashMap<String, FileInfo> filesBeingRestored;
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoredChunks;
     private ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap;
