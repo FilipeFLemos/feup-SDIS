@@ -30,6 +30,8 @@ public class PeerState implements Serializable {
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoredChunks;
     private ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap;
 
+    private ConcurrentHashMap<FileChunk, ChunkInfo> chunksReclaimed;
+
     private boolean backupEnhancement;
     private boolean restoreEnhancement;
 
@@ -48,6 +50,8 @@ public class PeerState implements Serializable {
         filesBeingRestored = new ConcurrentHashMap<>();
         restoredChunks = new ConcurrentHashMap<>();
         isBeingRestoredChunkMap = new ConcurrentHashMap<>();
+
+        chunksReclaimed = new ConcurrentHashMap<>();
 
 
         if(version.equals("1.0")) {
@@ -218,13 +222,15 @@ public class PeerState implements Serializable {
      * Deletes a chunk that was saved locally.
      * @param fileId - the file id where the chunk belongs
      * @param chunkNo - the chunk number
+     * @param isReclaiming
      */
-    public void deleteChunk(String fileId, int chunkNo) {
+    public void deleteChunk(String fileId, int chunkNo, boolean isReclaiming) {
         storageManager.deleteChunk(fileId, chunkNo);
 
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
         ChunkInfo chunkInfo = storedChunks.remove(fileChunk);
         chunkInfo.removePeer(serverId);
+        chunkInfo.decreaseCurrentRepDeg();
 
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
         storedChunks.remove((Integer) chunkNo);
@@ -232,6 +238,14 @@ public class PeerState implements Serializable {
             storedChunksByFileId.remove(fileId);
             storageManager.deleteFileFolder(fileId);
         }
+
+        if(isReclaiming && !chunkInfo.achievedDesiredRepDeg()){
+            chunksReclaimed.putIfAbsent(fileChunk,chunkInfo);
+        }
+    }
+
+    public void removeReclaimedChunk(FileChunk fileChunk) {
+        chunksReclaimed.remove(fileChunk);
     }
 
     public StorageManager getStorageManager() {
@@ -276,6 +290,10 @@ public class PeerState implements Serializable {
 
     public ConcurrentHashMap<String, FileInfo> getBackedUpFiles() {
         return backedUpFiles;
+    }
+
+    public ConcurrentHashMap<FileChunk, ChunkInfo> getChunksReclaimed() {
+        return chunksReclaimed;
     }
 
     /******************************************************************************************************
@@ -375,4 +393,5 @@ public class PeerState implements Serializable {
         output += "\nStorage: \n  Available Memory(kB): "+ storageManager.getAvailableSpace()/1000 + "\n  Used Memory(kB): " + storageManager.getUsedSpace()/1000;
         return output;
     }
+
 }

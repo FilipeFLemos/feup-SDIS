@@ -241,7 +241,7 @@ public class MessageHandler {
 
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
         while(!storedChunks.isEmpty()) {
-            controller.deleteChunk(fileId, storedChunks.get(0));
+            controller.deleteChunk(fileId, storedChunks.get(0), false);
         }
 
         //controller.removeStoredChunksFile(fileId);
@@ -262,9 +262,11 @@ public class MessageHandler {
         //System.out.println("Received Removed Message: " + message.getChunkNo());
 
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
-        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunksInfo = controller.getStoredChunks();
-        if(storedChunksInfo.containsKey(fileChunk)) {
-            ChunkInfo chunkInfo = storedChunksInfo.get(fileChunk);
+        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = controller.getStoredChunks();
+        ConcurrentHashMap<FileChunk, ChunkInfo> reclaimedChunks = controller.getChunksReclaimed();
+
+        if(storedChunks.containsKey(fileChunk)) {
+            ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
@@ -274,6 +276,16 @@ public class MessageHandler {
                 threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBChannel()),
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
+        } else if(reclaimedChunks.containsKey(fileChunk)){
+            ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
+
+            System.out.println("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
+            Message chunk = controller.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
+
+            threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBChannel()),
+                    Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
+
+            controller.removeReclaimedChunk(fileChunk);
         }
         UI.printBoot("------------------------------------------------------");
     }
