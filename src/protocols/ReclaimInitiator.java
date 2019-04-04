@@ -64,16 +64,16 @@ public class ReclaimInitiator implements Runnable{
                 return reclaimedSpace;
             }
 
-            String fileID = toDelete.getFileId();
-            int chunkIndex = toDelete.getChunkNo();
+            String fileId = toDelete.getFileId();
+            int chunkNo = toDelete.getChunkNo();
 
-            System.out.println("Deleting " + fileID + " - " + chunkIndex);
+            System.out.println("Deleting " + fileId + " - " + chunkNo);
 
             long spaceBeforeDeleting = storageManager.getUsedSpace();
-            peerState.deleteChunk(fileID, chunkIndex, true);
+            peerState.deleteChunk(fileId, chunkNo, true);
             reclaimedSpace += (spaceBeforeDeleting - storageManager.getUsedSpace());
 
-            sendREMOVED(fileID, chunkIndex);
+            sendREMOVED(fileId, chunkNo);
         }
         return reclaimedSpace;
     }
@@ -88,19 +88,19 @@ public class ReclaimInitiator implements Runnable{
                 return storageManager.getUsedSpace() > targetSpace;
             }
 
-            String fileID = toDelete.getFileId();
-            int chunkIndex = toDelete.getChunkNo();
+            String fileId = toDelete.getFileId();
+            int chunkNo = toDelete.getChunkNo();
 
-            System.out.println("Deleting " + fileID + " - " + chunkIndex);
-            peerState.deleteChunk(fileID, chunkIndex, true);
+            System.out.println("Deleting " + fileId + " - " + chunkNo);
+            peerState.deleteChunk(fileId, chunkNo, true);
 
-            sendREMOVED(fileID, chunkIndex);
+            sendREMOVED(fileId, chunkNo);
         }
         return true;
     }
 
-    private void sendREMOVED(String fileID, int chunkIndex) {
-        Message removedMessage = new Message(peerState.getVersion(), peerState.getServerId(), fileID, null, Message.MessageType.REMOVED, chunkIndex);
+    private void sendREMOVED(String fileId, int chunkNo) {
+        Message removedMessage = new Message(peerState.getVersion(), peerState.getServerId(), fileId, null, Message.MessageType.REMOVED, chunkNo);
         mcChannel.sendMessage(removedMessage);
     }
 }
