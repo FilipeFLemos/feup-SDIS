@@ -160,7 +160,7 @@ public class MessageHandler {
             }
         }
 
-        if(controller.isPermformingBackUpChunk()) {
+        if(peer.getServerId() == message.getSenderId() && !controller.isPermformingBackUpChunk()){
             return;
         }
 
