@@ -43,7 +43,9 @@ public class MessageHandler {
       */
     void handleMessage(Message message, InetAddress address) {
 
-        if(message.getMessageType()!= Message.MessageType.REMOVED && message.getSenderId().equals(peer.getServerId())) {
+        if(message.getMessageType()!= Message.MessageType.REMOVED && message.getSenderId().equals(peer.getServerId()))
+            return;
+        else if(message.getMessageType()== Message.MessageType.STORED && message.getSenderId().equals(peer.getServerId())){
             return;
         }
 
@@ -136,7 +138,7 @@ public class MessageHandler {
         if(message.getSenderId() == -1){
             senderId = -1;
         }
-        Message storedMessage = new Message(message.getVersion(), senderId, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
+        Message storedMessage = new Message(message.getVersion(), peer.getServerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
         peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
         UI.printOK("Sent Stored Message: " + storedMessage.getChunkNo());
