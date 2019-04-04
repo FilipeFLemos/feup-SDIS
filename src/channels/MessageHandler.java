@@ -280,9 +280,10 @@ public class MessageHandler {
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
             System.out.println("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
-            Message chunk = controller.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
+            Message PUTCHUNK = new Message(peer.getVersion(), peer.getServerId(), message.getFileId(), chunkInfo.getBody(),
+                    Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
 
-            threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBChannel()),
+            threadPool.schedule( new BackupChunk(controller, PUTCHUNK, peer.getMDBChannel()),
                     Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
 
             controller.removeReclaimedChunk(fileChunk);

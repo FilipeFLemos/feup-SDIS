@@ -10,6 +10,7 @@ public class ChunkInfo implements Serializable {
     private int desiredReplicationDeg;
     private int size = 0;
     private ArrayList<Integer> peersWithChunk;
+    private byte[] body = null;
 
     public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg) {
         this.desiredReplicationDeg = desiredReplicationDeg;
@@ -41,6 +42,14 @@ public class ChunkInfo implements Serializable {
 
     public boolean achievedDesiredRepDeg() {
         return currentReplicationDeg >= desiredReplicationDeg;
+    }
+
+    public byte[] getBody() {
+        return body;
+    }
+
+    public void setBody(byte[] body) {
+        this.body = body;
     }
 
     /**

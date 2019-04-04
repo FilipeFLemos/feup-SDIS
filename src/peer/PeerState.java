@@ -225,6 +225,7 @@ public class PeerState implements Serializable {
      * @param isReclaiming
      */
     public void deleteChunk(String fileId, int chunkNo, boolean isReclaiming) {
+        Message chunkBeingDeleted = storageManager.loadChunk(fileId,chunkNo);
         storageManager.deleteChunk(fileId, chunkNo);
 
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
@@ -240,6 +241,7 @@ public class PeerState implements Serializable {
         }
 
         if(isReclaiming && !chunkInfo.achievedDesiredRepDeg()){
+            chunkInfo.setBody(chunkBeingDeleted.getBody());
             chunksReclaimed.putIfAbsent(fileChunk,chunkInfo);
         }
     }

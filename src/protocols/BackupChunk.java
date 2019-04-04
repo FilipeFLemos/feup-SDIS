@@ -26,6 +26,12 @@ public class BackupChunk implements Runnable {
         createPUTCHANK(chunk, replicationDeg);
     }
 
+    public BackupChunk(PeerState peerState, Message putchunk, Channel channel) {
+        this.peerState = peerState;
+        this.channel = channel;
+        this.message = putchunk;
+    }
+
     /**
      * Create PUTCHUNK message from REMOVED message.
      * @param chunk
