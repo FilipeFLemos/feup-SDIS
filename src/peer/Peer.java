@@ -24,8 +24,8 @@ public class Peer implements RMIProtocol {
     private Channel MDBChannel;
     private Channel MDRChannel;
     private MessageHandler messageHandler;
-    //private TCPSender TCPController;
-    private SocketController TCPController;
+    private TCPSender TCPController;
+    //private SocketController TCPController;
     private int serverId;
     private String version;
     private PeerState controller;
@@ -148,8 +148,8 @@ public class Peer implements RMIProtocol {
         }
 
         if(!version.equals("1.0")) {
-            //TCPController = new TCPSender(MDRPort);
-            TCPController = new SocketController(MDRPort);
+            TCPController = new TCPSender(MDRPort);
+            //TCPController = new SocketController(MDRPort);
         }
     }
 

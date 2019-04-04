@@ -55,22 +55,14 @@ public class TCPSender {
             }
 
             ObjectOutputStream stream = null;
-
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
                 stream.writeObject(message);
-                stream.reset();
                 System.out.println("Sent CHUNK message " + message.getChunkNo() + " via TCP");
             } catch (IOException e) {
-                e.printStackTrace();
-                System.out.println("Closing TCP socket");
-                try {
-                    socket.close();
-                    stream.close();
-                }
-                catch (IOException ex) {
-                    ex.printStackTrace();
-                }
+                System.out.println("Closing TCP socket...");
+                try { socket.close(); }
+                catch (IOException e1) { }
             }
         });
     }
