@@ -15,6 +15,7 @@ public class BackupChunk implements Runnable {
     private Message message;
     private Channel channel;
     private PeerState peerState;
+    private boolean selfDoing = false;
 
     /**
       * Instantiates a new BackupChunk protocols
@@ -28,7 +29,7 @@ public class BackupChunk implements Runnable {
         this.peerState = peerState;
         this.channel = channel;
         if(chunk.getSenderId() == -1) {
-            peerState.setAtomicBoolean(true);
+            selfDoing = true;
         }
         createPUTCHANK(chunk, replicationDeg);
     }
@@ -79,9 +80,6 @@ public class BackupChunk implements Runnable {
             channel.sendMessage(message);
         } while(!hasDesiredReplicationDeg(waitTime));
 
-        if(peerState.isPermformingBackUpChunk()) {
-            peerState.setAtomicBoolean(false);
-        }
         UI.printInfo("------------------------------------------------------");
     }
 
@@ -98,7 +96,8 @@ public class BackupChunk implements Runnable {
             e.printStackTrace();
         }
 
-        if(peerState.isPermformingBackUpChunk()){
+        if(selfDoing){
+            System.out.println("Entrei aqui");
             int currentDegree = 0;
             FileChunk fileChunk = new FileChunk(message.getFileId(),message.getChunkNo());
             ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = peerState.getStoredChunks();
