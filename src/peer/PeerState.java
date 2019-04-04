@@ -329,6 +329,10 @@ public class PeerState implements Serializable {
         return bestChunk;
     }
 
+    /**
+     * Delete files from backed up files container. Starts by deleting every backed up chunk from the selected file.
+     * @param filePath - the filepath of the file
+     */
     public void deleteBackedUp(String filePath) {
         FileInfo fileInfo = backedUpFiles.remove(filePath);
         for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
