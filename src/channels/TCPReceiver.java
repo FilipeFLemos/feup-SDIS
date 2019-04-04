@@ -67,6 +67,7 @@ public class TCPReceiver implements Runnable {
     private void socketHandler(Socket client, ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
         Message message = null;
         if(client.isClosed()){
+            objectInputStream.close();
             return;
         }
         try {
