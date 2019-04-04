@@ -2,7 +2,6 @@ package channels;
 
 import message.Message;
 import utils.Globals;
-import user_interface.UI;
 
 
 import java.io.IOException;
@@ -43,15 +42,7 @@ public class TCPReceiver implements Runnable {
         while (isRestoring) {
             try {
                 Socket socket = serverSocket.accept();
-                threadPool.submit(() -> {
-                    try {
-                        socketHandler(socket);
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    } catch (ClassNotFoundException e) {
-                        e.printStackTrace();
-                    }
-                });
+                threadPool.submit(() -> listenClientMessages(socket));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -69,11 +60,8 @@ public class TCPReceiver implements Runnable {
 
     /**
       * Socket handler.
-      *
-      * @throws IOException
-      * @throws ClassNotFoundException
       */
-    private void socketHandler(Socket socket) throws IOException, ClassNotFoundException {
+    private void listenClientMessages(Socket socket) {
         ObjectInputStream stream = null;
 
         try {
@@ -84,7 +72,12 @@ public class TCPReceiver implements Runnable {
         }
 
         while(true) {
-            Message message = (Message) stream.readObject();
+            Message message = null;
+            try {
+                message = (Message) stream.readObject();
+            } catch (IOException | ClassNotFoundException e) {
+                e.printStackTrace();
+            }
             if(message == null){
                 break;
             }
@@ -96,7 +89,11 @@ public class TCPReceiver implements Runnable {
             }
             catch (IOException e) {
                 System.out.println("Closing TCP socket...");
-                socket.close();
+                try {
+                    socket.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
                 break;
             }
         }
