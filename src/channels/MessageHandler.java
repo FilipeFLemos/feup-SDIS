@@ -6,12 +6,14 @@ import message.Message;
 import storage.FileChunk;
 import peer.Peer;
 import protocols.BackupChunk;
+import storage.FileInfo;
 import utils.Globals;
 import utils.Utils;
 import user_interface.UI;
 
 import java.net.InetAddress;
 import java.util.ArrayList;
+import java.util.Map;
 import java.util.concurrent.*;
 
 public class MessageHandler {
@@ -92,6 +94,15 @@ public class MessageHandler {
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
 
+        //Ignora putchunks dum fichieor que ele esta a fazer backup
+        ConcurrentHashMap<String, FileInfo> backedUpFiles = controller.getBackedUpFiles();
+        for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
+            FileInfo fileInfo = entry.getValue();
+            if(fileInfo.getFileId() == fileId){
+                return;
+            }
+        }
+
         if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
             FileChunk key = new FileChunk(fileId, chunkNo);
             ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo = controller.getStoredChunks_ENH();
@@ -120,7 +131,7 @@ public class MessageHandler {
             controller.addStoredChunk(message);
         }
 
-        Message storedMessage = new Message(message.getVersion(), peer.getServerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
+        Message storedMessage = new Message(message.getVersion(), -1, message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
         peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
 
         UI.printOK("Sent Stored Message: " + storedMessage.getChunkNo());
