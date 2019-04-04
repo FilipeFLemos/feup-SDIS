@@ -59,7 +59,7 @@ public class TCPSender {
                 stream.writeObject(message);
                 System.out.println("Sent CHUNK message " + message.getChunkNo() + " via TCP");
             } catch (IOException e) {
-                System.out.println("Closing TCP socket...");
+                System.out.println("Closing TCP socket");
                 try {
                     socket.close();
                 }

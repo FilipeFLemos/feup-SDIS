@@ -38,6 +38,8 @@ public class DeleteInitiator implements Runnable{
         String fileId = Utils.getFileID(filePath);
         ConcurrentHashMap<String, FileInfo> backedUpFiles = peer.getController().getBackedUpFiles();
         if(!backedUpFiles.containsKey(filePath)){
+            UI.printWarning("File "+filePath+" is not being backed up");
+            UI.printInfo("------------------------------------------------------");
             return;
         }
 

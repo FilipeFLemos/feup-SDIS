@@ -82,7 +82,7 @@ public class TCPReceiver implements Runnable {
                 stream = new ObjectInputStream(socket.getInputStream());
             }
             catch (IOException e) {
-                System.out.println("Closing TCP socket...");
+                System.out.println("Closing TCP socket");
                 socket.close();
                 break;
             }

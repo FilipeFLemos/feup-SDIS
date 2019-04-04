@@ -34,7 +34,7 @@ public class RestoreInitiator implements Runnable{
         UI.printInfo("------------- Executing Restore Protocol -------------");
         ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths = peerState.getBackedUpFiles();
         if(!backedUpFilesByPaths.containsKey(filePath)) {
-            UI.printWarning("File " + filePath + " is not backed up.");
+            UI.printWarning("File " + filePath + " is  not being backed up");
             UI.printInfo("------------------------------------------------------");
             return;
         }

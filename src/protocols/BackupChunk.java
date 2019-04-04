@@ -42,9 +42,11 @@ public class BackupChunk implements Runnable {
       */
     @Override
     public void run() {
-        //if chunk degree was satisfied meanwhile, cancel
+        UI.printInfo("----------- Executing Chunk Backup Protocol ----------");
+
         if(peerState.getChunkRepDeg(message) >= message.getReplicationDeg()) {
-            UI.printWarning("Chunk " + message.getChunkNo() + " satisfied meanwhile, canceling");
+            UI.printWarning("Chunk " + message.getChunkNo() + " replication degree was achived in the meantime");
+            UI.printInfo("------------------------------------------------------");
             return;
         }
 
@@ -58,10 +60,12 @@ public class BackupChunk implements Runnable {
 
             if(tries > Globals.MAX_PUTCHUNK_TRIES) {
                 UI.printError("Aborting backup, attempt limit reached");
+                UI.printInfo("------------------------------------------------------");
                 break;
             }
             channel.sendMessage(message);
         } while(!hasDesiredReplicationDeg(waitTime));
+        UI.printInfo("------------------------------------------------------");
     }
 
     /**

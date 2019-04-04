@@ -162,7 +162,7 @@ public class MessageHandler {
         if(isBeingRestoredChunkMap.containsKey(fileChunk)) {
             if(isBeingRestoredChunkMap.get(fileChunk)) {
                 controller.removeChunk(fileChunk);
-                UI.printWarning("Received a CHUNK message for " + chunkNo + " meanwhile, ignoring request");
+                UI.printWarning("CHUNK " + chunkNo + " is already being restored, ignoring request");
                 UI.printBoot("------------------------------------------------------");
                 return;
             }
@@ -195,7 +195,7 @@ public class MessageHandler {
         ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap = controller.getIsBeingRestoredChunkMap();
         if(isBeingRestoredChunkMap.containsKey(fileChunk)) {
             controller.setIsBeingRestored(fileChunk);
-            UI.printOK("Added Chunk " + message.getChunkNo() + " to requests info.");
+            UI.printOK("Marked Chunk " + message.getChunkNo() + "as being restored");
         }
 
         ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = controller.getRestoredChunks();
@@ -245,7 +245,7 @@ public class MessageHandler {
         }
 
         //controller.removeStoredChunksFile(fileId);
-        UI.printOK("Delete Success: file deleted.");
+        UI.printOK("Delete Success: file deleted");
         UI.printBoot("------------------------------------------------------");
     }
 
@@ -268,7 +268,7 @@ public class MessageHandler {
             chunkInfo.decreaseCurrentRepDeg();
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
-                System.out.println("Chunk " + message.getChunkNo() + " not satisfied anymore.");
+                System.out.println("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
                 Message chunk = controller.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
 
                 threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBChannel()),

@@ -91,6 +91,7 @@ public class UI{
         System.out.println(PURPLE + s + RESET);
     }
 
+
     public static void nl(){
         System.out.println();
     }
