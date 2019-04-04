@@ -28,9 +28,6 @@ public class BackupChunk implements Runnable {
     public BackupChunk(PeerState peerState, Message chunk, int replicationDeg, Channel channel) {
         this.peerState = peerState;
         this.channel = channel;
-        if(chunk.getSenderId() == -1) {
-            selfDoing = true;
-        }
         createPUTCHANK(chunk, replicationDeg);
     }
 
@@ -38,6 +35,9 @@ public class BackupChunk implements Runnable {
         this.peerState = peerState;
         this.channel = channel;
         this.message = putchunk;
+        if(message.getSenderId() == -1) {
+            selfDoing = true;
+        }
     }
 
     /**
