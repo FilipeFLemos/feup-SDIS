@@ -119,7 +119,7 @@ public class StorageManager implements Serializable {
      * @return The chunk message
      */
     public synchronized Message loadChunk(String fileId, int chunkNo) {
-        Path chunkPath = Paths.get(this.backupDir + "/"+fileId+"_"+chunkNo);
+        Path chunkPath = Paths.get(this.backupDir + "/"+fileId+"/"+chunkNo);
 
         byte[] body = null;
         try {
