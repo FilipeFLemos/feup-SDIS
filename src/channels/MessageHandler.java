@@ -280,6 +280,7 @@ public class MessageHandler {
         if(storedChunks.containsKey(fileChunk)) {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
+            System.out.println("Have storedchunk");
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 System.out.println("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
