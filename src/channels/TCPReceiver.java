@@ -66,7 +66,6 @@ public class TCPReceiver implements Runnable {
       */
     private void socketHandler(ObjectInputStream objectInputStream) throws IOException, ClassNotFoundException {
         Message message = null;
-        objectInputStream.reset();
         try {
             message = (Message) objectInputStream.readObject();
             objectInputStream.close();
