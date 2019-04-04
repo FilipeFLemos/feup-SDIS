@@ -26,7 +26,7 @@ public class FileChunk implements Serializable {
 
 	@Override
 	public int hashCode() {
-		int hash = (chunkNo ^ (chunkNo >>> 8));
+		int hash = (chunkNo ^ (chunkNo >>> 32));
 		hash = 31 * hash + fileId.hashCode();
 		return hash;
 	}
