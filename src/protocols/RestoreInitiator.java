@@ -9,31 +9,29 @@ import user_interface.UI;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
 
-public class RestoreInitiator implements Runnable{
+public class RestoreInitiator implements Runnable {
 
-    private String filePath;
     private PeerState peerState;
+    private String filePath;
     private Channel channel;
 
-    /**
-     * Instantiates a new Restore initiator.
-     *  @param filePath the file path
-     * @param channel  the message
-     */
     public RestoreInitiator(PeerState peerState, String filePath, Channel channel) {
         this.peerState = peerState;
-        this.channel = channel;
         this.filePath = filePath;
+        this.channel = channel;
     }
 
     /**
-      * Method to be executed when thread starts running. Executes the restore protocols as an initiator peer
-      */
+     * Executes the restore protocol.
+     * Starts by checking if the file is being backed up by the peer, aborting if otherwise.
+     * Then, generates the PUTCHUNK messages for the file chunks of the file being restored and, sends them to the channel.
+     */
     @Override
     public void run() {
         UI.printInfo("------------- Executing Restore Protocol -------------");
+
         ConcurrentHashMap<String, FileInfo> backedUpFilesByPaths = peerState.getBackedUpFiles();
-        if(!backedUpFilesByPaths.containsKey(filePath)) {
+        if (!backedUpFilesByPaths.containsKey(filePath)) {
             UI.printWarning("File " + filePath + " is  not being backed up");
             UI.printInfo("------------------------------------------------------");
             return;
@@ -43,18 +41,19 @@ public class RestoreInitiator implements Runnable{
         String fileId = fileInfo.getFileId();
         int numberOfChunks = fileInfo.getNumberOfChunks();
 
-        ArrayList<Message> chunks = new ArrayList<>();
-        for(int i = 0; i < numberOfChunks; i++) {
-            chunks.add(new Message(peerState.getVersion(), peerState.getServerId(), fileId, null, Message.MessageType.GETCHUNK, i));
-        }
-
         peerState.addToRestoringFiles(fileId, fileInfo);
         UI.print("Restoring file with " + numberOfChunks + " chunks");
 
-        for(Message chunk : chunks){
+        ArrayList<Message> chunks = new ArrayList<>();
+        for (int i = 0; i < numberOfChunks; i++) {
+            chunks.add(new Message(peerState.getVersion(), peerState.getServerId(), fileId, null, Message.MessageType.GETCHUNK, i));
+        }
+
+        for (Message chunk : chunks) {
             channel.sendMessage(chunk);
             UI.print("Sending " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
         }
+
         UI.printInfo("------------------------------------------------------");
     }
 }
