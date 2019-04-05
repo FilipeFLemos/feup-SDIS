@@ -189,11 +189,11 @@ public class Peer implements RMIProtocol {
      * Submits an initiator instance of the backup protocols to the thread pool
      *
      * @param filePath          filename of file to be backed up
-     * @param replicationDegree desired replication degree
+     * @param replicationDeg desired replication degree
      */
     @Override
-    public void backup(String filePath, int replicationDegree) {
-        threadPool.submit(new BackupInitiator(controller, filePath, replicationDegree, MDBChannel));
+    public void backup(String filePath, int replicationDeg) {
+        threadPool.submit(new BackupInitiator(controller, filePath, replicationDeg, MDBChannel));
     }
 
     /**

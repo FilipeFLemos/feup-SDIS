@@ -6,42 +6,36 @@ import java.rmi.RemoteException;
 public interface RMIProtocol extends Remote {
 
     /**
-     * BackupChunk file service.
+     * Executes the backup file service.
      *
-     * @param filePath          the file path
-     * @param replicationDegree the desired replication degree
-     * @throws RemoteException
+     * @param filePath       - the file path
+     * @param replicationDeg - the desired replication degree
      */
-    void backup(String filePath, int replicationDegree) throws RemoteException;
+    void backup(String filePath, int replicationDeg) throws RemoteException;
 
     /**
-     * Restore file service.
+     * Executes the restore file service.
      *
-     * @param filePath the file path
-     * @throws RemoteException
+     * @param filePath - the file path
      */
     void restore(String filePath) throws RemoteException;
 
     /**
-     * Delete file service.
+     * Executes the delete file service.
      *
      * @param filePath the file path
-     * @throws RemoteException
      */
     void delete(String filePath) throws RemoteException;
 
     /**
-     * Reclaim space service.
+     * Executes the reclaim space service.
      *
-     * @param space new value for reserved peer storage space
-     * @throws RemoteException
+     * @param space - the value to be reclaimed from the used local storage space
      */
     void reclaim(long space) throws RemoteException;
 
     /**
-     * Retrieve state service.
-     *
-     * @throws RemoteException
+     * Executes the retrieve state service.
      */
     void state() throws RemoteException;
 }
