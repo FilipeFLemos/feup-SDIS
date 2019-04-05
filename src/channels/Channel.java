@@ -83,7 +83,7 @@ public class Channel {
 
                 try {
                     socket.receive(multicastPacket);
-                    Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
+                    Message message = new Message(multicastPacket.getData());
                     messageHandler.handleMessage(message, multicastPacket.getAddress());
                 } catch (IOException e) {
                     UI.printError("Failed to receive message in " + this.type + " on port " + this.port);
@@ -99,7 +99,7 @@ public class Channel {
      * @param message the message to be sent
      */
     public void sendMessage(Message message) {
-        byte[] rbuf = message.buildMessagePacket(true);
+        byte[] rbuf = message.getPacket(true);
 
         try {
             this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));
@@ -114,7 +114,7 @@ public class Channel {
      * @param message the message to be sent
      */
     public void sendMessage(Message message, boolean sendBody) {
-        byte[] rbuf = message.buildMessagePacket(sendBody);
+        byte[] rbuf = message.getPacket(sendBody);
 
         try {
             this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));

@@ -306,19 +306,21 @@ public class MessageHandler {
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
-                Message chunk = controller.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
+                Message messagePUTCHUNK = controller.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
+                messagePUTCHUNK.setMessageType(Message.MessageType.PUTCHUNK);
+                messagePUTCHUNK.setReplicationDeg(chunkInfo.getDesiredReplicationDeg());
 
-                threadPool.schedule( new BackupChunk(controller, chunk, chunkInfo.getDesiredReplicationDeg(), peer.getMDBChannel()),
+                threadPool.schedule( new BackupChunk(controller, messagePUTCHUNK, peer.getMDBChannel()),
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         } else if(reclaimedChunks.containsKey(fileChunk)){
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
             UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
-            Message PUTCHUNK = new Message(peer.getVersion(), -1, message.getFileId(), chunkInfo.getBody(),
+            Message messagePUTCHUNK = new Message(peer.getVersion(), -1, message.getFileId(), chunkInfo.getBody(),
                     Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
 
-            threadPool.schedule( new BackupChunk(controller, PUTCHUNK, peer.getMDBChannel()),
+            threadPool.schedule( new BackupChunk(controller, messagePUTCHUNK, peer.getMDBChannel()),
                     Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
 
             controller.removeReclaimedChunk(fileChunk);

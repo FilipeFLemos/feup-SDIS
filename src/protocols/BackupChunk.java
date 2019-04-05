@@ -17,38 +17,13 @@ public class BackupChunk implements Runnable {
     private PeerState peerState;
     private boolean selfDoing = false;
 
-    /**
-      * Instantiates a new BackupChunk protocols
-      *
-      * @param peerState the peer's peerState
-      * @param chunk the target chunk
-      * @param replicationDeg the desired replication degree
-      * @param channel the helper channel
-      */
-    public BackupChunk(PeerState peerState, Message chunk, int replicationDeg, Channel channel) {
+    public BackupChunk(PeerState peerState, Message message, Channel channel) {
         this.peerState = peerState;
         this.channel = channel;
-        createPUTCHANK(chunk, replicationDeg);
-    }
-
-    public BackupChunk(PeerState peerState, Message putchunk, Channel channel) {
-        this.peerState = peerState;
-        this.channel = channel;
-        this.message = putchunk;
-        if(message.getSenderId() == -1) {
+        this.message = message;
+        if(this.message.getSenderId() == -1) {
             selfDoing = true;
         }
-    }
-
-    /**
-     * Create PUTCHUNK message from REMOVED message.
-     * @param chunk
-     * @param replicationDeg
-     */
-    private void createPUTCHANK(Message chunk, int replicationDeg){
-        message = chunk;
-        message.setMessageType(Message.MessageType.PUTCHUNK);
-        message.setReplicationDeg(replicationDeg);
     }
 
     /**

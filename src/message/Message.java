@@ -1,7 +1,7 @@
 package message;
 
-import java.io.Serializable;
-import user_interface.UI;
+import java.io.*;
+import java.util.Arrays;
 
 
 public class Message implements Comparable, Serializable {
@@ -28,26 +28,32 @@ public class Message implements Comparable, Serializable {
     private byte[] body;
 
     /**
-     * Processes a message given as a byte[] (directly from a DatagramPacket)
-     *
-     * @param message the message
-     * @param size    the message size
+     * Creates a Message from the DatagramPacket's data received.
+     * @param data - the received data.
      */
-    public Message(byte[] message, int size) {
-        int headerLength = 0;
-        for (int i = 0; i < message.length; ++i) {
-            if((char)message[i] == '\r' && (char)message[i+1] == '\n') {
-                headerLength = i+4;
-                break;
-            }
+    public Message(byte[] data) {
+        String header = extractHeader(data);
+        parseHeader(header);
+
+        int nBytes = data.length - header.length() - 4;
+        body = new byte[nBytes];
+        ByteArrayInputStream message = new ByteArrayInputStream(data, header.length() + 4, nBytes);
+        message.read(body, 0, nBytes);
+    }
+
+    private String extractHeader(byte[] data) {
+        ByteArrayInputStream stream = new ByteArrayInputStream(data);
+        BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
+
+        String header = "";
+
+        try {
+            header = reader.readLine();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
 
-        String header = new String(message, 0, headerLength);
-        processHeader(header);
-
-        int bodyLength = size - headerLength;
-        this.body = new byte[bodyLength];
-        System.arraycopy(message, headerLength, this.body, 0, bodyLength);
+        return header;
     }
 
 
@@ -112,7 +118,7 @@ public class Message implements Comparable, Serializable {
      *
      * @param str the header
      */
-    public void processHeader(String str) {
+    public void parseHeader(String str) {
         String[] header = str.split("\\s+");
         switch(header[0]) {
             case "PUTCHUNK":
@@ -154,29 +160,60 @@ public class Message implements Comparable, Serializable {
         }
     }
 
-    public byte[] buildMessagePacket(boolean sendBody) {
+    /**
+     * Retrieves the message packet (header + body).
+     * @param sendBody - if the body should be added or not to the packet (RESTORE ENHANCEMENT)
+     * @return - the message packet
+     */
+    public byte[] getPacket(boolean sendBody) {
         String header = buildHeader();
 
         byte[] headerBytes = header.getBytes();
 
-        int bodyLength;
-        if(body == null || !sendBody) {
-            bodyLength = 0;
-        } else {
+        int bodyLength = 0;
+        if(body != null && sendBody) {
             bodyLength = body.length;
         }
 
         byte[] packet = new byte[headerBytes.length + bodyLength];
         System.arraycopy(headerBytes, 0, packet, 0, headerBytes.length);
 
-        if(bodyLength != 0)
+        if(bodyLength != 0) {
             System.arraycopy(this.body, 0, packet, header.length(), bodyLength);
+        }
 
         return packet;
     }
 
+    /**
+     * Generates the message header.
+     * @return the message header.
+     */
     private String buildHeader() {
-        String header = parseType() + version + " " + senderId + " ";
+        String header = "";
+
+        switch(messageType){
+            case PUTCHUNK:
+                header += "PUTCHUNK ";
+            case STORED:
+                header += "STORED ";
+            case GETCHUNK:
+                header += "GETCHUNK ";
+            case CHUNK:
+                header += "CHUNK ";
+            case DELETE:
+                header += "DELETE ";
+            case REMOVED:
+                header += "REMOVED ";
+            case CONTROL:
+                header += "CONTROL ";
+            case ACK_DELETE:
+                header += "ACK_DELETE ";
+            default:
+                header += "NOT VALID";
+        }
+
+        header += version + " " + senderId + " ";
 
         if (this.fileId != null){
             header += fileId + " ";
@@ -195,6 +232,46 @@ public class Message implements Comparable, Serializable {
         return header;
     }
 
+    public boolean hasBody() {
+        return (body != null && body.length > 0);
+    }
+
+    public String getVersion() {
+        return version;
+    }
+
+    public Integer getSenderId() {
+        return senderId;
+    }
+
+    public String getFileId() {
+        return fileId;
+    }
+
+    public Integer getChunkNo() {
+        return chunkNo;
+    }
+
+    public Integer getReplicationDeg() {
+        return replicationDeg;
+    }
+
+    public byte[] getBody() {
+        return body;
+    }
+
+    public MessageType getMessageType() {
+        return messageType;
+    }
+
+    public void setMessageType(MessageType messageType) {
+        this.messageType = messageType;
+    }
+
+    public void setReplicationDeg(int replicationDeg) {
+        this.replicationDeg = replicationDeg;
+    }
+
     @Override
     public String toString() {
         String message = buildHeader();
@@ -205,125 +282,9 @@ public class Message implements Comparable, Serializable {
         return message;
     }
 
-    private String parseType() {
-        switch(this.messageType){
-            case PUTCHUNK:
-                return "PUTCHUNK ";
-            case STORED:
-                return "STORED ";
-            case GETCHUNK:
-                return "GETCHUNK ";
-            case CHUNK:
-                return "CHUNK ";
-            case DELETE:
-                return "DELETE ";
-            case REMOVED:
-                return "REMOVED ";
-            case CONTROL:
-                return "CONTROL ";
-            case ACK_DELETE:
-                return "ACK_DELETE ";
-            default:
-                break;
-        }
-
-        return "NOT VALID";
-    }
-
-    /**
-     * Gets the message messageType.
-     *
-     * @return the messageType
-     */
-    public MessageType getMessageType() {
-        return messageType;
-    }
-
-    /**
-     * Gets the message version.
-     *
-     * @return the version
-     */
-    public String getVersion() {
-        return version;
-    }
-
-    /**
-     * Gets sender peer id.
-     *
-     * @return the peer id
-     */
-    public Integer getSenderId() {
-        return senderId;
-    }
-
-    /**
-     * Gets file id.
-     *
-     * @return the file id
-     */
-    public String getFileId() {
-        return fileId;
-    }
-
-    /**
-     * Gets chunk index.
-     *
-     * @return the chunk index
-     */
-    public Integer getChunkNo() {
-        return chunkNo;
-    }
-
-    /**
-     * Gets rep degree.
-     *
-     * @return the rep degree
-     */
-    public Integer getReplicationDeg() {
-        return replicationDeg;
-    }
-
-    /**
-     * Get body byte [ ].
-     *
-     * @return the byte [ ]
-     */
-    public byte[] getBody() {
-        return body;
-    }
-
-    /**
-      * Sets the message messageType
-      * @param messageType new messageType
-      */
-    public void setMessageType(MessageType messageType) {
-        this.messageType = messageType;
-    }
-
-    /**
-      * Sets the replication degree (used for backup)
-      * @param degree new rep degree
-      */
-    public void setReplicationDeg(int degree) {
-        this.replicationDeg = degree;
-    }
-
-    /**
-     * Checks if message body has body
-     * @return true if body size is greater than 0
-     */
-    public boolean hasBody() {
-        return body.length > 0;
-    }
-
-    /**
-      * Compares Message objects by the chunkNo
-      * @param o object to compare to
-      * @return difference between chunk numbers
-      */
     @Override
-    public int compareTo(Object o) {
-        return this.chunkNo - ((Message) o).getChunkNo();
+    public int compareTo(Object obj) {
+        Message other = (Message) obj;
+        return this.chunkNo - other.getChunkNo();
     }
 }
