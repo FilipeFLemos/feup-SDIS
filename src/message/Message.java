@@ -228,6 +228,10 @@ public class Message implements Comparable, Serializable {
                 return "DELETE ";
             case REMOVED:
                 return "REMOVED ";
+            case CONTROL:
+                return "CONTROL ";
+            case ACK_DELETE:
+                return "ACK_DELETE ";
             default:
                 break;
         }
