@@ -196,22 +196,31 @@ public class Message implements Comparable, Serializable {
         switch(messageType){
             case PUTCHUNK:
                 header += "PUTCHUNK ";
+                break;
             case STORED:
                 header += "STORED ";
+                break;
             case GETCHUNK:
                 header += "GETCHUNK ";
+                break;
             case CHUNK:
                 header += "CHUNK ";
+                break;
             case DELETE:
                 header += "DELETE ";
+                break;
             case REMOVED:
                 header += "REMOVED ";
+                break;
             case CONTROL:
                 header += "CONTROL ";
+                break;
             case ACK_DELETE:
                 header += "ACK_DELETE ";
+                break;
             default:
                 header += "NOT VALID";
+                break;
         }
 
         header += version + " " + senderId + " ";
