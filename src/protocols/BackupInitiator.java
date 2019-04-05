@@ -22,13 +22,6 @@ public class BackupInitiator implements Runnable{
     private PeerState peerState;
     private Channel channel;
 
-    /**
-     * Instantiates a new BackupChunk initiator.
-     *
-     * @param filePath          the file path
-     * @param replicationDegree the replication degree
-     * @param channel           the message
-     */
     public BackupInitiator(PeerState peerState, String filePath, int replicationDegree, Channel channel) {
         this.peerState = peerState;
         this.channel = channel;

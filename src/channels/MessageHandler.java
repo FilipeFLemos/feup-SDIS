@@ -1,11 +1,11 @@
 package channels;
 
 import peer.PeerState;
+import protocols.BackupChunkInitiator;
 import storage.ChunkInfo;
 import message.Message;
 import storage.FileChunk;
 import peer.Peer;
-import protocols.BackupChunk;
 import storage.FileInfo;
 import utils.Globals;
 import utils.Utils;
@@ -310,7 +310,7 @@ public class MessageHandler {
                 messagePUTCHUNK.setMessageType(Message.MessageType.PUTCHUNK);
                 messagePUTCHUNK.setReplicationDeg(chunkInfo.getDesiredReplicationDeg());
 
-                threadPool.schedule( new BackupChunk(controller, messagePUTCHUNK, peer.getMDBChannel()),
+                threadPool.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
                         Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
             }
         } else if(reclaimedChunks.containsKey(fileChunk)){
@@ -320,7 +320,7 @@ public class MessageHandler {
             Message messagePUTCHUNK = new Message(peer.getVersion(), -1, message.getFileId(), chunkInfo.getBody(),
                     Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
 
-            threadPool.schedule( new BackupChunk(controller, messagePUTCHUNK, peer.getMDBChannel()),
+            threadPool.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
                     Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
 
             controller.removeReclaimedChunk(fileChunk);
