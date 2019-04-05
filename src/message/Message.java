@@ -27,6 +27,7 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Creates a Message from the DatagramPacket's data received.
+     *
      * @param data - the received data.
      */
     public Message(byte[] data) {
@@ -41,6 +42,7 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Extracts the header from the DatagramPacket's data.
+     *
      * @param data - the received data
      * @return the header
      */
@@ -60,12 +62,13 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Constructor to create CONTROL messages
-     * @param version - the protocol version
-     * @param senderId - the id of the sender peer
-     * @param body - the body of the message
+     *
+     * @param version     - the protocol version
+     * @param senderId    - the id of the sender peer
+     * @param body        - the body of the message
      * @param messageType - the message type
      */
-    public Message(String version, Integer senderId, byte[] body, MessageType messageType){
+    public Message(String version, Integer senderId, byte[] body, MessageType messageType) {
         this.version = version;
         this.senderId = senderId;
         this.body = body;
@@ -74,25 +77,27 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Constructor to create DELETED messages
-     * @param version - the protocol version
-     * @param senderId - the id of the sender peer
-     * @param fileId - the file id
-     * @param body - the body of the message
+     *
+     * @param version     - the protocol version
+     * @param senderId    - the id of the sender peer
+     * @param fileId      - the file id
+     * @param body        - the body of the message
      * @param messageType - the message type
      */
     public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType) {
-        this(version,senderId,body,messageType);
+        this(version, senderId, body, messageType);
         this.fileId = fileId;
     }
 
     /**
      * Constructor to create CHUNK, GETCHUNK, REMOVED and STORED messages
-     * @param version - the protocol version
-     * @param senderId - the id of the sender peer
-     * @param fileId - the file id
-     * @param body - the message data
+     *
+     * @param version     - the protocol version
+     * @param senderId    - the id of the sender peer
+     * @param fileId      - the file id
+     * @param body        - the message data
      * @param messageType - the message type
-     * @param chunkNo - the chunk No
+     * @param chunkNo     - the chunk No
      */
     public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkNo) {
         this(version, senderId, fileId, body, messageType);
@@ -101,12 +106,13 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Contructor to create PUTCHUNK Messages
-     * @param version - the protocol version
-     * @param senderId - the id of the sender peer
-     * @param fileId - the file id
-     * @param body - the message data
-     * @param messageType - the message type
-     * @param chunkNo - the chunk No
+     *
+     * @param version        - the protocol version
+     * @param senderId       - the id of the sender peer
+     * @param fileId         - the file id
+     * @param body           - the message data
+     * @param messageType    - the message type
+     * @param chunkNo        - the chunk No
      * @param replicationDeg - the replication degree
      */
     public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkNo, int replicationDeg) {
@@ -116,11 +122,12 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Attributes the value of each header element.
+     *
      * @param str - the header
      */
     private void parseHeader(String str) {
         String[] header = str.split("\\s+");
-        switch(header[0]) {
+        switch (header[0]) {
             case "PUTCHUNK":
                 this.messageType = MessageType.PUTCHUNK;
                 this.replicationDeg = Integer.parseInt(header[5]);
@@ -152,16 +159,17 @@ public class Message implements Comparable, Serializable {
 
         this.version = header[1];
         this.senderId = Integer.parseInt(header[2]);
-        if(header.length > 3) {
+        if (header.length > 3) {
             this.fileId = header[3];
         }
-        if(header.length > 4) {
+        if (header.length > 4) {
             this.chunkNo = Integer.parseInt(header[4]);
         }
     }
 
     /**
      * Retrieves the message packet (header + body).
+     *
      * @param sendBody - if the body should be added or not to the packet (RESTORE ENHANCEMENT)
      * @return the message packet
      */
@@ -171,14 +179,14 @@ public class Message implements Comparable, Serializable {
         byte[] headerBytes = header.getBytes();
 
         int bodyLength = 0;
-        if(body != null && sendBody) {
+        if (body != null && sendBody) {
             bodyLength = body.length;
         }
 
         byte[] packet = new byte[headerBytes.length + bodyLength];
         System.arraycopy(headerBytes, 0, packet, 0, headerBytes.length);
 
-        if(bodyLength != 0) {
+        if (bodyLength != 0) {
             System.arraycopy(this.body, 0, packet, header.length(), bodyLength);
         }
 
@@ -187,12 +195,13 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Generates the message header.
+     *
      * @return the message header.
      */
     private String buildHeader() {
         String header = "";
 
-        switch(messageType){
+        switch (messageType) {
             case PUTCHUNK:
                 header += "PUTCHUNK ";
                 break;
@@ -224,7 +233,7 @@ public class Message implements Comparable, Serializable {
 
         header += version + " " + senderId + " ";
 
-        if (this.fileId != null){
+        if (this.fileId != null) {
             header += fileId + " ";
         }
 
@@ -284,7 +293,7 @@ public class Message implements Comparable, Serializable {
     @Override
     public String toString() {
         String message = buildHeader();
-        if(body != null) {
+        if (body != null) {
             message += new String(this.body);
         }
 
