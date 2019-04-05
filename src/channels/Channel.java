@@ -99,7 +99,7 @@ public class Channel {
      * @param message the message to be sent
      */
     public void sendMessage(Message message) {
-        byte[] rbuf = message.buildMessagePacket();
+        byte[] rbuf = message.buildMessagePacket(true);
 
         try {
             this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));

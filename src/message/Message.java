@@ -195,15 +195,6 @@ public class Message implements Comparable, Serializable {
         return header;
     }
 
-    /**
-     * Build message packet byte.
-     *
-     * @return message as byte[]
-     */
-    public byte[] buildMessagePacket() {
-        return buildMessagePacket(true);
-    }
-
     @Override
     public String toString() {
         String message = buildHeader();
