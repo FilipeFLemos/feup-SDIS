@@ -175,7 +175,7 @@ public class PeerState implements Serializable {
         ConcurrentSkipListSet<Message> chunks = restoredChunks.get(fileId);
         chunks.add(message);
         restoredChunks.put(fileId, chunks);
-        System.out.println("New size: " + chunks.size());
+        UI.print("New size: " + chunks.size());
     }
 
     /**

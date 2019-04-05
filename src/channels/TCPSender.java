@@ -9,6 +9,7 @@ import java.net.Socket;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import user_interface.UI;
 
 public class TCPSender {
 
@@ -58,9 +59,9 @@ public class TCPSender {
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
                 stream.writeObject(message);
-                System.out.println("Sent CHUNK message " + message.getChunkNo() + " via TCP");
+                UI.print("Sending CHUNK message " + message.getChunkNo() + " via TCP");
             } catch (IOException e) {
-                System.out.println("Closing TCP socket...");
+                UI.print("Closing TCP socket...");
                 try {
                     socket.close();
                 } catch (IOException e1) {

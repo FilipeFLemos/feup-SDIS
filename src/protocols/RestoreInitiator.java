@@ -49,11 +49,11 @@ public class RestoreInitiator implements Runnable{
         }
 
         peerState.addToRestoringFiles(fileId, fileInfo);
-        System.out.println("Restoring file with " + numberOfChunks + " chunks");
+        UI.print("Restoring file with " + numberOfChunks + " chunks");
 
         for(Message chunk : chunks){
             channel.sendMessage(chunk);
-            System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
+            UI.print("Sending " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
         }
         UI.printInfo("------------------------------------------------------");
     }

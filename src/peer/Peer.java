@@ -37,10 +37,9 @@ public class Peer implements RMIProtocol {
      * @param args initialization arguments
      */
     private Peer(final String args[]) {
-        UI.printBoot("-------------------- Booting Peer --------------------");
+        UI.printBoot("------------------- Booting Peer " + args[1] + " -------------------");
         UI.nl();
-        UI.printBoot("Starting Peer with protocols version " + args[0]);
-        UI.printBoot("Starting Peer with ID " + args[1]);
+        UI.printBoot("Protocols version " + args[0]);
         version = args[0];
         serverId = Integer.parseInt(args[1]);
 
@@ -66,20 +65,16 @@ public class Peer implements RMIProtocol {
         initChannels(args[3], Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]), args[7], MDRPort);
 
         UI.nl();
-        UI.printBoot("-------------------- Peer "+args[1]+" Ready --------------------");
+        UI.printBoot("-------------------- Peer " + args[1] + " Ready --------------------");
     }
 
-    // peer.Peer args
-    //<protocols version> <peer id> <service access point> <MCChannel address> <MCChannel port> <MDBChannel address> <MDBChannel port> <MDRChannel address> <MDRChannel port>
-    public static void main(final String args[]) throws IOException {
+    public static void main(final String args[]) {
         if (args.length != 9) {
-            System.out.println("Usage: java peer.Peer" +
-                    " <protocol_version> <peer_id> <service_access_point>" +
-                    " <MCReceiver_address> <MCReceiver_port> <MDBReceiver_address>" +
-                    " <MDBReceiver_port> <MDRReceiver_address> <MDRReceiver_port>");
+            UI.printError("Wrong input!");
+            UI.printWarning("Please use: java peer.Peer" + " <protocol_version> <peer_id> <service_access_point>" +
+                    " <MCReceiver_address> <MCReceiver_port> <MDBReceiver_address>" + " <MDBReceiver_port> <MDRReceiver_address> <MDRReceiver_port>");
             return;
         }
-
         new Peer(args);
     }
 
@@ -96,10 +91,10 @@ public class Peer implements RMIProtocol {
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind(accessPoint, remoteService);
 
-            UI.printBoot("Server ready!");
+            UI.printBoot("Connection to RMI server established");
             UI.nl();
         } catch (Exception e) {
-            UI.printError("Server exception: " + e.toString());
+            UI.printError("Failed to connect to RMI server. \nReason: " + e.toString());
         }
     }
 
@@ -129,24 +124,23 @@ public class Peer implements RMIProtocol {
     /**
      * Initiates fields not retrievable from non-volatile memory
      *
-     * @param MCAddress control channel address
-     * @param MCPort control channel port
+     * @param MCAddress  control channel address
+     * @param MCPort     control channel port
      * @param MDBAddress backup channel address
-     * @param MDBPort backup channel port
+     * @param MDBPort    backup channel port
      * @param MDRAddress restore channel address
-     * @param MDRPort restore channel port
+     * @param MDRPort    restore channel port
      */
     public void initChannels(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
-        // subscribe to multicast channels
         try {
-            this.MCChannel = new Channel(MCAddress, MCPort, messageHandler);
-            this.MDBChannel = new Channel(MDBAddress, MDBPort, messageHandler);
-            this.MDRChannel = new Channel(MDRAddress, MDRPort, messageHandler);
+            this.MCChannel = new Channel("MC", MCAddress, MCPort, messageHandler);
+            this.MDBChannel = new Channel("MDB", MDBAddress, MDBPort, messageHandler);
+            this.MDRChannel = new Channel("MDR", MDRAddress, MDRPort, messageHandler);
         } catch (IOException e) {
             e.printStackTrace();
         }
 
-        if(!version.equals("1.0")) {
+        if (!version.equals("1.0")) {
             TCPController = new TCPSender(MDRPort);
         }
     }
@@ -162,7 +156,7 @@ public class Peer implements RMIProtocol {
             controllerObject.close();
             controllerFile.close();
         } catch (FileNotFoundException e) {
-            UI.printError("PeerState not found");
+            UI.printError("Failed to create PeerState"+serverId+".ser");
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
@@ -203,7 +197,7 @@ public class Peer implements RMIProtocol {
     @Override
     public void restore(String filePath) {
         if (!version.equals("1.0")) {
-            System.out.println("Starting enhanced restore protocols");
+            UI.printInfo("Enhanced restore protocols initiated  (v"+version+")");
             threadPool.submit(new TCPReceiver(MDRPort, messageHandler));
         }
 
@@ -235,8 +229,8 @@ public class Peer implements RMIProtocol {
      */
     @Override
     public void state() {
-        UI.printInfo("-------------------- Peer "+serverId+" State --------------------");
-        System.out.println(controller.getPeerState());
+        UI.printInfo("-------------------- Peer " + serverId + " State --------------------");
+        UI.print(controller.getPeerState());
         UI.printInfo("------------------------------------------------------");
     }
 
@@ -248,13 +242,12 @@ public class Peer implements RMIProtocol {
         return MDBChannel;
     }
 
-    public void sendMessage(Message message, InetAddress sourceAddress){
-        if(controller.isRestoreEnhancement() && !message.getVersion().equals("1.0")) {
+    public void sendMessage(Message message, InetAddress sourceAddress) {
+        if (controller.isRestoreEnhancement() && !message.getVersion().equals("1.0")) {
             //send chunk via tcp and send header to MDR
             TCPController.sendMessage(message, sourceAddress);
             MDRChannel.sendMessage(message, false);
-        }
-        else
+        } else
             MDRChannel.sendMessage(message);
     }
 }

@@ -10,6 +10,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import user_interface.UI;
 
 public class TCPReceiver implements Runnable {
 
@@ -29,7 +30,7 @@ public class TCPReceiver implements Runnable {
         try {
             this.serverSocket = new ServerSocket(port);
         } catch (IOException e) {
-            System.out.println("ServerSocket already working, no need to open again");
+            UI.print("ServerSocket already working, no need to open again");
         }
         isRestoring = true;
     }
@@ -54,7 +55,7 @@ public class TCPReceiver implements Runnable {
             serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error Closing TCP Socket");
+            UI.print("Error Closing TCP Socket");
         }
     }
 
@@ -68,7 +69,7 @@ public class TCPReceiver implements Runnable {
             stream = new ObjectInputStream(socket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Error reading message from TCP Server");
+            UI.print("Error reading message from TCP Server");
         }
 
         while(true) {
@@ -82,13 +83,13 @@ public class TCPReceiver implements Runnable {
                 break;
             }
             messageHandler.handleMessage(message, null);
-            System.out.println("Received CHUNK message " + message.getChunkNo() + " via TCP");
+            UI.print("Received CHUNK message " + message.getChunkNo() + " via TCP");
 
             try {
                 stream = new ObjectInputStream(socket.getInputStream());
             }
             catch (IOException e) {
-                System.out.println("Closing TCP socket...");
+                UI.print("Closing TCP socket...");
                 try {
                     socket.close();
                 } catch (IOException e1) {

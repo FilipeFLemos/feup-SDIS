@@ -32,6 +32,11 @@ public class Channel {
     private MulticastSocket socket;
 
     /**
+     * The channel type.
+     */
+    private String type;
+
+    /**
      * The MessageHandler.
      */
     private MessageHandler messageHandler;
@@ -41,12 +46,14 @@ public class Channel {
     /**
      * Instantiates a new Channel.
      *
+     *
+     * @param type       Type of the channel created
      * @param address    the address
      * @param port       the port
      * @param messageHandler the messageHandler
      * @throws IOException the io exception
      */
-    public Channel(String address, int port, MessageHandler messageHandler) throws IOException {
+    public Channel(String type, String address, int port, MessageHandler messageHandler) throws IOException {
         // create multicast socket
         this.socket = new MulticastSocket(port);
         this.socket.setTimeToLive(1);
@@ -61,7 +68,7 @@ public class Channel {
 
         startListening();
 
-        UI.printBoot("Joined Multicast Channel " + address + ":" + port);
+        UI.printBoot("Joined " + type + " on " + address + " at port " + port);
     }
 
     /**
@@ -79,7 +86,7 @@ public class Channel {
                     Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
                     messageHandler.handleMessage(message, multicastPacket.getAddress());
                 } catch (IOException e) {
-                    UI.printError("Error receiving multicast message");
+                    UI.printError("Failed to receive message in " + this.type + " on port " + this.port);
                     e.printStackTrace();
                 }
             }

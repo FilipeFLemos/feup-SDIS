@@ -10,6 +10,7 @@ import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import user_interface.UI;
 
 /**
  * Utility functions
@@ -39,7 +40,7 @@ public class Utils {
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            System.out.println("Hash algorithm not found: " + e.getMessage());
+            UI.print("Hash algorithm not found: " + e.getMessage());
             return null;
         }
 
@@ -73,7 +74,7 @@ public class Utils {
         if (m.find()) {
             peer_ap = new String[]{m.group(1), m.group(2), m.group(3)};
         } else {
-            System.out.println("Invalid Access Point!");
+            UI.print("Invalid Access Point!");
         }
 
         return peer_ap;

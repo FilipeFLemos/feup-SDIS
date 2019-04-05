@@ -139,7 +139,7 @@ public class StorageManager implements Serializable {
         byte[] fileData = mergeChunks(fileChunks);
 
         Path path = Paths.get(this.restoreDir + "/" + cropFilesDir(filePath));
-        System.out.println("FULL PATH: " + path.toAbsolutePath());
+        UI.print("FULL PATH: " + path.toAbsolutePath());
 
         try {
             if(!Files.exists(path)) {

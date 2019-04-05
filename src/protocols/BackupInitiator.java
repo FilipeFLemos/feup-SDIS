@@ -61,7 +61,7 @@ public class BackupInitiator implements Runnable{
 
         do {
             tries++; waitTime *= 2;
-            System.out.println("Sent " + filePath + " PUTCHUNK messages " + tries + " times");
+            UI.print("Sending " + filePath + " PUTCHUNK messages " + tries + " times");
 
             if(tries > Globals.MAX_PUTCHUNK_TRIES) {
                 UI.printError("Aborting backup, attempt limit reached");
@@ -71,7 +71,7 @@ public class BackupInitiator implements Runnable{
 
             for(Message chunk : chunks){
                 channel.sendMessage(chunk);
-                System.out.println("Sent " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
+                UI.print("Sending " + chunk.getMessageType() + " message: " + chunk.getChunkNo());
             }
 
         } while(!wereAllSTOREDReceived(waitTime));

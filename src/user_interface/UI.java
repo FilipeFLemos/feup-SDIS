@@ -90,8 +90,9 @@ public class UI{
     public static void printInfo(String s){
         System.out.println(PURPLE + s + RESET);
     }
-
-
+    public static void print(String s){
+        System.out.println(WHITE_BRIGHT + s + RESET);
+    }
     public static void nl(){
         System.out.println();
     }

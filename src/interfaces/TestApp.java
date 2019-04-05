@@ -44,7 +44,7 @@ public class TestApp {
 
     public static void main(final String args[]){
         if (args.length < 2 || args.length > 4) {
-            System.out.println("Usage: java TestApp <peer_ap> <sub_protocol> <opnd_1> <opnd_2>");
+            UI.print("Usage: java TestApp <peer_ap> <sub_protocol> <opnd_1> <opnd_2>");
             return;
         }
 

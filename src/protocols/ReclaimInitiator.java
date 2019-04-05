@@ -35,7 +35,7 @@ public class ReclaimInitiator implements Runnable{
         long targetSpace = space * 1000; //kbs to bytes
         if(targetSpace == 0){
             if(reclaimAllSpace(storageManager,targetSpace)){
-                System.out.println("Successfully reclaimed all disk space");
+                UI.print("Successfully reclaimed all disk space");
             }else {
                 UI.printError("Couldn't reclaim all disk space");
             }
@@ -43,7 +43,7 @@ public class ReclaimInitiator implements Runnable{
         } else{
             long reclaimedSpace = reclaimSpace(storageManager, targetSpace);
             if(reclaimedSpace >= targetSpace)
-                System.out.println("Successfully reclaimed disk space. New disk used space is " + storageManager.getUsedSpace());
+                UI.print("Successfully reclaimed disk space. New disk used space is " + storageManager.getUsedSpace());
             else
                 UI.printError("Couldn't reclaim down to " + space + " kB");
         }
@@ -70,7 +70,7 @@ public class ReclaimInitiator implements Runnable{
             String fileId = toDelete.getFileId();
             int chunkNo = toDelete.getChunkNo();
 
-            System.out.println("Deleting " + fileId + " - " + chunkNo);
+            UI.print("Deleting " + fileId + " - " + chunkNo);
 
             long spaceBeforeDeleting = storageManager.getUsedSpace();
             peerState.deleteChunk(fileId, chunkNo, true);
@@ -94,7 +94,7 @@ public class ReclaimInitiator implements Runnable{
             String fileId = toDelete.getFileId();
             int chunkNo = toDelete.getChunkNo();
 
-            System.out.println("Deleting " + fileId + " - " + chunkNo);
+            UI.print("Deleting " + fileId + " - " + chunkNo);
             peerState.deleteChunk(fileId, chunkNo, true);
 
             sendREMOVED(fileId, chunkNo);
