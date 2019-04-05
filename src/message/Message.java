@@ -120,6 +120,7 @@ public class Message implements Comparable, Serializable {
      */
     public void parseHeader(String str) {
         String[] header = str.split("\\s+");
+        System.out.println(str);
         switch(header[0]) {
             case "PUTCHUNK":
                 this.messageType = MessageType.PUTCHUNK;
