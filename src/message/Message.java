@@ -22,7 +22,7 @@ public class Message implements Comparable, Serializable {
     private MessageType messageType;
     private String version;
     private Integer senderId;
-    private String fileId;
+    private String fileId = null;
     private Integer chunkNo = null;
     private Integer replicationDeg = null;
     private byte[] body;
@@ -63,6 +63,7 @@ public class Message implements Comparable, Serializable {
         this.senderId = senderId;
         this.body = body;
         this.messageType = messageType;
+        System.out.println(messageType);
     }
 
     /**
