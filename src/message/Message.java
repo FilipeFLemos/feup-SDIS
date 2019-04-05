@@ -1,8 +1,6 @@
 package message;
 
 import java.io.*;
-import java.util.Arrays;
-
 
 public class Message implements Comparable, Serializable {
 
@@ -41,28 +39,31 @@ public class Message implements Comparable, Serializable {
         message.read(body, 0, nBytes);
     }
 
+    /**
+     * Extracts the header from the DatagramPacket's data.
+     * @param data - the received data
+     * @return the header
+     */
     private String extractHeader(byte[] data) {
         ByteArrayInputStream stream = new ByteArrayInputStream(data);
         BufferedReader reader = new BufferedReader(new InputStreamReader(stream));
 
         String header = "";
-
         try {
             header = reader.readLine();
         } catch (IOException e) {
             e.printStackTrace();
         }
-
         return header;
     }
 
 
     /**
      * Constructor to create CONTROL messages
-     * @param version
-     * @param senderId
-     * @param body
-     * @param messageType
+     * @param version - the protocol version
+     * @param senderId - the id of the sender peer
+     * @param body - the body of the message
+     * @param messageType - the message type
      */
     public Message(String version, Integer senderId, byte[] body, MessageType messageType){
         this.version = version;
@@ -73,11 +74,11 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Constructor to create DELETED messages
-     * @param version
-     * @param senderId
-     * @param fileId
-     * @param body
-     * @param messageType
+     * @param version - the protocol version
+     * @param senderId - the id of the sender peer
+     * @param fileId - the file id
+     * @param body - the body of the message
+     * @param messageType - the message type
      */
     public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType) {
         this(version,senderId,body,messageType);
@@ -86,41 +87,39 @@ public class Message implements Comparable, Serializable {
 
     /**
      * Constructor to create CHUNK, GETCHUNK, REMOVED and STORED messages
-     * @param version
-     * @param senderId
-     * @param fileId
-     * @param body
-     * @param messageType
-     * @param chunkIndex
+     * @param version - the protocol version
+     * @param senderId - the id of the sender peer
+     * @param fileId - the file id
+     * @param body - the message data
+     * @param messageType - the message type
+     * @param chunkNo - the chunk No
      */
-    public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkIndex) {
+    public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkNo) {
         this(version, senderId, fileId, body, messageType);
-        this.chunkNo = chunkIndex;
+        this.chunkNo = chunkNo;
     }
 
     /**
      * Contructor to create PUTCHUNK Messages
-     * @param version
-     * @param senderId
-     * @param fileId
-     * @param body
-     * @param messageType
-     * @param chunkIndex
-     * @param replicationDeg
+     * @param version - the protocol version
+     * @param senderId - the id of the sender peer
+     * @param fileId - the file id
+     * @param body - the message data
+     * @param messageType - the message type
+     * @param chunkNo - the chunk No
+     * @param replicationDeg - the replication degree
      */
-    public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkIndex, int replicationDeg) {
-        this(version, senderId, fileId, body, messageType, chunkIndex);
+    public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType, int chunkNo, int replicationDeg) {
+        this(version, senderId, fileId, body, messageType, chunkNo);
         this.replicationDeg = replicationDeg;
     }
 
     /**
-     * Process a message header given as a string.
-     *
-     * @param str the header
+     * Attributes the value of each header element.
+     * @param str - the header
      */
-    public void parseHeader(String str) {
+    private void parseHeader(String str) {
         String[] header = str.split("\\s+");
-        System.out.println(str);
         switch(header[0]) {
             case "PUTCHUNK":
                 this.messageType = MessageType.PUTCHUNK;
@@ -164,7 +163,7 @@ public class Message implements Comparable, Serializable {
     /**
      * Retrieves the message packet (header + body).
      * @param sendBody - if the body should be added or not to the packet (RESTORE ENHANCEMENT)
-     * @return - the message packet
+     * @return the message packet
      */
     public byte[] getPacket(boolean sendBody) {
         String header = buildHeader();
