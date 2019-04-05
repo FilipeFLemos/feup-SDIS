@@ -70,8 +70,6 @@ public class Peer implements RMIProtocol {
         if(!version.equals("1.0")){
             Message messageCONTROL = new Message(version,serverId, null, Message.MessageType.CONTROL);
             MCChannel.sendMessage(messageCONTROL);
-
-            System.out.println(messageCONTROL.getMessageType());
             UI.printOK("Sending CONTROL message");
             UI.printInfo("------------------------------------------------------");
         }

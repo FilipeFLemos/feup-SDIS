@@ -49,7 +49,6 @@ public class MessageHandler {
         }
 
         int randomWait;
-        System.out.println("MessageType: " + message.getMessageType());
         switch(message.getMessageType()) {
             case PUTCHUNK:
                 if(!message.getVersion().equals("1.0")) {
