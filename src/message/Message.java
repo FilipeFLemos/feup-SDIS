@@ -63,7 +63,6 @@ public class Message implements Comparable, Serializable {
         this.senderId = senderId;
         this.body = body;
         this.messageType = messageType;
-        System.out.println(messageType);
     }
 
     /**
