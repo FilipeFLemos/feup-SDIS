@@ -116,6 +116,8 @@ public class Channel {
     public void sendMessage(Message message, boolean sendBody) {
         byte[] rbuf = message.buildMessagePacket(sendBody);
 
+        System.out.println(message);
+
         try {
             this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));
         } catch (IOException e) {
