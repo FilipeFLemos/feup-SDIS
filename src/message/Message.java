@@ -219,7 +219,7 @@ public class Message implements Comparable, Serializable {
                 header += "ACK_DELETE ";
                 break;
             default:
-                header += "NOT VALID";
+                header += "NOT_VALID";
                 break;
         }
 
