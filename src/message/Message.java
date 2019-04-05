@@ -167,7 +167,11 @@ public class Message implements Comparable, Serializable {
     }
 
     private String buildHeader() {
-        String header = parseType() + version + " " + senderId + " " + fileId + " ";
+        String header = parseType() + version + " " + senderId + " ";
+
+        if (this.fileId != null){
+            header += fileId + " ";
+        }
 
         if (this.chunkNo != null) {
             header += chunkNo + " ";
