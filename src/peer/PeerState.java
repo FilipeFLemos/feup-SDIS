@@ -142,6 +142,7 @@ public class PeerState implements Serializable {
             peers.add(message.getSenderId());
             peersBackingUpFile.put(fileChunk.getFileId(), peers);
             System.out.println("Added peer " + message.getSenderId() +" to backing up file " + fileChunk.getFileId());
+            System.out.println(peers.size());
         }
 
         if(backupEnhancement && !message.getVersion().equals("1.0")) {

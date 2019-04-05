@@ -99,8 +99,6 @@ public class MessageHandler {
 
         UI.printBoot("------------- Received PUTCHUNK Message: "+message.getChunkNo()+" -----------");
 
-        //UI.print("Received Putchunk: " + message.getChunkNo());
-
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
 
