@@ -56,6 +56,8 @@ public class BackupInitiator implements Runnable{
         int tries = 0;
         int waitTime = 500;
 
+        peerState.initPeersWithFile(fileId);
+
         for(Message chunk : chunks)
             peerState.listenForSTORED(chunk);
 

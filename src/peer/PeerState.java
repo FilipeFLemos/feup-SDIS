@@ -25,6 +25,9 @@ public class PeerState implements Serializable {
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks;
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH;
 
+    private Set<String> deletedFiles;
+    private ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile;
+
     private ConcurrentHashMap<String, FileInfo> filesBeingRestored;
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoredChunks;
     private ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap;
@@ -51,6 +54,8 @@ public class PeerState implements Serializable {
         isBeingRestoredChunkMap = new ConcurrentHashMap<>();
 
         chunksReclaimed = new ConcurrentHashMap<>();
+        deletedFiles = new HashSet<>();
+        peersBackingUpFile = new ConcurrentHashMap<>();
 
         if(version.equals("1.0")) {
             backupEnhancement = false;
@@ -131,6 +136,13 @@ public class PeerState implements Serializable {
     public void updateChunkInfo(FileChunk fileChunk, Message message) {
         updateContainer(storedChunks, fileChunk, message);
         updateContainer(backedUpChunks, fileChunk, message);
+
+        if(peersBackingUpFile.containsKey(fileChunk.getFileId())){
+            Set<Integer> peers = peersBackingUpFile.get(fileChunk.getFileId());
+            peers.add(message.getSenderId());
+            peersBackingUpFile.put(fileChunk.getFileId(), peers);
+            System.out.println("Added peer " + message.getSenderId() +" to backing up file " + fileChunk.getFileId());
+        }
 
         if(backupEnhancement && !message.getVersion().equals("1.0")) {
             updateContainer(storedChunks_ENH, fileChunk, message);
@@ -245,6 +257,10 @@ public class PeerState implements Serializable {
         }
     }
 
+    public void addFileToDeleted(String fileId) {
+        deletedFiles.add(fileId);
+    }
+
     public void removeReclaimedChunk(FileChunk fileChunk) {
         chunksReclaimed.remove(fileChunk);
     }
@@ -314,6 +330,10 @@ public class PeerState implements Serializable {
         }
 
         return currentDegree;
+    }
+
+    public void initPeersWithFile(String fileId) {
+        peersBackingUpFile.putIfAbsent(fileId, new HashSet<>());
     }
 
     /**
@@ -395,5 +415,4 @@ public class PeerState implements Serializable {
         output += "\nStorage: \n  Available Memory(kB): "+ storageManager.getAvailableSpace()/1000 + "\n  Used Memory(kB): " + storageManager.getUsedSpace()/1000;
         return output;
     }
-
 }

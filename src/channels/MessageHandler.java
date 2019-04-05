@@ -269,6 +269,7 @@ public class MessageHandler {
 
         //controller.removeStoredChunksFile(fileId);
         UI.printOK("File deleted successfully");
+        //controller.addFileToDeleted(fileId);
         UI.printBoot("------------------------------------------------------");
     }
 
