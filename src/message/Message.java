@@ -134,15 +134,24 @@ public class Message implements Comparable, Serializable {
             case "REMOVED":
                 this.messageType = MessageType.REMOVED;
                 break;
+            case "CONTROL":
+                this.messageType = MessageType.CONTROL;
+                break;
+            case "ACK_DELETE":
+                this.messageType = MessageType.ACK_DELETE;
+                break;
             default:
                 break;
         }
 
         this.version = header[1];
         this.senderId = Integer.parseInt(header[2]);
-        this.fileId = header[3];
-        if(header.length > 4)
+        if(header.length > 3) {
+            this.fileId = header[3];
+        }
+        if(header.length > 4) {
             this.chunkNo = Integer.parseInt(header[4]);
+        }
     }
 
     public byte[] buildMessagePacket(boolean sendBody) {
