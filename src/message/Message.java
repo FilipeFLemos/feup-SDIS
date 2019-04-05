@@ -14,7 +14,9 @@ public class Message implements Comparable, Serializable {
         GETCHUNK,
         CHUNK,
         DELETE,
-        REMOVED
+        REMOVED,
+        CONTROL,
+        ACK_DELETE
     }
 
     private MessageType messageType;
@@ -48,6 +50,21 @@ public class Message implements Comparable, Serializable {
         System.arraycopy(message, headerLength, this.body, 0, bodyLength);
     }
 
+
+    /**
+     * Constructor to create CONTROL messages
+     * @param version
+     * @param senderId
+     * @param body
+     * @param messageType
+     */
+    public Message(String version, Integer senderId, byte[] body, MessageType messageType){
+        this.version = version;
+        this.senderId = senderId;
+        this.body = body;
+        this.messageType = messageType;
+    }
+
     /**
      * Constructor to create DELETED messages
      * @param version
@@ -57,11 +74,8 @@ public class Message implements Comparable, Serializable {
      * @param messageType
      */
     public Message(String version, Integer senderId, String fileId, byte[] body, MessageType messageType) {
-        this.version = version;
-        this.senderId = senderId;
+        this(version,senderId,body,messageType);
         this.fileId = fileId;
-        this.body = body;
-        this.messageType = messageType;
     }
 
     /**

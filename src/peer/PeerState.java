@@ -25,7 +25,6 @@ public class PeerState implements Serializable {
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks;
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH;
 
-    private Set<String> deletedFiles;
     private ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile;
 
     private ConcurrentHashMap<String, FileInfo> filesBeingRestored;
@@ -54,7 +53,6 @@ public class PeerState implements Serializable {
         isBeingRestoredChunkMap = new ConcurrentHashMap<>();
 
         chunksReclaimed = new ConcurrentHashMap<>();
-        deletedFiles = new HashSet<>();
         peersBackingUpFile = new ConcurrentHashMap<>();
 
         if(version.equals("1.0")) {
@@ -137,18 +135,20 @@ public class PeerState implements Serializable {
         updateContainer(storedChunks, fileChunk, message);
         updateContainer(backedUpChunks, fileChunk, message);
 
-        if(peersBackingUpFile.containsKey(fileChunk.getFileId())){
-            Set<Integer> peers = peersBackingUpFile.get(fileChunk.getFileId());
-            peers.add(message.getSenderId());
-            peersBackingUpFile.put(fileChunk.getFileId(), peers);
-            System.out.println("Added peer " + message.getSenderId() +" to backing up file " + fileChunk.getFileId());
-            System.out.println(peers.size());
-        }
+        addPeerBackingUpFile(fileChunk, message);
 
         if(backupEnhancement && !message.getVersion().equals("1.0")) {
             updateContainer(storedChunks_ENH, fileChunk, message);
         }
         UI.printOK("Finished updating");
+    }
+
+    private void addPeerBackingUpFile(FileChunk fileChunk, Message message) {
+        if(peersBackingUpFile.containsKey(fileChunk.getFileId())){
+            Set<Integer> peers = peersBackingUpFile.get(fileChunk.getFileId());
+            peers.add(message.getSenderId());
+            peersBackingUpFile.put(fileChunk.getFileId(), peers);
+        }
     }
 
     /**
@@ -258,8 +258,12 @@ public class PeerState implements Serializable {
         }
     }
 
-    public void addFileToDeleted(String fileId) {
-        deletedFiles.add(fileId);
+    public void removePeerBackingUpFile(String fileId, Integer senderId) {
+        Set<Integer> peers = peersBackingUpFile.get(fileId);
+        peers.remove(senderId);
+        if(peers.isEmpty()){
+            peersBackingUpFile.remove(fileId);
+        }
     }
 
     public void removeReclaimedChunk(FileChunk fileChunk) {
@@ -312,6 +316,10 @@ public class PeerState implements Serializable {
 
     public ConcurrentHashMap<FileChunk, ChunkInfo> getChunksReclaimed() {
         return chunksReclaimed;
+    }
+
+    public ConcurrentHashMap<String, Set<Integer>> getPeersBackingUpFile() {
+        return peersBackingUpFile;
     }
 
     /******************************************************************************************************

@@ -14,6 +14,7 @@ import user_interface.UI;
 import java.net.InetAddress;
 import java.util.ArrayList;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 
 public class MessageHandler {
@@ -75,6 +76,12 @@ public class MessageHandler {
                 break;
             case REMOVED:
                 threadPool.submit(() -> handleREMOVED(message));
+                break;
+            case CONTROL:
+                threadPool.submit(() -> handleCONTROL(message));
+                break;
+            case ACK_DELETE:
+                threadPool.submit(() -> handleACK_DELETE(message));
                 break;
             default:
                 UI.printError("Message type "+message.getMessageType()+" is not valid");
@@ -267,7 +274,13 @@ public class MessageHandler {
 
         //controller.removeStoredChunksFile(fileId);
         UI.printOK("File deleted successfully");
-        //controller.addFileToDeleted(fileId);
+
+        if(!peer.getVersion().equals("1.0")){
+            Message messageACK_DELETE = new Message(peer.getVersion(),peer.getServerId(),fileId, null, Message.MessageType.ACK_DELETE);
+            peer.getMCChannel().sendMessage(messageACK_DELETE);
+            UI.printOK("Sending ACK_DELETE message");
+        }
+
         UI.printBoot("------------------------------------------------------");
     }
 
@@ -309,6 +322,32 @@ public class MessageHandler {
                     Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
 
             controller.removeReclaimedChunk(fileChunk);
+        }
+        UI.printBoot("------------------------------------------------------");
+    }
+
+    private void handleCONTROL(Message message){
+        UI.printBoot("-------------- Received CONTROL Message ---------------");
+
+        ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
+        for (Map.Entry<String, Set<Integer>> entry : peersBackingUpFile.entrySet()) {
+            Set<Integer> peers = entry.getValue();
+            if(peers.contains(message.getSenderId())){
+                Message messageDELETE = new Message(peer.getVersion(),peer.getServerId(),entry.getKey(), null, Message.MessageType.DELETE);
+                peer.getMCChannel().sendMessage(messageDELETE);
+                UI.printOK("Sending DELETE message");
+            }
+        }
+        UI.printBoot("------------------------------------------------------");
+    }
+
+    private void handleACK_DELETE(Message message){
+        String fileId = message.getFileId();
+        UI.printBoot("------------- Received ACK_DELETE Message: " + fileId + " ------------");
+
+        ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
+        if(peersBackingUpFile.containsKey(fileId)){
+            controller.removePeerBackingUpFile(fileId, message.getSenderId());
         }
         UI.printBoot("------------------------------------------------------");
     }

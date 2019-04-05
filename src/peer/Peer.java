@@ -66,6 +66,13 @@ public class Peer implements RMIProtocol {
 
         UI.nl();
         UI.printBoot("-------------------- Peer " + args[1] + " Ready --------------------");
+
+        if(!version.equals("1.0")){
+            Message messageCONTROL = new Message(version,serverId, null, Message.MessageType.CONTROL);
+            MCChannel.sendMessage(messageCONTROL);
+            UI.printOK("Sending CONTROL message");
+            UI.printInfo("------------------------------------------------------");
+        }
     }
 
     public static void main(final String args[]) {
