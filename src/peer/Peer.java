@@ -45,6 +45,10 @@ public class Peer implements RMIProtocol {
         version = args[0];
         serverId = Integer.parseInt(args[1]);
 
+        if(!version.equals("1.0")) {
+            isEnhanced = true;
+        }
+
         String[] serviceAccessPoint = parseRMI(args[2], false);
         if (serviceAccessPoint == null) {
             return;
@@ -69,7 +73,7 @@ public class Peer implements RMIProtocol {
         UI.nl();
         UI.printBoot("-------------------- Peer " + args[1] + " Ready --------------------");
 
-        if(!version.equals("1.0")){
+        if(isEnhanced){
             isEnhanced = true;
             Message messageCONTROL = new Message(version,serverId, null, Message.MessageType.CONTROL);
             MCChannel.sendMessage(messageCONTROL);
