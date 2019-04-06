@@ -63,7 +63,6 @@ public class Channel implements Runnable{
 
     @Override
     public void run() {
-        new Thread(() -> {
             byte[] mbuf = new byte[65535];
 
             while(true) {
@@ -78,7 +77,6 @@ public class Channel implements Runnable{
                     e.printStackTrace();
                 }
             }
-        }).start();
     }
 
     /**
