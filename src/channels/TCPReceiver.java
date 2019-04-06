@@ -43,23 +43,19 @@ public class TCPReceiver implements Runnable {
 
     /**
      * Listens on the TCP channel for CHUNK messages.
-     * @param socket - the client socket
+     * @param socket
      */
     private void listenForCHUNKS(Socket socket) {
         ObjectInputStream stream = null;
 
-        do{
-            try {
-                stream = new ObjectInputStream(socket.getInputStream());
-            } catch (IOException e) {
-                e.printStackTrace();
-                UI.print("Error reading message from TCP Server");
-            }
+        try {
+            stream = new ObjectInputStream(socket.getInputStream());
+        } catch (IOException e) {
+            e.printStackTrace();
+            UI.print("Error reading message from TCP Server");
+        }
 
-            if(stream == null){
-                continue;
-            }
-
+        while(true) {
             Message message = null;
             try {
                 message = (Message) stream.readObject();
@@ -71,6 +67,19 @@ public class TCPReceiver implements Runnable {
             }
             messageHandler.handleMessage(message, null);
             UI.print("Received CHUNK message " + message.getChunkNo() + " via the TCP connection");
-        }while(true);
+
+            try {
+                stream = new ObjectInputStream(socket.getInputStream());
+            }
+            catch (IOException e) {
+                UI.print("Closing TCP socket");
+                try {
+                    socket.close();
+                } catch (IOException e1) {
+                    e1.printStackTrace();
+                }
+                break;
+            }
+        }
     }
 }
