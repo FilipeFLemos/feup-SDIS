@@ -29,6 +29,7 @@ public class Message implements Comparable, Serializable {
      * Creates a Message from the DatagramPacket's data received.
      *
      * @param data - the received data.
+     * @param length - the received packet length.
      */
     public Message(byte[] data, int length) {
         String header = extractHeader(data);
@@ -38,7 +39,6 @@ public class Message implements Comparable, Serializable {
         body = new byte[nBytes];
         ByteArrayInputStream message = new ByteArrayInputStream(data, header.length() + 4, nBytes);
         message.read(body, 0, nBytes);
-        System.out.println(body.length);
     }
 
     /**
