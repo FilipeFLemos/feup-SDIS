@@ -1,7 +1,6 @@
 package storage;
 
 import message.Message;
-import utils.Globals;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -12,6 +11,7 @@ import java.nio.file.Paths;
 import java.util.concurrent.ConcurrentSkipListSet;
 
 import user_interface.UI;
+import utils.Utils;
 
 public class StorageManager implements Serializable {
 
@@ -28,7 +28,7 @@ public class StorageManager implements Serializable {
         this.version = version;
         this.peerId = peerId;
         usedSpace = 0;
-        maxReservedSpace = Globals.MAX_PEER_STORAGE;
+        maxReservedSpace = Utils.MAX_STORAGE_SPACE;
 
         backupDir = "peers/peer" + peerId + "/backup";
         restoreDir = "peers/peer" + peerId + "/restore";

@@ -15,11 +15,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import static utils.Utils.MAX_THREADS;
+import static utils.Utils.SAVING_INTERVAL;
 import static utils.Utils.parseRMI;
 
 public class Peer implements RMIProtocol {
 
-    private static final int MAX_INITIATOR_THREADS = 50;
     private Channel MCChannel;
     private Channel MDBChannel;
     private Channel MDRChannel;
@@ -28,7 +29,7 @@ public class Peer implements RMIProtocol {
     private int serverId;
     private String version;
     private PeerState controller;
-    private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_INITIATOR_THREADS);
+    private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_THREADS);
     private int MDRPort;
 
     /**
@@ -43,7 +44,7 @@ public class Peer implements RMIProtocol {
         version = args[0];
         serverId = Integer.parseInt(args[1]);
 
-        String[] serviceAccessPoint = parseRMI(true, args[2]);
+        String[] serviceAccessPoint = parseRMI(args[2]);
         if (serviceAccessPoint == null) {
             return;
         }
@@ -58,8 +59,7 @@ public class Peer implements RMIProtocol {
 
         this.messageHandler = new MessageHandler(this);
 
-        // save peerController data every 3 seconds
-        threadPool.scheduleAtFixedRate(this::saveController, 0, 3, TimeUnit.SECONDS);
+        threadPool.scheduleAtFixedRate(this::saveController, 0, SAVING_INTERVAL, TimeUnit.SECONDS);
 
         MDRPort = Integer.parseInt(args[8]);
         initChannels(args[3], Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]), args[7], MDRPort);
@@ -115,7 +115,6 @@ public class Peer implements RMIProtocol {
             FileInputStream controllerFile = new FileInputStream("PeerState" + serverId + ".ser");
             ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
             this.controller = (PeerState) controllerObject.readObject();
-            //this.controller.initChannels(MCAddress, MCPort, MDBAddress, MDBPort, MDRAddress, MDRPort);
             controllerObject.close();
             controllerFile.close();
             return true;

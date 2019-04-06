@@ -1,7 +1,6 @@
 package channels;
 
 import message.Message;
-import utils.Globals;
 
 
 import java.io.IOException;
@@ -11,12 +10,13 @@ import java.net.Socket;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import user_interface.UI;
+import utils.Utils;
 
 public class TCPReceiver implements Runnable {
 
     private MessageHandler messageHandler;
     private ServerSocket serverSocket;
-    private ExecutorService threadPool = Executors.newFixedThreadPool(Globals.MAX_TCP_SOCKET_THREADS);
+    private ExecutorService threadPool = Executors.newFixedThreadPool(Utils.MAX_THREADS);
     private boolean isRestoring;
 
     /**

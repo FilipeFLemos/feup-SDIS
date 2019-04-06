@@ -1,6 +1,5 @@
 package utils;
 
-import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -12,62 +11,72 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import user_interface.UI;
 
-/**
- * Utility functions
- */
 public class Utils {
 
 
-    private final static char[] hexArray = "0123456789ABCDEF".toCharArray();
+    public static final int MAX_THREADS = 50;
+    public static int MAX_CHUNK_SIZE = 64000;
+    public static int MAX_PUTCHUNK_TRIES = 5;
+    public static int MAX_DELAY_STORED = 400;
+    public static int MAX_DELAY_CHUNK = 400;
+    public static int MAX_DELAY_REMOVED = 400;
+    public static int MAX_DELAY_BACKUP_ENH = 750;
+    public static long MAX_STORAGE_SPACE = (long) (8*Math.pow(10,9));
+    public static int SAVING_INTERVAL = 3;
 
-    public static String bytesToHex(byte[] bytes) {
-        char[] hexChars = new char[bytes.length * 2];
-        for (int j = 0; j < bytes.length; j++) {
-            int v = bytes[j] & 0xFF;
-            hexChars[j * 2] = hexArray[v >>> 4];
-            hexChars[j * 2 + 1] = hexArray[v & 0x0F];
-        }
-        return new String(hexChars);
-    }
+    private final static char[] hex = "0123456789ABCDEF".toCharArray();
+
     /**
-     * Generates a SHA256 based hash given a file pathname (after also retrieving some of its metadata)
+     * Generates a SHA256 hash for the provided file path
      *
-     * @param file file pathname
-     * @return hashed fileID
+     * @param filePath - the file path
+     * @return - hashed fileId
      */
-    public static final String getFileID(String file) {
+    public static String getFileID(String filePath) {
         MessageDigest digest;
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            UI.print("Hash algorithm not found: " + e.getMessage());
+            UI.printError("Error hashing filepath name");
             return null;
         }
 
-        byte[] hash = digest.digest(file.getBytes(StandardCharsets.UTF_8));
-        String hashedID = bytesToHex(hash);
-        return hashedID;
+        return bytesToHex(digest.digest(filePath.getBytes(StandardCharsets.UTF_8)));
     }
 
     /**
-     * Gets a random number in a specific range.
-     *
-     * @param min the min
-     * @param max the max
-     * @return the random between them
+     * Converts bytes into hex chars
+     * @param bytes - the hashed bytes
+     * @return the hex chars
      */
-    public static final int getRandomBetween(int min, int max) {
+    private static String bytesToHex(byte[] bytes) {
+        char[] hexChars = new char[bytes.length * 2];
+        for (int j = 0; j < bytes.length; j++) {
+            int v = bytes[j] & 0xFF;
+            hexChars[j * 2] = hex[v >>> 4];
+            hexChars[j * 2 + 1] = hex[v & 0x0F];
+        }
+        return new String(hexChars);
+    }
+
+    /**
+     * Generates a random number.
+     *
+     * @param min the min - the minimum number
+     * @param max the max - the maximum number
+     * @return the random number between them
+     */
+    public static int getRandom(int min, int max) {
         return ThreadLocalRandom.current().nextInt(min, max + 1);
     }
 
-    public static String[] parseRMI(boolean Server, String accessPoint) {
-        Pattern rmiPattern;
-        if (Server) {
-            rmiPattern = Pattern.compile("//([\\w.]+)(?::(\\d+))?/(\\w+)?");
-        } else {
-            rmiPattern = Pattern.compile("//([\\w.]+)(?::(\\d+))?/(\\w+)");
-        }
-
+    /**
+     * Parses the accessPoint to retrieve the host, address and port
+     * @param accessPoint - the provided peer access point
+     * @return a string with the host, address and port
+     */
+    public static String[] parseRMI(String accessPoint) {
+        Pattern rmiPattern = Pattern.compile("//([\\w.]+)(?::(\\d+))?/(\\w+)");
         Matcher m = rmiPattern.matcher(accessPoint);
         String[] peer_ap = null;
 
@@ -80,21 +89,22 @@ public class Utils {
         return peer_ap;
     }
 
+    /**
+     * Binds the remote stub with the peer registry.
+     * @param serviceAccessPoint - the peer access point
+     * @return
+     */
     public static Registry getRegistry(String[] serviceAccessPoint) {
         Registry registry = null;
-        // Bind the remote object's stub in the registry
-
         try {
             if (serviceAccessPoint[1] == null) {
-                if (serviceAccessPoint[0] == "localhost") {
-
+                if (serviceAccessPoint[0].equals("localhost")) {
                     registry = LocateRegistry.getRegistry();
-
                 } else {
                     registry = LocateRegistry.getRegistry(serviceAccessPoint[0]);
                 }
             } else {
-                if (serviceAccessPoint[0] == "localhost") {
+                if (serviceAccessPoint[0].equals("localhost")) {
                     registry = LocateRegistry.getRegistry(serviceAccessPoint[1]);
                 } else {
                     registry = LocateRegistry.getRegistry(serviceAccessPoint[0], Integer.parseInt(serviceAccessPoint[1]));

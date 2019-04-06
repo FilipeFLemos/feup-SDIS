@@ -3,7 +3,6 @@ package protocols;
 import message.Message;
 import peer.PeerState;
 import channels.Channel;
-import utils.Globals;
 import utils.Utils;
 import user_interface.UI;
 
@@ -31,7 +30,7 @@ public class BackupInitiator implements Runnable {
         file = new File(filePath);
         fileId = Utils.getFileID(filePath);
 
-        numberOfChunks = (int) (file.length() / Globals.MAX_CHUNK_SIZE + 1);
+        numberOfChunks = (int) (file.length() / Utils.MAX_CHUNK_SIZE + 1);
         chunks = new ArrayList<>();
     }
 
@@ -57,7 +56,7 @@ public class BackupInitiator implements Runnable {
         do {
             UI.print("Sending " + filePath + " PUTCHUNK messages " + tries + " times");
 
-            if (tries > Globals.MAX_PUTCHUNK_TRIES) {
+            if (tries > Utils.MAX_PUTCHUNK_TRIES) {
                 UI.printError("Aborting backup, attempt limit reached");
                 UI.printInfo("------------------------------------------------------");
                 return;
@@ -88,15 +87,15 @@ public class BackupInitiator implements Runnable {
 
             for (int i = 0; i < numberOfChunks; i++) {
                 byte[] body;
-                byte[] aux = new byte[Globals.MAX_CHUNK_SIZE];
+                byte[] aux = new byte[Utils.MAX_CHUNK_SIZE];
                 int bytesRead = bufferedFile.read(aux);
 
                 if (bytesRead == -1) {
                     body = new byte[0];
-                } else if (bytesRead < Globals.MAX_CHUNK_SIZE) {
+                } else if (bytesRead < Utils.MAX_CHUNK_SIZE) {
                     body = new byte[bytesRead];
                 } else {
-                    body = new byte[Globals.MAX_CHUNK_SIZE];
+                    body = new byte[Utils.MAX_CHUNK_SIZE];
                 }
 
                 System.arraycopy(aux, 0, body, 0, body.length);

@@ -133,7 +133,7 @@ public class Channel {
     public void sendWithRandomDelay(int min, int max, Message message) {
         threadPool.schedule(() -> {
             sendMessage(message);
-        }, Utils.getRandomBetween(min, max), TimeUnit.MILLISECONDS);
+        }, Utils.getRandom(min, max), TimeUnit.MILLISECONDS);
     }
 
 }

@@ -7,7 +7,6 @@ import message.Message;
 import storage.FileChunk;
 import peer.Peer;
 import storage.FileInfo;
-import utils.Globals;
 import utils.Utils;
 import user_interface.UI;
 
@@ -17,13 +16,14 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.*;
 
+import static utils.Utils.MAX_THREADS;
+
 public class MessageHandler {
 
-    private final int MAX_DISPATCHER_THREADS = 50;
     private PeerState controller;
     private Peer peer;
 
-    private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_DISPATCHER_THREADS);
+    private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_THREADS);
 
     /**
      * Instantiates a new MessageHandler.
@@ -53,7 +53,7 @@ public class MessageHandler {
             case PUTCHUNK:
                 if(!message.getVersion().equals("1.0")) {
                     controller.listenForSTORED_ENH(message);
-                    randomWait = Utils.getRandomBetween(0, Globals.MAX_BACKUP_ENH_WAIT_TIME);
+                    randomWait = Utils.getRandom(0, Utils.MAX_DELAY_BACKUP_ENH);
                 }
                 else
                     randomWait = 0;
@@ -65,7 +65,7 @@ public class MessageHandler {
                 break;
             case GETCHUNK:
                 controller.listenForCHUNK(message);
-                randomWait = Utils.getRandomBetween(0, Globals.MAX_CHUNK_WAITING_TIME);
+                randomWait = Utils.getRandom(0, Utils.MAX_DELAY_CHUNK);
                 threadPool.schedule(() -> handleGETCHUNK(message, address), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case CHUNK:
@@ -138,7 +138,7 @@ public class MessageHandler {
         }
 
         Message storedMessage = new Message(message.getVersion(), peer.getServerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
-        peer.getMCChannel().sendWithRandomDelay(0, Globals.MAX_STORED_WAITING_TIME, storedMessage);
+        peer.getMCChannel().sendWithRandomDelay(0, Utils.MAX_DELAY_STORED, storedMessage);
 
         UI.printOK("Sending STORED message: " + storedMessage.getChunkNo());
         UI.printBoot("------------------------------------------------------");
@@ -311,7 +311,7 @@ public class MessageHandler {
                 messagePUTCHUNK.setReplicationDeg(chunkInfo.getDesiredReplicationDeg());
 
                 threadPool.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
-                        Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
+                        Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
             }
         } else if(reclaimedChunks.containsKey(fileChunk)){
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
@@ -321,7 +321,7 @@ public class MessageHandler {
                     Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
 
             threadPool.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
-                    Utils.getRandomBetween(0, Globals.MAX_REMOVED_WAITING_TIME), TimeUnit.MILLISECONDS);
+                    Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
 
             controller.removeReclaimedChunk(fileChunk);
         }

@@ -5,8 +5,8 @@ import channels.Channel;
 import peer.PeerState;
 import storage.ChunkInfo;
 import storage.FileChunk;
-import utils.Globals;
 import user_interface.UI;
+import utils.Utils;
 
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -48,7 +48,7 @@ public class BackupChunkInitiator implements Runnable {
         int waitTime = 500;
 
         do {
-            if (tries > Globals.MAX_PUTCHUNK_TRIES) {
+            if (tries > Utils.MAX_PUTCHUNK_TRIES) {
                 UI.printError("Aborting backup, attempt limit reached");
                 UI.printInfo("------------------------------------------------------");
                 break;

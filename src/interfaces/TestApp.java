@@ -13,7 +13,7 @@ import static utils.Utils.parseRMI;
 public class TestApp {
 
     private TestApp(String[] args) throws RemoteException {
-        String[] peer_ap = parseRMI(false, args[0]);
+        String[] peer_ap = parseRMI(args[0]);
         if (peer_ap == null) {
             return;
         }
