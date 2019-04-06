@@ -25,7 +25,7 @@ public class MessageHandler {
 
     public MessageHandler(Peer peer) {
         this.peer = peer;
-        this.controller = peer.getController();
+        this.controller = peer.getPeerState();
     }
 
     /**

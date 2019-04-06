@@ -28,24 +28,20 @@ public class Peer implements RMIProtocol {
     private TCPSender tcpSender;
     private int serverId;
     private String version;
-    private PeerState controller;
-    private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_THREADS);
+    private PeerState peerState;
+    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(MAX_THREADS);
     private int MDRPort;
     private boolean isEnhanced = false;
 
-    /**
-     * Constructor. Initiates peer from CLI args
-     *
-     * @param args initialization arguments
-     */
     private Peer(final String args[]) {
         UI.printBoot("------------------- Booting Peer " + args[1] + " -------------------");
         UI.nl();
         UI.printBoot("Protocols version " + args[0]);
         version = args[0];
         serverId = Integer.parseInt(args[1]);
+        messageHandler = new MessageHandler(this);
 
-        if(!version.equals("1.0")) {
+        if (!version.equals("1.0")) {
             isEnhanced = true;
         }
 
@@ -56,16 +52,14 @@ public class Peer implements RMIProtocol {
 
         initRMI(args[1]);
 
-        if (!loadPeerController()) {
-            controller = new PeerState(version, serverId);
+        if (!loadPeerState()) {
+            peerState = new PeerState(version, serverId);
         }
 
         UI.printBoot("------------- Booting Multicast Channels -------------");
         UI.nl();
 
-        this.messageHandler = new MessageHandler(this);
-
-        threadPool.scheduleAtFixedRate(this::saveController, 0, SAVING_INTERVAL, TimeUnit.SECONDS);
+        scheduledExecutorService.scheduleAtFixedRate(this::saveController, 0, SAVING_INTERVAL, TimeUnit.SECONDS);
 
         MDRPort = Integer.parseInt(args[8]);
         initChannels(args[3], Integer.parseInt(args[4]), args[5], Integer.parseInt(args[6]), args[7], MDRPort);
@@ -73,13 +67,19 @@ public class Peer implements RMIProtocol {
         UI.nl();
         UI.printBoot("-------------------- Peer " + args[1] + " Ready --------------------");
 
-        if(isEnhanced){
-            isEnhanced = true;
-            Message messageCONTROL = new Message(version,serverId, null, Message.MessageType.CONTROL);
-            MCChannel.sendMessage(messageCONTROL);
-            UI.printOK("Sending CONTROL message");
-            UI.printInfo("------------------------------------------------------");
+        if (isEnhanced) {
+            sendCONTROL();
         }
+    }
+
+    /**
+     * Sends a CONTROL message to the MC channel.
+     */
+    private void sendCONTROL() {
+        Message messageCONTROL = new Message(version, serverId, null, Message.MessageType.CONTROL);
+        MCChannel.sendMessage(messageCONTROL);
+        UI.printOK("Sending CONTROL message");
+        UI.printInfo("------------------------------------------------------");
     }
 
     public static void main(final String args[]) {
@@ -93,15 +93,13 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Initiates remote service.
+     * Initiates the remote service.
      *
-     * @param accessPoint the RMI access point
+     * @param accessPoint - the RMI access point
      */
     private void initRMI(String accessPoint) {
         try {
             RMIProtocol remoteService = (RMIProtocol) UnicastRemoteObject.exportObject(this, 0);
-
-            // Get own registry, to rebind to correct remoteService
             Registry registry = LocateRegistry.getRegistry();
             registry.rebind(accessPoint, remoteService);
 
@@ -113,21 +111,21 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Loads the peer controller from non-volatile memory, if file is present, or starts a new one.
+     * Loads the peer state from non-volatile memory, if it exists. Otherwise, creates a new Peer.
      *
-     * @return true if controller successfully loaded from .ser file, false otherwise
+     * @return true if the peer state was loaded successfully or false if otherwise
      */
-    private boolean loadPeerController() {
+    private boolean loadPeerState() {
         try {
             FileInputStream fileInputStream = new FileInputStream("PeerState" + serverId + ".ser");
             ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
-            controller = (PeerState) objectInputStream.readObject();
-            controller.setVersion(version);
+            peerState = (PeerState) objectInputStream.readObject();
+            peerState.setVersion(version);
             objectInputStream.close();
             fileInputStream.close();
             return true;
         } catch (FileNotFoundException e) {
-            UI.printWarning("No pre-existing PeerState found, starting new one");
+            UI.printWarning("Couldn't find any saved peer state. Starting a new one");
         } catch (IOException | ClassNotFoundException e) {
             e.printStackTrace();
         }
@@ -136,16 +134,9 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Initiates fields not retrievable from non-volatile memory
-     *
-     * @param MCAddress  control channel address
-     * @param MCPort     control channel port
-     * @param MDBAddress backup channel address
-     * @param MDBPort    backup channel port
-     * @param MDRAddress restore channel address
-     * @param MDRPort    restore channel port
+     * Initiates channels.
      */
-    public void initChannels(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
+    private void initChannels(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
         try {
             MCChannel = new Channel("MC", MCAddress, MCPort, messageHandler);
             MDBChannel = new Channel("MDB", MDBAddress, MDBPort, messageHandler);
@@ -164,95 +155,68 @@ public class Peer implements RMIProtocol {
     }
 
     /**
-     * Saves the controller state to non-volatile memory
+     * Saves the peer state to non-volatile memory
      */
     private void saveController() {
         try {
             FileOutputStream controllerFile = new FileOutputStream("PeerState" + serverId + ".ser");
             ObjectOutputStream controllerObject = new ObjectOutputStream(controllerFile);
-            controllerObject.writeObject(this.controller);
+            controllerObject.writeObject(this.peerState);
             controllerObject.close();
             controllerFile.close();
         } catch (FileNotFoundException e) {
-            UI.printError("Failed to create PeerState"+serverId+".ser");
+            UI.printError("Error creating PeerState" + serverId + ".ser");
             e.printStackTrace();
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-
     public String getVersion() {
         return version;
     }
-
 
     public int getServerId() {
         return serverId;
     }
 
-
-    public PeerState getController() {
-        return controller;
+    public PeerState getPeerState() {
+        return peerState;
     }
 
     public boolean isEnhanced() {
         return isEnhanced;
     }
 
-    /**
-     * Submits an initiator instance of the backup protocols to the thread pool
-     *
-     * @param filePath          filename of file to be backed up
-     * @param replicationDeg desired replication degree
-     */
     @Override
     public void backup(String filePath, int replicationDeg) {
-        threadPool.submit(new BackupInitiator(controller, filePath, replicationDeg, MDBChannel));
+        scheduledExecutorService.submit(new BackupInitiator(peerState, filePath, replicationDeg, MDBChannel));
     }
 
-    /**
-     * Submits an initiator instance of the restore protocols to the thread pool
-     *
-     * @param filePath filename of file to be restored
-     */
     @Override
     public void restore(String filePath) {
         if (!version.equals("1.0")) {
-            UI.printInfo("Enhanced restore protocols initiated  (v"+version+")");
-            threadPool.submit(new TCPReceiver(MDRPort, messageHandler));
+            UI.printInfo("Enhanced restore protocols initiated  (v" + version + ")");
+            scheduledExecutorService.submit(new TCPReceiver(MDRPort, messageHandler));
         }
 
-        threadPool.submit(new RestoreInitiator(controller, filePath, MCChannel));
+        scheduledExecutorService.submit(new RestoreInitiator(peerState, filePath, MCChannel));
     }
 
-    /**
-     * Submits an initiator instance of the delete protocols to the thread pool
-     *
-     * @param filePath filename of file to be deleted
-     */
     @Override
     public void delete(String filePath) {
-        threadPool.submit(new DeleteInitiator(this, filePath, MCChannel));
+        scheduledExecutorService.submit(new DeleteInitiator(this, filePath, MCChannel));
     }
 
-    /**
-     * Submits an initiator instance of the reclaim protocols to the thread pool
-     *
-     * @param space new amount of reserved space for peer, in kB
-     */
     @Override
     public void reclaim(long space) {
-        threadPool.submit(new ReclaimInitiator(controller, space, MCChannel));
+        scheduledExecutorService.submit(new ReclaimInitiator(peerState, space, MCChannel));
     }
 
-    /**
-     * Retrieves the peer's local state by printing out its controller
-     */
     @Override
     public void state() {
         UI.printInfo("-------------------- Peer " + serverId + " State --------------------");
-        UI.print(controller.getPeerState());
+        UI.print(peerState.getPeerState());
         UI.printInfo("------------------------------------------------------");
     }
 
@@ -264,12 +228,18 @@ public class Peer implements RMIProtocol {
         return MDBChannel;
     }
 
-    public void sendMessage(Message message, InetAddress sourceAddress) {
+    /**
+     * If the peer is enhanced, sends the CHUNK to the TCP socket and just the header to the MDC channel.
+     * Else, sends the CHUNK to the MDC channel.
+     * @param message - the received CHUNK message
+     * @param address - the address of the TCP socket
+     */
+    public void sendMessage(Message message, InetAddress address) {
         if (isEnhanced && !message.getVersion().equals("1.0")) {
-            //send chunk via tcp and send header to MDR
             MDRChannel.sendMessage(message, false);
-            tcpSender.sendMessage(message, sourceAddress);
-        } else
+            tcpSender.sendMessage(message, address);
+        } else {
             MDRChannel.sendMessage(message);
+        }
     }
 }

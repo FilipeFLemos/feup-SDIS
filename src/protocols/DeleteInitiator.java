@@ -31,7 +31,7 @@ public class DeleteInitiator implements Runnable {
         UI.printInfo("-------------- Executing Delete Protocol -------------");
 
         String fileId = Utils.getFileID(filePath);
-        ConcurrentHashMap<String, FileInfo> backedUpFiles = peer.getController().getBackedUpFiles();
+        ConcurrentHashMap<String, FileInfo> backedUpFiles = peer.getPeerState().getBackedUpFiles();
         if (!backedUpFiles.containsKey(filePath)) {
             UI.printWarning("File " + filePath + " is not being backed up");
             UI.printInfo("------------------------------------------------------");
@@ -40,7 +40,7 @@ public class DeleteInitiator implements Runnable {
 
         Message message = new Message(peer.getVersion(), peer.getServerId(), fileId, null, Message.MessageType.DELETE);
         channel.sendMessage(message);
-        peer.getController().deleteBackedUp(filePath);
+        peer.getPeerState().deleteBackedUp(filePath);
 
         UI.printOK("Deleted file " + filePath);
         UI.printInfo("------------------------------------------------------");
