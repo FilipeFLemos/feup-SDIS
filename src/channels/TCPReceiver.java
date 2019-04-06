@@ -19,6 +19,12 @@ public class TCPReceiver implements Runnable {
     private ExecutorService threadPool = Executors.newFixedThreadPool(Utils.MAX_THREADS);
     private boolean isRestoring;
 
+    /**
+     * Instantiates a socket channels
+     *
+     * @param port channels port
+     * @param messageHandler channels messageHandler
+     */
     public TCPReceiver(int port, MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
         try {
@@ -29,23 +35,34 @@ public class TCPReceiver implements Runnable {
         isRestoring = true;
     }
 
+    /**
+     * Method ran when thread starts executing. Submits handler to the thread pool
+     */
     @Override
     public void run() {
         while (isRestoring) {
             try {
                 Socket socket = serverSocket.accept();
-                threadPool.submit(() -> listenForCHUNKS(socket));
+                threadPool.submit(() -> listenClientMessages(socket));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
+    public void close(){
+        try {
+            serverSocket.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+            UI.print("Error Closing TCP Socket");
+        }
+    }
+
     /**
-     * Listens on the TCP channel for CHUNK messages.
-     * @param socket
+     * Socket handler.
      */
-    private void listenForCHUNKS(Socket socket) {
+    private void listenClientMessages(Socket socket) {
         ObjectInputStream stream = null;
 
         try {
@@ -56,7 +73,6 @@ public class TCPReceiver implements Runnable {
         }
 
         while(true) {
-            UI.print("Waiting");
             Message message = null;
             try {
                 message = (Message) stream.readObject();
@@ -67,13 +83,13 @@ public class TCPReceiver implements Runnable {
                 break;
             }
             messageHandler.handleMessage(message, null);
-            UI.print("Received CHUNK message " + message.getChunkNo() + " via the TCP connection");
+            UI.print("Received CHUNK message " + message.getChunkNo() + " via TCP");
 
             try {
                 stream = new ObjectInputStream(socket.getInputStream());
             }
             catch (IOException e) {
-                UI.print("Closing TCP socket");
+                UI.print("Closing TCP socket...");
                 try {
                     socket.close();
                 } catch (IOException e1) {

@@ -18,18 +18,22 @@ public class TCPSender {
     private ExecutorService threadPool = Executors.newFixedThreadPool(Utils.MAX_THREADS);
 
 
+    /**
+     * Instantiates a new TCPSender
+     *
+     * @param port controller port
+     */
     public TCPSender(int port) {
         this.port = port;
         sockets = new ConcurrentHashMap<>();
-        UI.printOK("CRESTED");
     }
 
     /**
-      * Send a message
-      *
-      * @param message message to be sent
-      * @param address destination address
-      */
+     * Send a message
+     *
+     * @param message message to be sent
+     * @param address destination address
+     */
     public synchronized void sendMessage(Message message, InetAddress address) {
         threadPool.submit(() -> {
             Socket socket = null;
@@ -51,7 +55,6 @@ public class TCPSender {
                 }
             }
 
-            UI.printOK("Sending CHUNK: " + message.getChunkNo());
             ObjectOutputStream stream;
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
