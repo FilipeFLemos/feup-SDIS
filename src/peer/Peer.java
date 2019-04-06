@@ -143,9 +143,13 @@ public class Peer implements RMIProtocol {
      */
     public void initChannels(String MCAddress, int MCPort, String MDBAddress, int MDBPort, String MDRAddress, int MDRPort) {
         try {
-            this.MCChannel = new Channel("MC", MCAddress, MCPort, messageHandler);
-            this.MDBChannel = new Channel("MDB", MDBAddress, MDBPort, messageHandler);
-            this.MDRChannel = new Channel("MDR", MDRAddress, MDRPort, messageHandler);
+            MCChannel = new Channel("MC", MCAddress, MCPort, messageHandler);
+            MDBChannel = new Channel("MDB", MDBAddress, MDBPort, messageHandler);
+            MDRChannel = new Channel("MDR", MDRAddress, MDRPort, messageHandler);
+
+            new Thread(MCChannel).start();
+            new Thread(MDBChannel).start();
+            new Thread(MDRChannel).start();
         } catch (IOException e) {
             e.printStackTrace();
         }
