@@ -15,27 +15,24 @@ public class TCPSender {
 
     private int port;
     private ConcurrentHashMap<InetAddress, Socket> sockets;
-    private ExecutorService threadPool = Executors.newFixedThreadPool(Utils.MAX_THREADS);
+    private ExecutorService executorService = Executors.newFixedThreadPool(Utils.MAX_THREADS);
 
-
-    /**
-     * Instantiates a new TCPSender
-     *
-     * @param port controller port
-     */
     public TCPSender(int port) {
         this.port = port;
         sockets = new ConcurrentHashMap<>();
     }
 
     /**
-     * Send a message
+     * Starts a thread for each message to be sent.
+     * If the socket for the specified address is still opened, uses it. Else, opens a new socket for that address and
+     * adds it to the sockets map for future requests.
+     * Finally sends the message.
      *
-     * @param message message to be sent
-     * @param address destination address
+     * @param message - the message to be sent
+     * @param address - the address of the destination
      */
     public synchronized void sendMessage(Message message, InetAddress address) {
-        threadPool.submit(() -> {
+        executorService.submit(() -> {
             Socket socket = null;
 
             if(sockets.containsKey(address)){
@@ -59,7 +56,7 @@ public class TCPSender {
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
                 stream.writeObject(message);
-                UI.print("Sending CHUNK message " + message.getChunkNo() + " via TCP");
+                UI.print("Sending CHUNK " + message.getChunkNo() + " via the TCP socket");
             } catch (IOException e) {
                 UI.print("Closing TCP socket...");
                 try {
