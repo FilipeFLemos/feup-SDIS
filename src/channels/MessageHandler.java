@@ -331,6 +331,17 @@ public class MessageHandler {
     private void handleCONTROL(Message message){
         UI.printBoot("-------------- Received CONTROL Message ---------------");
 
+        if(peer.getVersion().equals("1.0")){
+            UI.printBoot("------------------------------------------------------");
+            return;
+        }
+
+        Set<String> deletedFiles = controller.getDeletedFiles();
+        if(!deletedFiles.contains(message.getFileId())){
+            UI.printBoot("------------------------------------------------------");
+            return;
+        }
+
         ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
         for (Map.Entry<String, Set<Integer>> entry : peersBackingUpFile.entrySet()) {
             Set<Integer> peers = entry.getValue();
@@ -346,6 +357,11 @@ public class MessageHandler {
     private void handleACK_DELETE(Message message){
         String fileId = message.getFileId();
         UI.printBoot("------------- Received ACK_DELETE Message: " + fileId + " ------------");
+
+        if(peer.getVersion().equals("1.0")){
+            UI.printBoot("------------------------------------------------------");
+            return;
+        }
 
         ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
         if(peersBackingUpFile.containsKey(fileId)){

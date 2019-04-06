@@ -26,6 +26,7 @@ public class PeerState implements Serializable {
     private ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH;
 
     private ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile;
+    private Set<String> deletedFiles;
 
     private ConcurrentHashMap<String, FileInfo> filesBeingRestored;
     private ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> restoredChunks;
@@ -54,6 +55,7 @@ public class PeerState implements Serializable {
 
         chunksReclaimed = new ConcurrentHashMap<>();
         peersBackingUpFile = new ConcurrentHashMap<>();
+        deletedFiles = ConcurrentHashMap.newKeySet();
 
         if(version.equals("1.0")) {
             backupEnhancement = false;
@@ -263,6 +265,7 @@ public class PeerState implements Serializable {
         peers.remove(senderId);
         if(peers.isEmpty()){
             peersBackingUpFile.remove(fileId);
+            deletedFiles.remove(fileId);
         }
     }
 
@@ -320,6 +323,10 @@ public class PeerState implements Serializable {
 
     public ConcurrentHashMap<String, Set<Integer>> getPeersBackingUpFile() {
         return peersBackingUpFile;
+    }
+
+    public Set<String> getDeletedFiles() {
+        return deletedFiles;
     }
 
     /******************************************************************************************************
@@ -386,6 +393,9 @@ public class PeerState implements Serializable {
         for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
             ChunkInfo chunkInfo =  backedUpChunks.get(new FileChunk(fileInfo.getFileId(), i));
             backedUpChunks.remove(chunkInfo);
+        }
+        if(!version.equals("1.0")) {
+            deletedFiles.add(fileInfo.getFileId());
         }
     }
 
