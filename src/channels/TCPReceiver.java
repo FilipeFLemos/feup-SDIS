@@ -19,12 +19,6 @@ public class TCPReceiver implements Runnable {
     private ExecutorService threadPool = Executors.newFixedThreadPool(Utils.MAX_THREADS);
     private boolean isRestoring;
 
-    /**
-      * Instantiates a socket channels
-      *
-      * @param port channels port
-      * @param messageHandler channels messageHandler
-      */
     public TCPReceiver(int port, MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
         try {
@@ -35,44 +29,37 @@ public class TCPReceiver implements Runnable {
         isRestoring = true;
     }
 
-    /**
-      * Method ran when thread starts executing. Submits handler to the thread pool
-      */
     @Override
     public void run() {
         while (isRestoring) {
             try {
                 Socket socket = serverSocket.accept();
-                threadPool.submit(() -> listenClientMessages(socket));
+                threadPool.submit(() -> listenForCHUNKS(socket));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void close(){
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            UI.print("Error Closing TCP Socket");
-        }
-    }
-
     /**
-      * Socket handler.
-      */
-    private void listenClientMessages(Socket socket) {
+     * Listens on the TCP channel for CHUNK messages.
+     * @param socket - the client socket
+     */
+    private void listenForCHUNKS(Socket socket) {
         ObjectInputStream stream = null;
 
-        try {
-            stream = new ObjectInputStream(socket.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-            UI.print("Error reading message from TCP Server");
-        }
+        do{
+            try {
+                stream = new ObjectInputStream(socket.getInputStream());
+            } catch (IOException e) {
+                e.printStackTrace();
+                UI.print("Error reading message from TCP Server");
+            }
 
-        while(true) {
+            if(stream == null){
+                continue;
+            }
+
             Message message = null;
             try {
                 message = (Message) stream.readObject();
@@ -83,20 +70,7 @@ public class TCPReceiver implements Runnable {
                 break;
             }
             messageHandler.handleMessage(message, null);
-            UI.print("Received CHUNK message " + message.getChunkNo() + " via TCP");
-
-            try {
-                stream = new ObjectInputStream(socket.getInputStream());
-            }
-            catch (IOException e) {
-                UI.print("Closing TCP socket...");
-                try {
-                    socket.close();
-                } catch (IOException e1) {
-                    e1.printStackTrace();
-                }
-                break;
-            }
-        }
+            UI.print("Received CHUNK message " + message.getChunkNo() + " via the TCP connection");
+        }while(true);
     }
 }

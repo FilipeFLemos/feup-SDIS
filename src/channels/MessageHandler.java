@@ -134,7 +134,7 @@ public class MessageHandler {
         }
 
         Message storedMessage = new Message(peer.getVersion(), peer.getServerId(), fileId, null, Message.MessageType.STORED, chunkNo);
-        peer.getMCChannel().sendWithRandomDelay(0, Utils.MAX_DELAY_STORED, storedMessage);
+        peer.getMCChannel().sendWithRandomDelay(Utils.MAX_DELAY_STORED, storedMessage);
 
         UI.printOK("Sending STORED message: " + storedMessage.getChunkNo());
         UI.printBoot("------------------------------------------------------");

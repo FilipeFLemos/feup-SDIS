@@ -1,9 +1,6 @@
 package utils;
 
 import java.nio.charset.StandardCharsets;
-import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.concurrent.ThreadLocalRandom;
@@ -13,7 +10,7 @@ import user_interface.UI;
 
 public class Utils {
 
-
+    public static final int MAX_MESSAGE_SIZE = 65000;
     public static final int MAX_THREADS = 50;
     public static int MAX_CHUNK_SIZE = 64000;
     public static int MAX_PUTCHUNK_TRIES = 5;

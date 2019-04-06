@@ -18,11 +18,6 @@ public class TCPSender {
     private ExecutorService threadPool = Executors.newFixedThreadPool(Utils.MAX_THREADS);
 
 
-    /**
-      * Instantiates a new TCPSender
-      *
-      * @param port controller port
-      */
     public TCPSender(int port) {
         this.port = port;
         sockets = new ConcurrentHashMap<>();

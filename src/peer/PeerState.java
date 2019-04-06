@@ -34,11 +34,10 @@ public class PeerState implements Serializable {
 
     private ConcurrentHashMap<FileChunk, ChunkInfo> chunksReclaimed;
 
-    private boolean backupEnhancement;
-    private boolean restoreEnhancement;
+    private boolean isEnhanced;
 
-    public PeerState(String version, int serverId) {
-        this.version = version;
+    PeerState(String version, int serverId) {
+        setVersion(version);
         this.serverId = serverId;
         storageManager = new StorageManager(version, serverId);
 
@@ -56,16 +55,11 @@ public class PeerState implements Serializable {
         chunksReclaimed = new ConcurrentHashMap<>();
         peersBackingUpFile = new ConcurrentHashMap<>();
         deletedFiles = ConcurrentHashMap.newKeySet();
+    }
 
-        if(version.equals("1.0")) {
-            backupEnhancement = false;
-            restoreEnhancement = false;
-        }
-        else {
-            UI.printInfo("Enhancements activated");
-            backupEnhancement = true;
-            restoreEnhancement = true;
-        }
+    void setVersion(String version){
+        this.version = version;
+        isEnhanced = !version.equals("1.0");
     }
 
     /**
@@ -133,7 +127,7 @@ public class PeerState implements Serializable {
         addPeerBackingUpFile(fileChunk,message.getSenderId());
     }
 
-    public void addPeerBackingUpFile(FileChunk fileChunk, int senderId) {
+    private void addPeerBackingUpFile(FileChunk fileChunk, int senderId) {
         if(peersBackingUpFile.containsKey(fileChunk.getFileId())){
             Set<Integer> peers = peersBackingUpFile.get(fileChunk.getFileId());
             peers.add(senderId);
@@ -149,7 +143,7 @@ public class PeerState implements Serializable {
     public void updateStoredChunks(FileChunk fileChunk, Message message) {
         updateContainer(storedChunks, fileChunk, message);
 
-        if(backupEnhancement) {
+        if(isEnhanced) {
             updateContainer(storedChunks_ENH, fileChunk, message);
         }
     }
@@ -237,7 +231,7 @@ public class PeerState implements Serializable {
      * Deletes a chunk that was saved locally.
      * @param fileId - the file id where the chunk belongs
      * @param chunkNo - the chunk number
-     * @param isReclaiming
+     * @param isReclaiming - boolean to specify if the delete was done by a reclaim service
      */
     public void deleteChunk(String fileId, int chunkNo, boolean isReclaiming) {
         Message chunkBeingDeleted = storageManager.loadChunk(fileId,chunkNo);
@@ -286,14 +280,6 @@ public class PeerState implements Serializable {
         return serverId;
     }
 
-    public boolean isBackupEnhancement() {
-        return backupEnhancement;
-    }
-
-    public boolean isRestoreEnhancement() {
-        return restoreEnhancement;
-    }
-
     public ConcurrentHashMap<String, ArrayList<Integer>> getStoredChunksByFileId() {
         return storedChunksByFileId;
     }
@@ -329,10 +315,6 @@ public class PeerState implements Serializable {
     public Set<String> getDeletedFiles() {
         return deletedFiles;
     }
-
-    /******************************************************************************************************
-     *                                        Initiators methods
-     *******************************************************************************************************/
 
     /**
      * Calculates the current replication degree of the backed up chunk.
@@ -392,8 +374,8 @@ public class PeerState implements Serializable {
     public void deleteBackedUp(String filePath) {
         FileInfo fileInfo = backedUpFiles.remove(filePath);
         for(int i=0; i < fileInfo.getNumberOfChunks(); i++){
-            ChunkInfo chunkInfo =  backedUpChunks.get(new FileChunk(fileInfo.getFileId(), i));
-            backedUpChunks.remove(chunkInfo);
+            FileChunk fileChunk = new FileChunk(fileInfo.getFileId(), i);
+            backedUpChunks.remove(fileChunk);
         }
         if(!version.equals("1.0")) {
             deletedFiles.add(fileInfo.getFileId());
@@ -404,7 +386,7 @@ public class PeerState implements Serializable {
      * Retrieves the peer state.
      * @return - the string that describes it.
      */
-    public String getPeerState(){
+    String getPeerState(){
         String output = "";
         output += "Files backed up:";
         for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {

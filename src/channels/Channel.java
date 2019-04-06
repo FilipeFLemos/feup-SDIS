@@ -12,128 +12,80 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class Channel {
+import static utils.Utils.MAX_MESSAGE_SIZE;
+import static utils.Utils.MAX_THREADS;
 
-    private static final int MAX_RECEIVER_SENDING_THREADS = 50;
+public class Channel implements Runnable{
 
-    /**
-     * The address.
-     */
-
-    private InetAddress address;
-    /**
-     * The port.
-     */
-    private int port;
-
-    /**
-     * The socket.
-     */
-    private MulticastSocket socket;
-
-    /**
-     * The channel type.
-     */
     private String type;
-
-    /**
-     * The MessageHandler.
-     */
+    private InetAddress address;
+    private int port;
     private MessageHandler messageHandler;
 
-    private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_RECEIVER_SENDING_THREADS);
+    private MulticastSocket multicastSocket;
+    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(MAX_THREADS);
+    boolean isActive;
 
-    /**
-     * Instantiates a new Channel.
-     *
-     *
-     * @param type       Type of the channel created
-     * @param address    the address
-     * @param port       the port
-     * @param messageHandler the messageHandler
-     * @throws IOException the io exception
-     */
     public Channel(String type, String address, int port, MessageHandler messageHandler) throws IOException {
-        // create multicast socket
-        this.socket = new MulticastSocket(port);
-        this.socket.setTimeToLive(1);
-
+        this.type = type;
         this.address = InetAddress.getByName(address);
         this.port = port;
-
         this.messageHandler = messageHandler;
+        isActive = true;
 
-        //join multicast group
-        socket.joinGroup(this.address);
-
-        startListening();
+        multicastSocket = new MulticastSocket(port);
+        multicastSocket.setTimeToLive(1);
+        multicastSocket.joinGroup(this.address);
 
         UI.printBoot("Joined " + type + " on " + address + " at port " + port);
     }
 
-    /**
-      * Starts listening for messages, dispatching them as they are received
-      */
-    private void startListening() {
-        new Thread(() -> {
-            byte[] mbuf = new byte[65535];
-
-            while(true) {
-                DatagramPacket multicastPacket = new DatagramPacket(mbuf, mbuf.length);
-
-                try {
-                    socket.receive(multicastPacket);
-                    Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
-                    messageHandler.handleMessage(message, multicastPacket.getAddress());
-                } catch (IOException e) {
-                    UI.printError("Failed to receive message in " + this.type + " on port " + this.port);
-                    e.printStackTrace();
-                }
+    @Override
+    public void run() {
+        while(isActive) {
+            byte[] packet = new byte[MAX_MESSAGE_SIZE];
+            DatagramPacket multicastPacket = new DatagramPacket(packet, packet.length);
+            try {
+                multicastSocket.receive(multicastPacket);
+                Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
+                messageHandler.handleMessage(message, multicastPacket.getAddress());
+            } catch (IOException e) {
+                UI.printError("Failed to receive message in " + type + " on port " + port);
+                e.printStackTrace();
             }
-        }).start();
-    }
-
-    /**
-     * Sends a message through the socket.
-     *
-     * @param message the message to be sent
-     */
-    public void sendMessage(Message message) {
-        byte[] rbuf = message.getPacket(true);
-
-        try {
-            this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 
     /**
-     * Sends a message through the socket.
+     * Abstracts channels from defining if the message has to be sent with or without body.
+     *
+     * @param message - the message to be sent
+     */
+    public void sendMessage(Message message) {
+        sendMessage(message,true);
+    }
+
+    /**
+     * Sends a message through the multicastSocket.
      *
      * @param message the message to be sent
      */
     public void sendMessage(Message message, boolean sendBody) {
-        byte[] rbuf = message.getPacket(sendBody);
+        byte[] packet = message.getPacket(sendBody);
 
         try {
-            this.socket.send(new DatagramPacket(rbuf, rbuf.length, address, port));
+            this.multicastSocket.send(new DatagramPacket(packet, packet.length, address, port));
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
     /**
-     * Sends a message with random delay.
-     *
-     * @param min     the min delay
-     * @param max     the max delay
-     * @param message the message to be sent
+     * Schedules a message to be sent after a random delay.
+     * @param max - the max delay
+     * @param message - the message to be sent
      */
-    public void sendWithRandomDelay(int min, int max, Message message) {
-        threadPool.schedule(() -> {
-            sendMessage(message);
-        }, Utils.getRandom(min, max), TimeUnit.MILLISECONDS);
+    void sendWithRandomDelay(int max, Message message) {
+        scheduledExecutorService.schedule(() -> sendMessage(message), Utils.getRandom(0, max), TimeUnit.MILLISECONDS);
     }
-
 }

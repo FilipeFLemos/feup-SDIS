@@ -25,7 +25,7 @@ public class Peer implements RMIProtocol {
     private Channel MDBChannel;
     private Channel MDRChannel;
     private MessageHandler messageHandler;
-    private TCPSender TCPController;
+    private TCPSender tcpSender;
     private int serverId;
     private String version;
     private PeerState controller;
@@ -52,8 +52,9 @@ public class Peer implements RMIProtocol {
 
         initRMI(args[1]);
 
-        if (!loadPeerController())
-            this.controller = new PeerState(version, serverId);
+        if (!loadPeerController()) {
+            controller = new PeerState(version, serverId);
+        }
 
         UI.printBoot("------------- Booting Multicast Channels -------------");
         UI.nl();
@@ -114,11 +115,12 @@ public class Peer implements RMIProtocol {
      */
     private boolean loadPeerController() {
         try {
-            FileInputStream controllerFile = new FileInputStream("PeerState" + serverId + ".ser");
-            ObjectInputStream controllerObject = new ObjectInputStream(controllerFile);
-            this.controller = (PeerState) controllerObject.readObject();
-            controllerObject.close();
-            controllerFile.close();
+            FileInputStream fileInputStream = new FileInputStream("PeerState" + serverId + ".ser");
+            ObjectInputStream objectInputStream = new ObjectInputStream(fileInputStream);
+            controller = (PeerState) objectInputStream.readObject();
+            controller.setVersion(version);
+            objectInputStream.close();
+            fileInputStream.close();
             return true;
         } catch (FileNotFoundException e) {
             UI.printWarning("No pre-existing PeerState found, starting new one");
@@ -148,8 +150,8 @@ public class Peer implements RMIProtocol {
             e.printStackTrace();
         }
 
-        if (!version.equals("1.0")) {
-            TCPController = new TCPSender(MDRPort);
+        if (isEnhanced) {
+            tcpSender = new TCPSender(MDRPort);
         }
     }
 
@@ -255,9 +257,9 @@ public class Peer implements RMIProtocol {
     }
 
     public void sendMessage(Message message, InetAddress sourceAddress) {
-        if (controller.isRestoreEnhancement() && !message.getVersion().equals("1.0")) {
+        if (isEnhanced && !message.getVersion().equals("1.0")) {
             //send chunk via tcp and send header to MDR
-            TCPController.sendMessage(message, sourceAddress);
+            tcpSender.sendMessage(message, sourceAddress);
             MDRChannel.sendMessage(message, false);
         } else
             MDRChannel.sendMessage(message);

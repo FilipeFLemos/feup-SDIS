@@ -29,7 +29,7 @@ public class ChunkInfo implements Serializable {
      *
      * @param desiredReplicationDeg - the desired replication Degree
      * @param currentReplicationDeg - the currentReplication Degree
-     * @param size
+     * @param size - the size of the chunk
      */
     public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg, int size) {
         this(desiredReplicationDeg, currentReplicationDeg);
