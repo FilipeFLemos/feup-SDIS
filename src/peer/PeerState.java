@@ -149,7 +149,7 @@ public class PeerState implements Serializable {
     public void updateStoredChunks(FileChunk fileChunk, Message message) {
         updateContainer(storedChunks, fileChunk, message);
 
-        if(backupEnhancement && !message.getVersion().equals("1.0")) {
+        if(backupEnhancement) {
             updateContainer(storedChunks_ENH, fileChunk, message);
         }
     }

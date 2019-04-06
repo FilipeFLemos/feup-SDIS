@@ -6,7 +6,6 @@ import storage.ChunkInfo;
 import message.Message;
 import storage.FileChunk;
 import peer.Peer;
-import storage.FileInfo;
 import utils.Utils;
 import user_interface.UI;
 
@@ -22,13 +21,8 @@ public class MessageHandler {
 
     private PeerState controller;
     private Peer peer;
+    private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(MAX_THREADS);
 
-    private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_THREADS);
-
-    /**
-     * Instantiates a new MessageHandler.
-     *
-     */
     public MessageHandler(Peer peer) {
         this.peer = peer;
         this.controller = peer.getController();
@@ -36,7 +30,7 @@ public class MessageHandler {
 
     /**
       * Handles a message and sends it to the thread pool.
-      * Ignores messages sent my itself.
+      * Ignores messages sent my itself unless they are REMOVED messages.
       *
       * @param message message to be handled
       * @param address address used in GETCHUNK message (TCP address). Unless the peer is enhanced, this field is always
@@ -48,73 +42,75 @@ public class MessageHandler {
             return;
         }
 
-        int randomWait;
+        int randomWait = 0;
         switch(message.getMessageType()) {
             case PUTCHUNK:
-                if(!message.getVersion().equals("1.0")) {
-                    controller.listenForSTORED_ENH(message);
+                if(peer.isEnhanced()) {
                     randomWait = Utils.getRandom(0, Utils.MAX_DELAY_BACKUP_ENH);
+                    controller.listenForSTORED_ENH(message);
                 }
-                else
-                    randomWait = 0;
 
-                threadPool.schedule(() -> handlePUTCHUNK(message), randomWait, TimeUnit.MILLISECONDS);
+                scheduledExecutorService.schedule(() -> handlePUTCHUNK(message), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case STORED:
-                threadPool.submit(() -> handleSTORED(message));
+                scheduledExecutorService.submit(() -> handleSTORED(message));
                 break;
             case GETCHUNK:
                 controller.listenForCHUNK(message);
                 randomWait = Utils.getRandom(0, Utils.MAX_DELAY_CHUNK);
-                threadPool.schedule(() -> handleGETCHUNK(message, address), randomWait, TimeUnit.MILLISECONDS);
+                scheduledExecutorService.schedule(() -> handleGETCHUNK(message, address), randomWait, TimeUnit.MILLISECONDS);
                 break;
             case CHUNK:
-                threadPool.submit(() -> handleCHUNK(message));
+                scheduledExecutorService.submit(() -> handleCHUNK(message));
                 break;
             case DELETE:
-                threadPool.submit(() -> handleDELETE(message));
+                scheduledExecutorService.submit(() -> handleDELETE(message));
                 break;
             case REMOVED:
-                threadPool.submit(() -> handleREMOVED(message));
+                scheduledExecutorService.submit(() -> handleREMOVED(message));
                 break;
             case CONTROL:
-                threadPool.submit(() -> handleCONTROL(message));
+                scheduledExecutorService.submit(() -> handleCONTROL(message));
                 break;
             case ACK_DELETE:
-                threadPool.submit(() -> handleACK_DELETE(message));
+                scheduledExecutorService.submit(() -> handleACK_DELETE(message));
                 break;
             default:
-                UI.printError("Message type "+message.getMessageType()+" is not valid");
+                UI.printError("Message type "+message.getMessageType()+" is not a valid type");
         }
 
     }
 
     /**
-     * Handles a PUTCHUNK message
+     * Handles a PUTCHUNK message.
+     * Starts by checking if this peer was the one asking for this file to be backed up, ignoring if positive.
+     * If the peer is enhanced, and the replication degree for the chunk No received was achieved in the meantime, it
+     * aborts the request.
+     * Then, if that chunk size is larger than the available free space, the request is aborted.
+     * Finally, the chunk is saved in the local storage and the peer sends the STORED message. If the chunk was already
+     * saved, it still sends the STORED message.
      *
-     * @param message the message
+     * @param message - the received STORED message
      */
     private void handlePUTCHUNK(Message message) {
-        //Ignora putchunks dum ficheiro que ele esta a fazer backup
-        ConcurrentHashMap<String, FileInfo> backedUpFiles = controller.getBackedUpFiles();
-        for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
-            FileInfo fileInfo = entry.getValue();
-            if(fileInfo.getFileId().equals(message.getFileId())){
-                return;
-            }
-        }
-
         UI.printBoot("------------- Received PUTCHUNK Message: "+message.getChunkNo()+" -----------");
 
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
 
-        if(controller.isBackupEnhancement() && !message.getVersion().equals("1.0")) {
-            FileChunk key = new FileChunk(fileId, chunkNo);
-            ConcurrentHashMap<FileChunk, ChunkInfo> storedRepliesInfo = controller.getStoredChunks_ENH();
+        ConcurrentHashMap<String, Set<Integer>> peersWithFile = controller.getPeersBackingUpFile();
+        if(peersWithFile.containsKey(fileId)){
+            UI.printWarning("Since I'm the one backing up this file, this request wil be ignored");
+            UI.printBoot("------------------------------------------------------");
+            return;
+        }
 
-            if(storedRepliesInfo.containsKey(key)) {
-                if(storedRepliesInfo.get(key).achievedDesiredRepDeg()) {
+        if(peer.isEnhanced()) {
+            FileChunk fileChunk = new FileChunk(fileId, chunkNo);
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = controller.getStoredChunks_ENH();
+
+            if(storedChunks_ENH.containsKey(fileChunk)) {
+                if(storedChunks_ENH.get(fileChunk).achievedDesiredRepDeg()) {
                     UI.printWarning("Replication degree is already being respected for chunk " + message.getChunkNo() + ". Ignoring further requests");
                     UI.printBoot("------------------------------------------------------");
                     return;
@@ -130,14 +126,14 @@ public class MessageHandler {
         }
         else {
             if (!controller.getStorageManager().saveChunk(message)) {
-                UI.printError("Chunk " + message.getChunkNo() + " of file " + message.getFileId() + " is larger than the available space (" + controller.getStorageManager().getAvailableSpace() + ")");
+                UI.printError("Chunk " + chunkNo + " of file " + fileId + " is larger than the available space (" + controller.getStorageManager().getAvailableSpace() + ")");
                 UI.printBoot("------------------------------------------------------");
                 return;
             }
             controller.addStoredChunk(message);
         }
 
-        Message storedMessage = new Message(message.getVersion(), peer.getServerId(), message.getFileId(), null, Message.MessageType.STORED, message.getChunkNo());
+        Message storedMessage = new Message(peer.getVersion(), peer.getServerId(), fileId, null, Message.MessageType.STORED, chunkNo);
         peer.getMCChannel().sendWithRandomDelay(0, Utils.MAX_DELAY_STORED, storedMessage);
 
         UI.printOK("Sending STORED message: " + storedMessage.getChunkNo());
@@ -310,7 +306,7 @@ public class MessageHandler {
                 messagePUTCHUNK.setMessageType(Message.MessageType.PUTCHUNK);
                 messagePUTCHUNK.setReplicationDeg(chunkInfo.getDesiredReplicationDeg());
 
-                threadPool.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
+                scheduledExecutorService.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
                         Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
             }
         } else if(reclaimedChunks.containsKey(fileChunk)){
@@ -320,7 +316,7 @@ public class MessageHandler {
             Message messagePUTCHUNK = new Message(peer.getVersion(), -1, message.getFileId(), chunkInfo.getBody(),
                     Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
 
-            threadPool.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
+            scheduledExecutorService.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
                     Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
 
             controller.removeReclaimedChunk(fileChunk);

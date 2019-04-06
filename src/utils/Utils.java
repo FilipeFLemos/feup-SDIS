@@ -20,7 +20,7 @@ public class Utils {
     public static int MAX_DELAY_STORED = 400;
     public static int MAX_DELAY_CHUNK = 400;
     public static int MAX_DELAY_REMOVED = 400;
-    public static int MAX_DELAY_BACKUP_ENH = 750;
+    public static int MAX_DELAY_BACKUP_ENH = 1000;
     public static long MAX_STORAGE_SPACE = (long) (8*Math.pow(10,9));
     public static int SAVING_INTERVAL = 3;
 
