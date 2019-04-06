@@ -31,6 +31,7 @@ public class Peer implements RMIProtocol {
     private PeerState controller;
     private ScheduledExecutorService threadPool = Executors.newScheduledThreadPool(MAX_THREADS);
     private int MDRPort;
+    private boolean isEnhanced = false;
 
     /**
      * Constructor. Initiates peer from CLI args
@@ -68,6 +69,7 @@ public class Peer implements RMIProtocol {
         UI.printBoot("-------------------- Peer " + args[1] + " Ready --------------------");
 
         if(!version.equals("1.0")){
+            isEnhanced = true;
             Message messageCONTROL = new Message(version,serverId, null, Message.MessageType.CONTROL);
             MCChannel.sendMessage(messageCONTROL);
             UI.printOK("Sending CONTROL message");
@@ -182,6 +184,10 @@ public class Peer implements RMIProtocol {
 
     public PeerState getController() {
         return controller;
+    }
+
+    public boolean isEnhanced() {
+        return isEnhanced;
     }
 
     /**

@@ -128,28 +128,29 @@ public class PeerState implements Serializable {
         storedChunksByFileId.put(message.getFileId(), storedChunks);
     }
 
+    public void updateBackedUpChunks(FileChunk fileChunk, Message message) {
+        updateContainer(backedUpChunks, fileChunk, message);
+        addPeerBackingUpFile(fileChunk,message.getSenderId());
+    }
+
+    public void addPeerBackingUpFile(FileChunk fileChunk, int senderId) {
+        if(peersBackingUpFile.containsKey(fileChunk.getFileId())){
+            Set<Integer> peers = peersBackingUpFile.get(fileChunk.getFileId());
+            peers.add(senderId);
+            peersBackingUpFile.put(fileChunk.getFileId(), peers);
+        }
+    }
+
     /**
-     * Updates stored and backed up Chunk information.
+     * Updates stored chunks information.
      * @param fileChunk - the chunk
      * @param message - the STORED message
      */
-    public void updateChunkInfo(FileChunk fileChunk, Message message) {
+    public void updateStoredChunks(FileChunk fileChunk, Message message) {
         updateContainer(storedChunks, fileChunk, message);
-        updateContainer(backedUpChunks, fileChunk, message);
-
-        addPeerBackingUpFile(fileChunk, message);
 
         if(backupEnhancement && !message.getVersion().equals("1.0")) {
             updateContainer(storedChunks_ENH, fileChunk, message);
-        }
-        UI.printOK("Finished updating");
-    }
-
-    private void addPeerBackingUpFile(FileChunk fileChunk, Message message) {
-        if(peersBackingUpFile.containsKey(fileChunk.getFileId())){
-            Set<Integer> peers = peersBackingUpFile.get(fileChunk.getFileId());
-            peers.add(message.getSenderId());
-            peersBackingUpFile.put(fileChunk.getFileId(), peers);
         }
     }
 

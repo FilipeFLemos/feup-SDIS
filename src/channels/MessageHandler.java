@@ -146,39 +146,40 @@ public class MessageHandler {
 
     /**
      * Handles a STORED message
+     * If the peer is the backup initiator peer, updates the backed up information regarding the chunk and sender.
+     * Else, updates the stored information (number of peers storing/replication degree).
      *
-     * @param message the message
+     * @param message - the received STORED message
      */
     private void handleSTORED(Message message) {
-        //Ignora stores de ficheiros que ja fez backup
-        ConcurrentHashMap<String, FileInfo> backedUpFiles = controller.getBackedUpFiles();
-        for (Map.Entry<String, FileInfo> entry : backedUpFiles.entrySet()) {
-            FileInfo fileInfo = entry.getValue();
-            if(fileInfo.getFileId().equals(message.getFileId())){
-                return;
-            }
+        UI.printBoot("-------------- Received STORED Message: "+ message.getChunkNo() +" ------------");
+        FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
+        controller.updateBackedUpChunks(fileChunk, message);
+
+        ConcurrentHashMap<String, Set<Integer>> peersWithFile = controller.getPeersBackingUpFile();
+        if(peersWithFile.containsKey(message.getFileId())){
+            UI.printOK("Finished updating");
+            UI.printBoot("------------------------------------------------------");
+            return;
         }
 
-        UI.printBoot("-------------- Received STORED Message: "+ message.getChunkNo() +" ------------");
-
-        //UI.print("Received Stored Message: " + message.getChunkNo());
-
-        FileChunk key = new FileChunk(message.getFileId(), message.getChunkNo());
-        controller.updateChunkInfo(key,message);
+        controller.updateStoredChunks(fileChunk,message);
+        UI.printOK("Finished updating");
         UI.printBoot("------------------------------------------------------");
     }
 
     /**
-     * Handles a GETCHUNK message. If a CHUNK message for this chunk is received while handling GETCHUNK, the operation
-     * is aborted. If the peer does not have any CHUNK for this file or this CHUNK No, the operation is aborted.
+     * Handles a GETCHUNK message.
+     * If a CHUNK message for this chunk is received while handling GETCHUNK, the operation is aborted.
+     * is aborted.
+     * If the peer does not have any CHUNK for this file or this CHUNK No, the operation is aborted.
+     * Finally it loads the chunk stored in its local storage and sends the CHUNK to the channel.
      *
-     * @param message the message
-     * @param sourceAddress address used for TCP connection in enhanced version of protocols
+     * @param message - the received GETCHUNK message
+     * @param address - address used for TCP connection in enhanced peers
      */
-    private void handleGETCHUNK(Message message, InetAddress sourceAddress) {
+    private void handleGETCHUNK(Message message, InetAddress address) {
         UI.printBoot("------------ Received GETCHUNK Message: "+message.getChunkNo()+" ------------");
-
-        //UI.print("Received GetChunk Message: " + message.getChunkNo());
 
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
@@ -201,19 +202,24 @@ public class MessageHandler {
         }
 
         Message chunk = controller.getStorageManager().loadChunk(fileId, chunkNo);
-        peer.sendMessage(chunk,sourceAddress);
+        peer.sendMessage(chunk,address);
         UI.printOK("Sending CHUNK Message: " + message.getChunkNo());
         UI.printBoot("------------------------------------------------------");
     }
 
     /**
-     * Handles a CHUNK message
+     * Handles a CHUNK message.
+     * Starts by marking the chunk as being restored.
+     * Then checks if the file where that chunk belongs to is really being restored, aborting if negative.
+     * If the message was sent by an enhanced peer and it only contains the header, the request must be ignored. (used
+     * to avoid flooding the host)
+     * Finally it adds the chunk to the restored chunks. If the last chunk required was received, the peer has successfully
+     * restored the file.
      *
-     * @param message the message
+     * @param message - the received CHUNK message
      */
     private void handleCHUNK(Message message) {
         UI.printBoot("-------------- Received CHUNK Message: "+ message.getChunkNo() +" -------------");
-        //UI.print("Received Chunk Message: " + message.getChunkNo());
 
         String fileId = message.getFileId();
         FileChunk fileChunk = new FileChunk(fileId, message.getChunkNo());
@@ -231,11 +237,8 @@ public class MessageHandler {
             return;
         }
 
-        // if an enhanced chunk message is sent via multicast
-        // channel, it only contains a header, don't restore
-        //TODO: this verification isn't right
         if(!message.getVersion().equals("1.0") && !message.hasBody()) {
-            UI.print("Only header");
+            UI.print("Enhanced peer sent only header, ignoring restore request");
             UI.printBoot("------------------------------------------------------");
             return;
         }
@@ -250,14 +253,14 @@ public class MessageHandler {
     }
 
     /**
-     * Handles a DELETE message. If the peer does not have the chunk, the message is ignored.
+     * Handles a DELETE message.
+     * Starts by checking if the peer is backing up the file, ignoring the request if negative.
+     * Then, informs the peer to delete every chunk related to that file.
      *
-     * @param message the message
+     * @param message - the received DELETE message
      */
     private void handleDELETE(Message message) {
         UI.printBoot("-------------- Received DELETE Message ---------------");
-
-        //UI.print("Received Delete Message");
 
         String fileId = message.getFileId();
 
@@ -272,10 +275,9 @@ public class MessageHandler {
             controller.deleteChunk(fileId, storedChunks.get(0), false);
         }
 
-        //controller.removeStoredChunksFile(fileId);
         UI.printOK("File deleted successfully");
 
-        if(!peer.getVersion().equals("1.0")){
+        if(!peer.isEnhanced()){
             Message messageACK_DELETE = new Message(peer.getVersion(),peer.getServerId(),fileId, null, Message.MessageType.ACK_DELETE);
             peer.getMCChannel().sendMessage(messageACK_DELETE);
             UI.printOK("Sending ACK_DELETE message");
@@ -285,16 +287,14 @@ public class MessageHandler {
     }
 
     /**
-     * Handles a REMOVED message. If this action leads to an unsatisfied replication degree, a new backup protocols for
-     * the chunk must be initiated. However, it must wait a random interval of [0-400]ms to check if the degree was
-     * satisfied before taking action.
+     * Handles a REMOVED message.
+     * If the deletion of the chunk has lead to an unsatisfiable replication degree, a new backup protocol for that
+     * chunk is initiated.
      *
-     * @param message the message
+     * @param message - the received REMOVED message
      */
     private void handleREMOVED(Message message) {
         UI.printBoot("------------- Received REMOVE Message: "+message.getChunkNo()+" ------------");
-
-        //UI.print("Received Removed Message: " + message.getChunkNo());
 
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
         ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = controller.getStoredChunks();
@@ -328,10 +328,18 @@ public class MessageHandler {
         UI.printBoot("------------------------------------------------------");
     }
 
+    /**
+     * Handles an ACK_DELETE message.
+     * Starts by checking if the peer is enhanced, aborting if otherwise.
+     * Then, starts iterating through the peersBackingUpFile map. In each cycle it checks if the file was deleted.
+     * If positive, checks if the sends id belongs to one of the peers that haven't send an ACK_DELETE when the file was
+     * deleted, sending a DELETE message to the channel if it checks out.
+     * @param message - the received CONTROL message
+     */
     private void handleCONTROL(Message message){
         UI.printBoot("-------------- Received CONTROL Message ---------------");
 
-        if(peer.getVersion().equals("1.0")){
+        if(!peer.isEnhanced()){
             UI.printBoot("-------------------------------------------------------");
             return;
         }
@@ -353,15 +361,29 @@ public class MessageHandler {
         UI.printBoot("-------------------------------------------------------");
     }
 
+    /**
+     * Handles an ACK_DELETE message.
+     * Starts by checking if the peer is enhanced, aborting if otherwise.
+     * Then, checks if the peer deleted a file with that Id and didn't receive an ACK from all the peers that were
+     * backing it up.
+     * Finally, checks if the message belongs to one of the peers that were missing the ACK, removing it if positive.
+     * @param message - the received ACK_DELETE message
+     */
     private void handleACK_DELETE(Message message){
         UI.printBoot("------------- Received ACK_DELETE Message ------------");
 
-        if(peer.getVersion().equals("1.0")){
+        if(!peer.isEnhanced()){
             UI.printBoot("------------------------------------------------------");
             return;
         }
 
         String fileId = message.getFileId();
+        Set<String> deletedFiles = controller.getDeletedFiles();
+        if(!deletedFiles.contains(fileId)){
+            UI.printBoot("-------------------------------------------------------");
+            return;
+        }
+
         ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
         if(peersBackingUpFile.containsKey(fileId)){
             controller.removePeerBackingUpFile(fileId, message.getSenderId());
