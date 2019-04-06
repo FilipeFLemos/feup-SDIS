@@ -27,6 +27,30 @@ public class Utils {
     private final static char[] hex = "0123456789ABCDEF".toCharArray();
 
     /**
+     * Parses the accessPoint to retrieve the host, address and port
+     * @param accessPoint - the provided peer access point
+     * @return a string with the host, address and port
+     */
+    public static String[] parseRMI(String accessPoint, boolean isTestApp) {
+        Pattern rmiPattern;
+        if (!isTestApp) {
+            rmiPattern = Pattern.compile("//([\\w.]+)(?::(\\d+))?/(\\w+)?");
+        } else {
+            rmiPattern = Pattern.compile("//([\\w.]+)(?::(\\d+))?/(\\w+)");
+        }
+        Matcher m = rmiPattern.matcher(accessPoint);
+        String[] peer_ap = null;
+
+        if (m.find()) {
+            peer_ap = new String[]{m.group(1), m.group(2), m.group(3)};
+        } else {
+            UI.print("Invalid Access Point!");
+        }
+
+        return peer_ap;
+    }
+
+    /**
      * Generates a SHA256 hash for the provided file path
      *
      * @param filePath - the file path
@@ -68,52 +92,5 @@ public class Utils {
      */
     public static int getRandom(int min, int max) {
         return ThreadLocalRandom.current().nextInt(min, max + 1);
-    }
-
-    /**
-     * Parses the accessPoint to retrieve the host, address and port
-     * @param accessPoint - the provided peer access point
-     * @return a string with the host, address and port
-     */
-    public static String[] parseRMI(String accessPoint) {
-        Pattern rmiPattern = Pattern.compile("//([\\w.]+)(?::(\\d+))?/(\\w+)");
-        Matcher m = rmiPattern.matcher(accessPoint);
-        String[] peer_ap = null;
-
-        if (m.find()) {
-            peer_ap = new String[]{m.group(1), m.group(2), m.group(3)};
-        } else {
-            UI.print("Invalid Access Point!");
-        }
-
-        return peer_ap;
-    }
-
-    /**
-     * Binds the remote stub with the peer registry.
-     * @param serviceAccessPoint - the peer access point
-     * @return
-     */
-    public static Registry getRegistry(String[] serviceAccessPoint) {
-        Registry registry = null;
-        try {
-            if (serviceAccessPoint[1] == null) {
-                if (serviceAccessPoint[0].equals("localhost")) {
-                    registry = LocateRegistry.getRegistry();
-                } else {
-                    registry = LocateRegistry.getRegistry(serviceAccessPoint[0]);
-                }
-            } else {
-                if (serviceAccessPoint[0].equals("localhost")) {
-                    registry = LocateRegistry.getRegistry(serviceAccessPoint[1]);
-                } else {
-                    registry = LocateRegistry.getRegistry(serviceAccessPoint[0], Integer.parseInt(serviceAccessPoint[1]));
-                }
-            }
-        } catch (RemoteException e) {
-            e.printStackTrace();
-        }
-
-        return registry;
     }
 }

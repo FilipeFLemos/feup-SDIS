@@ -2,18 +2,18 @@ package interfaces;
 
 
 import java.rmi.RemoteException;
+import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 
 import user_interface.UI;
 
 
-import static utils.Utils.getRegistry;
 import static utils.Utils.parseRMI;
 
 public class TestApp {
 
     private TestApp(String[] args) throws RemoteException {
-        String[] peer_ap = parseRMI(args[0]);
+        String[] peer_ap = parseRMI(args[0], true);
         if (peer_ap == null) {
             return;
         }
@@ -73,5 +73,33 @@ public class TestApp {
         }
 
         return remoteService;
+    }
+
+    /**
+     * Binds the remote stub with the peer registry.
+     * @param serviceAccessPoint - the peer access point
+     * @return the peer registry
+     */
+    private Registry getRegistry(String[] serviceAccessPoint) {
+        Registry registry = null;
+        try {
+            if (serviceAccessPoint[1] == null) {
+                if (serviceAccessPoint[0].equals("localhost")) {
+                    registry = LocateRegistry.getRegistry();
+                } else {
+                    registry = LocateRegistry.getRegistry(serviceAccessPoint[0]);
+                }
+            } else {
+                if (serviceAccessPoint[0].equals("localhost")) {
+                    registry = LocateRegistry.getRegistry(serviceAccessPoint[1]);
+                } else {
+                    registry = LocateRegistry.getRegistry(serviceAccessPoint[0], Integer.parseInt(serviceAccessPoint[1]));
+                }
+            }
+        } catch (RemoteException e) {
+            e.printStackTrace();
+        }
+
+        return registry;
     }
 }

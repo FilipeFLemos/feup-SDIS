@@ -44,7 +44,7 @@ public class Peer implements RMIProtocol {
         version = args[0];
         serverId = Integer.parseInt(args[1]);
 
-        String[] serviceAccessPoint = parseRMI(args[2]);
+        String[] serviceAccessPoint = parseRMI(args[2], false);
         if (serviceAccessPoint == null) {
             return;
         }
