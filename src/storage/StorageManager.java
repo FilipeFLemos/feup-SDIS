@@ -165,7 +165,7 @@ public class StorageManager implements Serializable {
      */
     private String cropFilesDir(String filePath) {
         int index = filePath.lastIndexOf('/');
-        return filePath.substring(index, filePath.length() - 1);
+        return filePath.substring(index);
     }
 
     /**
