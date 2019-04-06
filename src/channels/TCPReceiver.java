@@ -2,7 +2,6 @@ package channels;
 
 import message.Message;
 
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.net.ServerSocket;
@@ -16,53 +15,35 @@ public class TCPReceiver implements Runnable {
 
     private MessageHandler messageHandler;
     private ServerSocket serverSocket;
-    private ExecutorService threadPool = Executors.newFixedThreadPool(Utils.MAX_THREADS);
+    private ExecutorService executorService = Executors.newFixedThreadPool(Utils.MAX_THREADS);
     private boolean isRestoring;
 
-    /**
-     * Instantiates a socket channels
-     *
-     * @param port channels port
-     * @param messageHandler channels messageHandler
-     */
     public TCPReceiver(int port, MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
         try {
             this.serverSocket = new ServerSocket(port);
-        } catch (IOException e) {
-            UI.print("ServerSocket already working, no need to open again");
+        } catch (IOException ignored) {
         }
         isRestoring = true;
     }
 
-    /**
-     * Method ran when thread starts executing. Submits handler to the thread pool
-     */
     @Override
     public void run() {
         while (isRestoring) {
             try {
                 Socket socket = serverSocket.accept();
-                threadPool.submit(() -> listenClientMessages(socket));
+                executorService.submit(() -> listenForCHUNKS(socket));
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
     }
 
-    public void close(){
-        try {
-            serverSocket.close();
-        } catch (IOException e) {
-            e.printStackTrace();
-            UI.print("Error Closing TCP Socket");
-        }
-    }
 
     /**
-     * Socket handler.
+     * Listens for CHUNK messages on the TCP socket
      */
-    private void listenClientMessages(Socket socket) {
+    private void listenForCHUNKS(Socket socket) {
         ObjectInputStream stream = null;
 
         try {
