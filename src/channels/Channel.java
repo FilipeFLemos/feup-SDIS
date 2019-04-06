@@ -42,8 +42,8 @@ public class Channel implements Runnable{
 
     @Override
     public void run() {
+        byte[] packet = new byte[MAX_MESSAGE_SIZE];
         while(isActive) {
-            byte[] packet = new byte[MAX_MESSAGE_SIZE];
             DatagramPacket multicastPacket = new DatagramPacket(packet, packet.length);
             try {
                 multicastSocket.receive(multicastPacket);
