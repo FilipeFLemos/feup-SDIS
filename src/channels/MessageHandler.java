@@ -337,22 +337,25 @@ public class MessageHandler {
             return;
         }
 
+        String fileId = message.getFileId();
+
         Set<String> deletedFiles = controller.getDeletedFiles();
-        if(!deletedFiles.contains(message.getFileId())){
+        if(!deletedFiles.contains(fileId)){
             System.out.println("Does not contain deleted File");
             UI.printBoot("------------------------------------------------------");
             return;
         }
 
+        System.out.println("Has deleted File");
+
         ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
-        for (Map.Entry<String, Set<Integer>> entry : peersBackingUpFile.entrySet()) {
-            Set<Integer> peers = entry.getValue();
-            if(peers.contains(message.getSenderId())){
-                Message messageDELETE = new Message(peer.getVersion(),peer.getServerId(),entry.getKey(), null, Message.MessageType.DELETE);
-                peer.getMCChannel().sendMessage(messageDELETE);
-                UI.printOK("Sending DELETE message");
-            }
+        Set<Integer> peers = peersBackingUpFile.get(fileId);
+        if(peers.contains(message.getSenderId())){
+            Message messageDELETE = new Message(peer.getVersion(),peer.getServerId(),fileId, null, Message.MessageType.DELETE);
+            peer.getMCChannel().sendMessage(messageDELETE);
+            UI.printOK("Sending DELETE message");
         }
+
         UI.printBoot("------------------------------------------------------");
     }
 
