@@ -63,6 +63,7 @@ public class Channel implements Runnable{
      */
     public void sendMessage(Message message) {
         sendMessage(message,true);
+        System.out.println(message);
     }
 
     /**
