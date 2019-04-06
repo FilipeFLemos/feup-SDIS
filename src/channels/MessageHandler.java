@@ -332,12 +332,14 @@ public class MessageHandler {
         UI.printBoot("-------------- Received CONTROL Message ---------------");
 
         if(peer.getVersion().equals("1.0")){
+            System.out.println("Not enhanced");
             UI.printBoot("------------------------------------------------------");
             return;
         }
 
         Set<String> deletedFiles = controller.getDeletedFiles();
         if(!deletedFiles.contains(message.getFileId())){
+            System.out.println("Does not contain deleted File");
             UI.printBoot("------------------------------------------------------");
             return;
         }
