@@ -56,6 +56,7 @@ public class TCPReceiver implements Runnable {
         }
 
         while(true) {
+            UI.print("Waiting");
             Message message = null;
             try {
                 message = (Message) stream.readObject();
