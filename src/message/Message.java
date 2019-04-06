@@ -38,6 +38,7 @@ public class Message implements Comparable, Serializable {
         body = new byte[nBytes];
         ByteArrayInputStream message = new ByteArrayInputStream(data, header.length() + 4, nBytes);
         message.read(body, 0, nBytes);
+        System.out.println(body.length);
     }
 
     /**
