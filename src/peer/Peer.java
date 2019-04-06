@@ -263,9 +263,8 @@ public class Peer implements RMIProtocol {
     public void sendMessage(Message message, InetAddress sourceAddress) {
         if (isEnhanced && !message.getVersion().equals("1.0")) {
             //send chunk via tcp and send header to MDR
-            System.out.println("Devia estar a mandar");
-            tcpSender.sendMessage(message, sourceAddress);
             MDRChannel.sendMessage(message, false);
+            tcpSender.sendMessage(message, sourceAddress);
         } else
             MDRChannel.sendMessage(message);
     }
