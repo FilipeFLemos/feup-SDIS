@@ -12,17 +12,29 @@ public class ChunkInfo implements Serializable {
     private ArrayList<Integer> peersWithChunk;
     private byte[] body = null;
 
+    /**
+     * Constructor for saving the desired and the current Replication Degree
+     *
+     * @param desiredReplicationDeg - the desired replication Degree
+     * @param currentReplicationDeg - the currentReplication Degree
+     */
     public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg) {
         this.desiredReplicationDeg = desiredReplicationDeg;
         this.currentReplicationDeg = currentReplicationDeg;
         this.peersWithChunk = new ArrayList<>();
     }
 
+    /**
+     * Constructor for providing the size of the chunk.
+     *
+     * @param desiredReplicationDeg - the desired replication Degree
+     * @param currentReplicationDeg - the currentReplication Degree
+     * @param size
+     */
     public ChunkInfo(int desiredReplicationDeg, int currentReplicationDeg, int size) {
         this(desiredReplicationDeg, currentReplicationDeg);
         this.size = size;
     }
-
 
     public int getCurrentReplicationDeg() {
         return currentReplicationDeg;
@@ -54,9 +66,10 @@ public class ChunkInfo implements Serializable {
 
     /**
      * Computes the difference between the current and the desired replication degree.
+     *
      * @return The difference value
      */
-    public int getReplicationDegDifference(){
+    public int getReplicationDegDifference() {
         return currentReplicationDeg - desiredReplicationDeg;
     }
 
@@ -66,6 +79,7 @@ public class ChunkInfo implements Serializable {
 
     /**
      * Adds a peer that backs up the chunk.
+     *
      * @param peerId - the peer id
      */
     public void addPeer(int peerId) {
@@ -74,6 +88,7 @@ public class ChunkInfo implements Serializable {
 
     /**
      * Removes a peer that stopped backing up the chunk.
+     *
      * @param peerId - the peer id
      */
     public void removePeer(Integer peerId) {
@@ -82,6 +97,7 @@ public class ChunkInfo implements Serializable {
 
     /**
      * Checks if the chunk is being backed up by a peer.
+     *
      * @param peerId - the peer id
      * @return true if positive and false otherwise
      */

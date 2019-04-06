@@ -2,16 +2,19 @@ package storage;
 
 import java.io.Serializable;
 
-/**
- * Represents a file's chunk
- */
 public class FileChunk implements Serializable {
 
     private static final long serialVersionUID = 1L;
-	private String fileId;
+    private String fileId;
     private Integer chunkNo;
 
-    public FileChunk(String fileId, Integer chunkNo){
+    /**
+     * Creates a chunk for the file id provided and with the respective chunk number
+     *
+     * @param fileId  - the file id
+     * @param chunkNo - the chunk number
+     */
+    public FileChunk(String fileId, Integer chunkNo) {
         this.fileId = fileId;
         this.chunkNo = chunkNo;
     }
@@ -24,32 +27,23 @@ public class FileChunk implements Serializable {
         return chunkNo;
     }
 
-	@Override
-	public int hashCode() {
-		int hash = (chunkNo ^ (chunkNo >>> 32));
-		hash = 31 * hash + fileId.hashCode();
-		return hash;
-	}
+    @Override
+    public int hashCode() {
+        int hash = (chunkNo ^ (chunkNo >>> 32));
+        hash = 31 * hash + fileId.hashCode();
+        return hash;
+    }
 
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj)
-			return true;
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj)
+            return true;
 
-		if (obj == null)
-			return false;
+        if (obj == null || getClass() != obj.getClass())
+            return false;
 
-		if (getClass() != obj.getClass())
-			return false;
+        FileChunk other = (FileChunk) obj;
 
-		FileChunk other = (FileChunk) obj;
-
-		if (!chunkNo.equals(other.chunkNo))
-			return false;
-
-		if (fileId == null) {
-			return other.fileId == null;
-		} else return fileId.equals(other.fileId);
-
-	}
+        return (chunkNo.equals(other.chunkNo) && fileId.equals(other.fileId));
+    }
 }
