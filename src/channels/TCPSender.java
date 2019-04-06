@@ -21,6 +21,7 @@ public class TCPSender {
     public TCPSender(int port) {
         this.port = port;
         sockets = new ConcurrentHashMap<>();
+        UI.printOK("CRESTED");
     }
 
     /**
