@@ -30,11 +30,11 @@ public class Message implements Comparable, Serializable {
      *
      * @param data - the received data.
      */
-    public Message(byte[] data) {
+    public Message(byte[] data, int length) {
         String header = extractHeader(data);
         parseHeader(header);
 
-        int nBytes = data.length - header.length() - 4;
+        int nBytes = length - header.length() - 4;
         body = new byte[nBytes];
         ByteArrayInputStream message = new ByteArrayInputStream(data, header.length() + 4, nBytes);
         message.read(body, 0, nBytes);

@@ -83,7 +83,7 @@ public class Channel {
 
                 try {
                     socket.receive(multicastPacket);
-                    Message message = new Message(multicastPacket.getData());
+                    Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
                     messageHandler.handleMessage(message, multicastPacket.getAddress());
                 } catch (IOException e) {
                     UI.printError("Failed to receive message in " + this.type + " on port " + this.port);
