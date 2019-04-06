@@ -332,8 +332,7 @@ public class MessageHandler {
         UI.printBoot("-------------- Received CONTROL Message ---------------");
 
         if(peer.getVersion().equals("1.0")){
-            System.out.println("Not enhanced");
-            UI.printBoot("------------------------------------------------------");
+            UI.printBoot("-------------------------------------------------------");
             return;
         }
 
@@ -351,18 +350,18 @@ public class MessageHandler {
                 }
             }
         }
-        UI.printBoot("------------------------------------------------------");
+        UI.printBoot("-------------------------------------------------------");
     }
 
     private void handleACK_DELETE(Message message){
-        String fileId = message.getFileId();
-        UI.printBoot("------------- Received ACK_DELETE Message: " + fileId + " ------------");
+        UI.printBoot("------------- Received ACK_DELETE Message ------------");
 
         if(peer.getVersion().equals("1.0")){
             UI.printBoot("------------------------------------------------------");
             return;
         }
 
+        String fileId = message.getFileId();
         ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
         if(peersBackingUpFile.containsKey(fileId)){
             controller.removePeerBackingUpFile(fileId, message.getSenderId());
