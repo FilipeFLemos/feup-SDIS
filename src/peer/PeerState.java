@@ -64,7 +64,7 @@ public class PeerState implements Serializable {
 
     /**
      * Initiates the stored chunks container for enhanced peers. This informs the peer to start listening for STORED
-     * messages of the provided chunk No.
+     * messages of the provided chunk No. (Peers storing file)
      * @param chunk - the received chunk
      */
     public void listenForSTORED_ENH(Message chunk) {
@@ -74,7 +74,7 @@ public class PeerState implements Serializable {
 
     /**
      * Initiates the stored chunks container. This informs the peer to start listening for STORED
-     * messages of the provided chunk No.
+     * messages of the provided chunk No. (Backup initiator peer)
      * @param chunk - the received chunk
      */
     public void listenForSTORED(Message chunk) {
@@ -84,7 +84,7 @@ public class PeerState implements Serializable {
 
     /**
      * Initiates the being restored chunks container. This informs the peer to start listening for CHUNK
-     * messages of the provided chunk No.
+     * messages of the provided chunk No. (Restore initiator peer)
      * @param chunk - the received chunk
      */
     public void listenForCHUNK(Message chunk) {
@@ -93,17 +93,17 @@ public class PeerState implements Serializable {
     }
 
     /**
-     * Add file to restoring files structure.
+     * Add the file to the restoring file structures. (Restore initiator peer)
      *
-     * @param fileID      the file id
+     * @param fileId - the file id
      */
-    public void addToRestoringFiles(String fileID, FileInfo fileInfo) {
-        restoredChunks.putIfAbsent(fileID, new ConcurrentSkipListSet<>());
-        filesBeingRestored.putIfAbsent(fileID, fileInfo);
+    public void addToRestoringFiles(String fileId, FileInfo fileInfo) {
+        restoredChunks.putIfAbsent(fileId, new ConcurrentSkipListSet<>());
+        filesBeingRestored.putIfAbsent(fileId, fileInfo);
     }
 
     /**
-     * Initializes the stored chunk maps
+     * Initializes the stored chunk maps (Backup initiator peer)
      * @param message - the PUTCHUNK message
      */
     public void startStoringChunks(Message message) {
@@ -122,11 +122,21 @@ public class PeerState implements Serializable {
         storedChunksByFileId.put(message.getFileId(), storedChunks);
     }
 
+    /**
+     * Updates the backed up chunks container and peers backing up file.
+     * @param fileChunk - the file chunk
+     * @param message - the received STORED message
+     */
     public void updateBackedUpChunks(FileChunk fileChunk, Message message) {
         updateContainer(backedUpChunks, fileChunk, message);
         addPeerBackingUpFile(fileChunk,message.getSenderId());
     }
 
+    /**
+     * Adds the id of the sender to the set of peers backing up file if it isn't already there.
+     * @param fileChunk - the file chunk
+     * @param senderId - the received STORED message
+     */
     private void addPeerBackingUpFile(FileChunk fileChunk, int senderId) {
         if(peersBackingUpFile.containsKey(fileChunk.getFileId())){
             Set<Integer> peers = peersBackingUpFile.get(fileChunk.getFileId());
@@ -136,9 +146,9 @@ public class PeerState implements Serializable {
     }
 
     /**
-     * Updates stored chunks information.
-     * @param fileChunk - the chunk
-     * @param message - the STORED message
+     * Updates the stored chunks information.
+     * @param fileChunk - the file chunk
+     * @param message - the received STORED message
      */
     public void updateStoredChunks(FileChunk fileChunk, Message message) {
         updateContainer(storedChunks, fileChunk, message);
@@ -149,10 +159,7 @@ public class PeerState implements Serializable {
     }
 
     /**
-     * Updates map container at given key with the received STORED message IF:
-     * 1) Chunk is stored by the peer and received this message from a new peer
-     * 2) Chunk was requested by the peer and hasn't received it yet - backup initiator peer
-     * In both cases, the replication degree of the chunk is increased and the sender peer is added to the chunks mirrors.
+     * Updates map container at given key with the received STORED message
      * @param map - The map container
      * @param fileChunk - The chunk
      * @param message - The STORED message
@@ -164,7 +171,7 @@ public class PeerState implements Serializable {
             chunkInfo.increaseCurrentRepDeg();
             chunkInfo.addPeer(message.getSenderId());
             map.put(fileChunk, chunkInfo);
-            UI.printOK("Updated with received store message");
+            UI.printOK("Updated with received STORED message");
         }
     }
 
