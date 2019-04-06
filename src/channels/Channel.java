@@ -37,46 +37,23 @@ public class Channel implements Runnable{
         multicastSocket.setTimeToLive(1);
         multicastSocket.joinGroup(this.address);
 
-        startListening();
-
         UI.printBoot("Joined " + type + " on " + address + " at port " + port);
-    }
-
-    private void startListening() {
-//        new Thread(() -> {
-//            byte[] mbuf = new byte[65535];
-//
-//            while(true) {
-//                DatagramPacket multicastPacket = new DatagramPacket(mbuf, mbuf.length);
-//
-//                try {
-//                    this.multicastSocket.receive(multicastPacket);
-//                    Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
-//                    messageHandler.handleMessage(message, multicastPacket.getAddress());
-//                } catch (IOException e) {
-//                    System.out.println("Error receiving multicast message");
-//                    e.printStackTrace();
-//                }
-//            }
-//        }).start();
     }
 
     @Override
     public void run() {
-            byte[] mbuf = new byte[65535];
-
-            while(true) {
-                DatagramPacket multicastPacket = new DatagramPacket(mbuf, mbuf.length);
-
-                try {
-                    this.multicastSocket.receive(multicastPacket);
-                    Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
-                    messageHandler.handleMessage(message, multicastPacket.getAddress());
-                } catch (IOException e) {
-                    System.out.println("Error receiving multicast message");
-                    e.printStackTrace();
-                }
+        byte[] packet = new byte[MAX_MESSAGE_SIZE];
+        DatagramPacket multicastPacket = new DatagramPacket(packet, packet.length);
+        while(isActive) {
+            try {
+                multicastSocket.receive(multicastPacket);
+                Message message = new Message(multicastPacket.getData(), multicastPacket.getLength());
+                messageHandler.handleMessage(message, multicastPacket.getAddress());
+            } catch (IOException e) {
+                UI.printError("Failed to receive message in " + type + " on port " + port);
+                e.printStackTrace();
             }
+        }
     }
 
     /**
