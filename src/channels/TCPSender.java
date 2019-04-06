@@ -50,6 +50,7 @@ public class TCPSender {
                 }
             }
 
+            UI.printOK("Sending CHUNK: " + message.getChunkNo());
             ObjectOutputStream stream;
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());

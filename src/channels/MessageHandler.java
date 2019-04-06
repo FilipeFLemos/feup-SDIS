@@ -198,8 +198,8 @@ public class MessageHandler {
         }
 
         Message chunk = controller.getStorageManager().loadChunk(fileId, chunkNo);
-        peer.sendMessage(chunk,address);
         UI.printOK("Sending CHUNK Message: " + message.getChunkNo());
+        peer.sendMessage(chunk,address);
         UI.printBoot("------------------------------------------------------");
     }
 
