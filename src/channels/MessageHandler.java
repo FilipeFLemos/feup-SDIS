@@ -19,13 +19,13 @@ import static utils.Utils.MAX_THREADS;
 
 public class MessageHandler {
 
-    private PeerState controller;
+    private PeerState peerState;
     private Peer peer;
     private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(MAX_THREADS);
 
     public MessageHandler(Peer peer) {
         this.peer = peer;
-        this.controller = peer.getPeerState();
+        this.peerState = peer.getPeerState();
     }
 
     /**
@@ -47,7 +47,7 @@ public class MessageHandler {
             case PUTCHUNK:
                 if(peer.isEnhanced()) {
                     randomWait = Utils.getRandom(0, Utils.MAX_DELAY_BACKUP_ENH);
-                    controller.listenForSTORED_ENH(message);
+                    peerState.listenForSTORED_ENH(message);
                 }
 
                 scheduledExecutorService.schedule(() -> handlePUTCHUNK(message), randomWait, TimeUnit.MILLISECONDS);
@@ -56,7 +56,7 @@ public class MessageHandler {
                 scheduledExecutorService.submit(() -> handleSTORED(message));
                 break;
             case GETCHUNK:
-                controller.listenForCHUNK(message);
+                peerState.listenForCHUNK(message);
                 randomWait = Utils.getRandom(0, Utils.MAX_DELAY_CHUNK);
                 scheduledExecutorService.schedule(() -> handleGETCHUNK(message, address), randomWait, TimeUnit.MILLISECONDS);
                 break;
@@ -98,7 +98,7 @@ public class MessageHandler {
         String fileId = message.getFileId();
         int chunkNo = message.getChunkNo();
 
-        ConcurrentHashMap<String, Set<Integer>> peersWithFile = controller.getPeersBackingUpFile();
+        ConcurrentHashMap<String, Set<Integer>> peersWithFile = peerState.getPeersBackingUpFile();
         if(peersWithFile.containsKey(fileId)){
             UI.printWarning("Since I'm the one backing up this file, this request wil be ignored");
             UI.printBoot("------------------------------------------------------");
@@ -107,7 +107,7 @@ public class MessageHandler {
 
         if(peer.isEnhanced()) {
             FileChunk fileChunk = new FileChunk(fileId, chunkNo);
-            ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = controller.getStoredChunks_ENH();
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
 
             if(storedChunks_ENH.containsKey(fileChunk)) {
                 if(storedChunks_ENH.get(fileChunk).achievedDesiredRepDeg()) {
@@ -118,19 +118,19 @@ public class MessageHandler {
             }
         }
 
-        controller.startStoringChunks(message);
-        ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = controller.getStoredChunksByFileId();
+        peerState.startStoringChunks(message);
+        ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = peerState.getStoredChunksByFileId();
 
         if(storedChunksByFileId.get(fileId).contains(message.getChunkNo())) {
             UI.printWarning("Chunk is already stored, sending STORED message");
         }
         else {
-            if (!controller.getStorageManager().saveChunk(message)) {
-                UI.printError("Chunk " + chunkNo + " of file " + fileId + " is larger than the available space (" + controller.getStorageManager().getAvailableSpace() + ")");
+            if (!peerState.getStorageManager().saveChunk(message)) {
+                UI.printError("Chunk " + chunkNo + " of file " + fileId + " is larger than the available space (" + peerState.getStorageManager().getAvailableSpace() + ")");
                 UI.printBoot("------------------------------------------------------");
                 return;
             }
-            controller.addStoredChunk(message);
+            peerState.addStoredChunk(message);
         }
 
         Message storedMessage = new Message(peer.getVersion(), peer.getServerId(), fileId, null, Message.MessageType.STORED, chunkNo);
@@ -150,16 +150,16 @@ public class MessageHandler {
     private void handleSTORED(Message message) {
         UI.printBoot("-------------- Received STORED Message: "+ message.getChunkNo() +" ------------");
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
-        controller.updateBackedUpChunks(fileChunk, message);
+        peerState.updateBackedUpChunks(fileChunk, message);
 
-        ConcurrentHashMap<String, Set<Integer>> peersWithFile = controller.getPeersBackingUpFile();
+        ConcurrentHashMap<String, Set<Integer>> peersWithFile = peerState.getPeersBackingUpFile();
         if(peersWithFile.containsKey(message.getFileId())){
             UI.printOK("Finished updating");
             UI.printBoot("------------------------------------------------------");
             return;
         }
 
-        controller.updateStoredChunks(fileChunk,message);
+        peerState.updateStoredChunks(fileChunk,message);
         UI.printOK("Finished updating");
         UI.printBoot("------------------------------------------------------");
     }
@@ -181,23 +181,23 @@ public class MessageHandler {
         int chunkNo = message.getChunkNo();
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
 
-        ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap = controller.getIsBeingRestoredChunkMap();
+        ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap = peerState.getIsBeingRestoredChunkMap();
         if(isBeingRestoredChunkMap.containsKey(fileChunk)) {
             if(isBeingRestoredChunkMap.get(fileChunk)) {
-                controller.removeChunk(fileChunk);
+                peerState.removeChunk(fileChunk);
                 UI.printWarning("Chunk " + chunkNo + " is already being restored, ignoring request");
                 UI.printBoot("------------------------------------------------------");
                 return;
             }
         }
 
-        ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = controller.getStoredChunksByFileId();
+        ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = peerState.getStoredChunksByFileId();
         if(!storedChunksByFileId.containsKey(fileId) || !storedChunksByFileId.get(fileId).contains(chunkNo)) {
             UI.printBoot("------------------------------------------------------");
             return;
         }
 
-        Message chunk = controller.getStorageManager().loadChunk(fileId, chunkNo);
+        Message chunk = peerState.getStorageManager().loadChunk(fileId, chunkNo);
         UI.printOK("Sending CHUNK Message: " + message.getChunkNo());
         peer.sendMessage(chunk,address);
         UI.printBoot("------------------------------------------------------");
@@ -220,13 +220,13 @@ public class MessageHandler {
         String fileId = message.getFileId();
         FileChunk fileChunk = new FileChunk(fileId, message.getChunkNo());
 
-        ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap = controller.getIsBeingRestoredChunkMap();
+        ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap = peerState.getIsBeingRestoredChunkMap();
         if(isBeingRestoredChunkMap.containsKey(fileChunk)) {
-            controller.setIsBeingRestored(fileChunk);
+            peerState.setIsBeingRestored(fileChunk);
             UI.printOK("Marked chunk " + message.getChunkNo() + "as being restored");
         }
 
-        ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = controller.getRestoredChunks();
+        ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = peerState.getRestoredChunks();
         if(!chunksByRestoredFile.containsKey(fileId)) {
             UI.print("File is not being restored");
             UI.printBoot("------------------------------------------------------");
@@ -239,11 +239,11 @@ public class MessageHandler {
             return;
         }
 
-        controller.addRestoredFileChunks(message);
+        peerState.addRestoredFileChunks(message);
 
-        if(controller.hasRestoredAllChunks(fileId)) {
-            controller.saveFileToRestoredFolder(fileId);
-            controller.stopRestoringFile(fileId);
+        if(peerState.hasRestoredAllChunks(fileId)) {
+            peerState.saveFileToRestoredFolder(fileId);
+            peerState.stopRestoringFile(fileId);
         }
         UI.printBoot("------------------------------------------------------");
     }
@@ -260,7 +260,7 @@ public class MessageHandler {
 
         String fileId = message.getFileId();
 
-        ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = controller.getStoredChunksByFileId();
+        ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = peerState.getStoredChunksByFileId();
         if(!storedChunksByFileId.containsKey(fileId)) {
             UI.printBoot("------------------------------------------------------");
             return;
@@ -268,7 +268,7 @@ public class MessageHandler {
 
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
         while(!storedChunks.isEmpty()) {
-            controller.deleteChunk(fileId, storedChunks.get(0), false);
+            peerState.deleteChunk(fileId, storedChunks.get(0), false);
         }
 
         UI.printOK("File deleted successfully");
@@ -293,8 +293,8 @@ public class MessageHandler {
         UI.printBoot("------------- Received REMOVE Message: "+message.getChunkNo()+" ------------");
 
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
-        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = controller.getStoredChunks();
-        ConcurrentHashMap<FileChunk, ChunkInfo> reclaimedChunks = controller.getChunksReclaimed();
+        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = peerState.getStoredChunks();
+        ConcurrentHashMap<FileChunk, ChunkInfo> reclaimedChunks = peerState.getChunksReclaimed();
 
         if(storedChunks.containsKey(fileChunk)) {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
@@ -302,11 +302,11 @@ public class MessageHandler {
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
-                Message messagePUTCHUNK = controller.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
+                Message messagePUTCHUNK = peerState.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
                 messagePUTCHUNK.setMessageType(Message.MessageType.PUTCHUNK);
                 messagePUTCHUNK.setReplicationDeg(chunkInfo.getDesiredReplicationDeg());
 
-                scheduledExecutorService.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
+                scheduledExecutorService.schedule( new BackupChunkInitiator(peerState, messagePUTCHUNK, peer.getMDBChannel()),
                         Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
             }
         } else if(reclaimedChunks.containsKey(fileChunk)){
@@ -316,10 +316,10 @@ public class MessageHandler {
             Message messagePUTCHUNK = new Message(peer.getVersion(), -1, message.getFileId(), chunkInfo.getBody(),
                     Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
 
-            scheduledExecutorService.schedule( new BackupChunkInitiator(controller, messagePUTCHUNK, peer.getMDBChannel()),
+            scheduledExecutorService.schedule( new BackupChunkInitiator(peerState, messagePUTCHUNK, peer.getMDBChannel()),
                     Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
 
-            controller.removeReclaimedChunk(fileChunk);
+            peerState.removeReclaimedChunk(fileChunk);
         }
         UI.printBoot("------------------------------------------------------");
     }
@@ -340,8 +340,8 @@ public class MessageHandler {
             return;
         }
 
-        Set<String> deletedFiles = controller.getDeletedFiles();
-        ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
+        Set<String> deletedFiles = peerState.getDeletedFiles();
+        ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = peerState.getPeersBackingUpFile();
 
         for (Map.Entry<String, Set<Integer>> entry : peersBackingUpFile.entrySet()) {
             String fileId = entry.getKey();
@@ -374,15 +374,15 @@ public class MessageHandler {
         }
 
         String fileId = message.getFileId();
-        Set<String> deletedFiles = controller.getDeletedFiles();
+        Set<String> deletedFiles = peerState.getDeletedFiles();
         if(!deletedFiles.contains(fileId)){
             UI.printBoot("-------------------------------------------------------");
             return;
         }
 
-        ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = controller.getPeersBackingUpFile();
+        ConcurrentHashMap<String, Set<Integer>> peersBackingUpFile = peerState.getPeersBackingUpFile();
         if(peersBackingUpFile.containsKey(fileId)){
-            controller.removePeerBackingUpFile(fileId, message.getSenderId());
+            peerState.removePeerBackingUpFile(fileId, message.getSenderId());
         }
         UI.printBoot("------------------------------------------------------");
     }

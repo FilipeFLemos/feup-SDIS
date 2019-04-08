@@ -39,7 +39,6 @@ public class Peer implements RMIProtocol {
         UI.printBoot("Protocols version " + args[0]);
         version = args[0];
         serverId = Integer.parseInt(args[1]);
-        messageHandler = new MessageHandler(this);
 
         if (!version.equals("1.0")) {
             isEnhanced = true;
@@ -55,6 +54,8 @@ public class Peer implements RMIProtocol {
         if (!loadPeerState()) {
             peerState = new PeerState(version, serverId);
         }
+
+        messageHandler = new MessageHandler(this);
 
         UI.printBoot("------------- Booting Multicast Channels -------------");
         UI.nl();
