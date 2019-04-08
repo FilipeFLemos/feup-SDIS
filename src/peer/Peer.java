@@ -78,8 +78,8 @@ public class Peer implements RMIProtocol {
     private void sendCONTROL() {
         Message messageCONTROL = new Message(version, serverId, null, Message.MessageType.CONTROL);
         MCChannel.sendMessage(messageCONTROL);
-        UI.printOK("Sending CONTROL message");
-        UI.printInfo("------------------------------------------------------");
+        UI.printBoot("-------------- Sending CONTROL message ---------------");
+        UI.printBoot("------------------------------------------------------");
     }
 
     public static void main(final String args[]) {
