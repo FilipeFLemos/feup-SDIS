@@ -1,89 +1,89 @@
 #Backups
 
-echo -e "Testing Backups \n \n Backing up 10k file in Peer 1"
+echo "Testing Backups \n \n Backing up 10k file in Peer 1"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/1 BACKUP "files/test10k" 2
 
-sleep(5)
+sleep 5
 
-echo -e "\n Backing up 100k file in Peer 2"
+echo "\n Backing up 100k file in Peer 2"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/2 BACKUP "files/test100k" 2
 
-sleep(5)
+sleep 15
 
-echo -e "\n Backing up 1M file in Peer 3"
+echo "\n Backing up 1M file in Peer 3"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/3 BACKUP "files/test1M" 2
 
-sleep(5)
+sleep 30
 
-echo -e "\n Backing up 10M file in Peer 4"
+echo "\n Backing up image file in Peer 4"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/4 BACKUP "files/test10M" 2
+java -classpath bin interfaces.TestApp //127.0.0.1/4 BACKUP "files/image1.png" 2
 
-sleep(10)
+sleep 20
 
 #Restores
 
-echo -e "Testing Restores \n \n Restoring 10k file in Peer 1"
+echo "Testing Restores \n \n Restoring 10k file in Peer 1"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/1 RESTORE "files/test10k"
+#java -classpath bin interfaces.TestApp //127.0.0.1/1 RESTORE "files/test10k"
 
-sleep(5)
+sleep 10
 
-echo -e "\n Restoring 100k file in Peer 2"
+echo "\n Restoring 100k file in Peer 2"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/2 RESTORE "files/test100k"
 
-sleep(5)
+sleep 30
 
-echo -e "\n Restoring 1M file in Peer 3"
-
-java -classpath bin interfaces.TestApp //127.0.0.1/3 RESTORE "files/test1M"
-
-sleep(5)
-
-echo -e "\n Restoring 10M file in Peer 4"
-
-java -classpath bin interfaces.TestApp //127.0.0.1/4 RESTORE "files/test10M"
-
-sleep(10)
-
-#Delete
-
-echo -e "\n Deleting 1M file in Peer 3"
-
-java -classpath bin interfaces.TestApp //127.0.0.1/3 DELETE "files/test1M"
-
-sleep(5)
-
-echo -e "\n Restoring 1M file in Peer 3, Should fail"
+echo "\n Restoring 1M file in Peer 3"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/3 RESTORE "files/test1M"
+
+sleep 60
+
+echo "\n Restoring image file in Peer 4"
+
+java -classpath bin interfaces.TestApp //127.0.0.1/4 RESTORE "files/image1.png"
+
+sleep 5
 
 #Reclaim
 
-echo -e "\n Reclaiming 100k from peer 1"
+echo "\n Reclaiming 10k from peer 1"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/1 RECLAIM 100
+java -classpath bin interfaces.TestApp //127.0.0.1/1 RECLAIM 10
 
-sleep(10)
+sleep 10
 
-echo -e "\n Reclaiming 100k from peer 2"
+echo "\n Reclaiming 10k from peer 2"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/2 RECLAIM 100
+java -classpath bin interfaces.TestApp //127.0.0.1/2 RECLAIM 10
 
-sleep(10)
+sleep 10
 
-echo -e "\n Reclaiming 100k from peer 3"
+echo "\n Reclaiming 10k from peer 3"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/3 RECLAIM 100
+java -classpath bin interfaces.TestApp //127.0.0.1/3 RECLAIM 10
 
-sleep(10)
+sleep 10
 
-echo -e "\n Restoring 10M file in Peer 4"
+echo "\n Restoring image file in Peer 4"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/4 RESTORE "files/test10M"
+java -classpath bin interfaces.TestApp //127.0.0.1/4 RESTORE "files/image1.png"
 
-sleep(10)
+sleep 10
+
+#Delete
+
+echo "\n Deleting 1M file in Peer 3"
+
+java -classpath bin interfaces.TestApp //127.0.0.1/3 DELETE "files/test1M"
+
+sleep 5
+
+echo "\n Restoring 1M file in Peer 3, Should fail"
+
+java -classpath bin interfaces.TestApp //127.0.0.1/3 RESTORE "files/test1M"
