@@ -64,11 +64,23 @@ java -classpath bin interfaces.TestApp //127.0.0.1/3 RESTORE "files/test1M"
 
 #Reclaim
 
-echo -e "\n Reclaiming 100k from peer 4"
+echo -e "\n Reclaiming 100k from peer 1"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/4 RECLAIM 100
+java -classpath bin interfaces.TestApp //127.0.0.1/1 RECLAIM 100
 
-sleep(5)
+sleep(10)
+
+echo -e "\n Reclaiming 100k from peer 2"
+
+java -classpath bin interfaces.TestApp //127.0.0.1/2 RECLAIM 100
+
+sleep(10)
+
+echo -e "\n Reclaiming 100k from peer 3"
+
+java -classpath bin interfaces.TestApp //127.0.0.1/3 RECLAIM 100
+
+sleep(10)
 
 echo -e "\n Restoring 10M file in Peer 4"
 
