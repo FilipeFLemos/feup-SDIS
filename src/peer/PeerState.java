@@ -334,6 +334,8 @@ public class PeerState implements Serializable {
             currentDegree = backedUpChunks.get(fileChunk).getCurrentReplicationDeg();
         }
 
+        System.out.println(currentDegree);
+
         return currentDegree;
     }
 
