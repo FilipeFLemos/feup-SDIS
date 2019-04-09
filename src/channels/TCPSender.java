@@ -52,8 +52,6 @@ public class TCPSender {
                 }
             }
 
-            System.out.println("--- Sending to address: " + address);
-
             ObjectOutputStream stream;
             try {
                 stream = new ObjectOutputStream(socket.getOutputStream());
