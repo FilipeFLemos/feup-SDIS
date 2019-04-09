@@ -26,6 +26,3 @@ osascript -e 'tell app "Terminal"
                 sh run.sh 2.0 4"
 end tell'
 
-osascript -e 'tell app "Terminal"
-    do script "cd ~/FEUP/SDIS/SDIS/"
-end tell'
