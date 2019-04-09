@@ -128,6 +128,7 @@ public class PeerState implements Serializable {
      * @param message - the received STORED message
      */
     public void updateBackedUpChunks(FileChunk fileChunk, Message message) {
+        System.out.println("Backed up: " +backedUpChunks.size());
         updateContainer(backedUpChunks, fileChunk, message);
         addPeerBackingUpFile(fileChunk,message.getSenderId());
     }
