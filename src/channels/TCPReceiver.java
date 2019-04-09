@@ -33,8 +33,10 @@ public class TCPReceiver implements Runnable {
     public void run() {
         while (isRestoring) {
             try {
-                Socket socket = serverSocket.accept();
-                executorService.submit(() -> listenForCHUNKS(socket));
+                if(!serverSocket.isClosed()) {
+                    Socket socket = serverSocket.accept();
+                    executorService.submit(() -> listenForCHUNKS(socket));
+                }
             } catch (IOException e) {
                 e.printStackTrace();
             }
