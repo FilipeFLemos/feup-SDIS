@@ -10,13 +10,13 @@ echo "\n Backing up 100k file in Peer 2"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/2 BACKUP "files/test100k" 2
 
-sleep 7
+sleep 10
 
 echo "\n Backing up 1M file in Peer 3"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/3 BACKUP "files/test1M" 2
 
-sleep 12
+sleep 20
 
 echo "\n Backing up image file in Peer 4"
 
