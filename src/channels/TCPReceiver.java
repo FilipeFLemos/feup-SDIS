@@ -17,6 +17,7 @@ public class TCPReceiver implements Runnable {
     private ServerSocket serverSocket;
     private ExecutorService executorService = Executors.newFixedThreadPool(Utils.MAX_THREADS);
     private boolean isRestoring;
+    private ObjectInputStream stream = null;
 
     public TCPReceiver(int port, MessageHandler messageHandler) {
         this.messageHandler = messageHandler;
@@ -33,10 +34,8 @@ public class TCPReceiver implements Runnable {
     public void run() {
         while (isRestoring) {
             try {
-                if(!serverSocket.isClosed()) {
-                    Socket socket = serverSocket.accept();
-                    executorService.submit(() -> listenForCHUNKS(socket));
-                }
+                Socket socket = serverSocket.accept();
+                executorService.submit(() -> listenForCHUNKS(socket));
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -46,6 +45,7 @@ public class TCPReceiver implements Runnable {
     public void close(){
         try {
             isRestoring = false;
+            stream.close();
             serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
@@ -57,7 +57,6 @@ public class TCPReceiver implements Runnable {
      * Listens for CHUNK messages on the TCP socket
      */
     private void listenForCHUNKS(Socket socket) {
-        ObjectInputStream stream;
 
         try {
             stream = new ObjectInputStream(socket.getInputStream());
