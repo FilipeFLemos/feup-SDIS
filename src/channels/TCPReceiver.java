@@ -41,6 +41,15 @@ public class TCPReceiver implements Runnable {
         }
     }
 
+    public void close(){
+        try {
+            serverSocket.close();
+            isRestoring = false;
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
 
     /**
      * Listens for CHUNK messages on the TCP socket

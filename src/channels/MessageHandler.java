@@ -244,6 +244,7 @@ public class MessageHandler {
         if(peerState.hasRestoredAllChunks(fileId)) {
             peerState.saveFileToRestoredFolder(fileId);
             peerState.stopRestoringFile(fileId);
+            peer.closeTcpReceiver();
         }
         UI.printBoot("------------------------------------------------------");
     }
