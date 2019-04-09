@@ -22,6 +22,7 @@ public class TCPReceiver implements Runnable {
         this.messageHandler = messageHandler;
         try {
             this.serverSocket = new ServerSocket(port);
+            System.out.println("--- Sending to address: " + port);
         } catch (IOException ignored) {
         }
         isRestoring = true;
