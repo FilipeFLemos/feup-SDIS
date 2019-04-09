@@ -223,12 +223,12 @@ public class MessageHandler {
         ConcurrentHashMap<FileChunk, Boolean> isBeingRestoredChunkMap = peerState.getIsBeingRestoredChunkMap();
         if(isBeingRestoredChunkMap.containsKey(fileChunk)) {
             peerState.setIsBeingRestored(fileChunk);
-            UI.printOK("Marked chunk " + message.getChunkNo() + "as being restored");
+            UI.printOK("Marked chunk No " + message.getChunkNo() + " as being restored");
         }
 
         ConcurrentHashMap<String, ConcurrentSkipListSet<Message>> chunksByRestoredFile = peerState.getRestoredChunks();
         if(!chunksByRestoredFile.containsKey(fileId)) {
-            UI.print("File is not being restored");
+            UI.print("File is not being restored by this peer");
             UI.printBoot("------------------------------------------------------");
             return;
         }
