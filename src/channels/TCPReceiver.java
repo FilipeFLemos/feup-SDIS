@@ -36,7 +36,7 @@ public class TCPReceiver implements Runnable {
                 Socket socket = serverSocket.accept();
                 executorService.submit(() -> listenForCHUNKS(socket));
             } catch (IOException e) {
-                e.printStackTrace();
+                UI.printWarning("Server socket closing");
             }
         }
     }
@@ -85,6 +85,7 @@ public class TCPReceiver implements Runnable {
                 try {
                     socket.close();
                 } catch (IOException e1) {
+                    e1.printStackTrace();
                 }
                 break;
             }
