@@ -43,8 +43,8 @@ public class TCPReceiver implements Runnable {
 
     public void close(){
         try {
-            serverSocket.close();
             isRestoring = false;
+            serverSocket.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
