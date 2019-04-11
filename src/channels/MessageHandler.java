@@ -315,6 +315,8 @@ public class MessageHandler {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
 
+            System.out.println("I am backing up and received removed");
+
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
                 Message messagePUTCHUNK = peerState.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
