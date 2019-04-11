@@ -32,6 +32,7 @@ public class Peer implements RMIProtocol {
     private PeerState peerState;
     private ScheduledExecutorService scheduledExecutorService = Executors.newScheduledThreadPool(MAX_THREADS);
     private int MDRPort;
+    private final int TCP_PORT = 4444;
     private boolean isEnhanced = false;
 
     private Peer(final String args[]) {
@@ -152,7 +153,7 @@ public class Peer implements RMIProtocol {
         }
 
         if (isEnhanced) {
-            tcpSender = new TCPSender(MDRPort);
+            tcpSender = new TCPSender(TCP_PORT);
         }
     }
 
@@ -199,7 +200,7 @@ public class Peer implements RMIProtocol {
     public void restore(String filePath) {
         if (!version.equals("1.0")) {
             UI.printInfo("Enhanced restore protocols initiated  (v" + version + ")");
-            tcpReceiver = new TCPReceiver(MDRPort, messageHandler);
+            tcpReceiver = new TCPReceiver(MDRPort + serverId, messageHandler);
             scheduledExecutorService.submit(tcpReceiver);
         }
 

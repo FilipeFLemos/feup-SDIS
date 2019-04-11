@@ -45,7 +45,7 @@ public class TCPSender {
 
             if(socket == null){
                 try {
-                    socket = new Socket(address, port);
+                    socket = new Socket(address, port + message.getSenderId());
                     sockets.put(address, socket);
                 } catch (IOException e) {
                     e.printStackTrace();
