@@ -311,6 +311,9 @@ public class MessageHandler {
                     ChunkInfo chunkInfoEnh = storedChunks_ENH.get(fileChunk);
                     chunkInfoEnh.decreaseCurrentRepDeg();
                     chunkInfoEnh.removePeer(message.getSenderId());
+                    System.out.println("StoredCHunks_ENH atualizado para o chunk: " + message.getChunkNo());
+                } else{
+                    System.out.println("StoredCHunks_ENH não tem o file logo não poderei lançar aquela msg para o chunk: " + message.getChunkNo());
                 }
             }
 
