@@ -34,6 +34,7 @@ public class TCPSender {
     public synchronized void sendMessage(Message message, InetAddress address) {
         executorService.submit(() -> {
             Socket socket = null;
+            int destinationPort = port + message.getSenderId();
 
             if(sockets.containsKey(address)){
                 socket = sockets.get(address);

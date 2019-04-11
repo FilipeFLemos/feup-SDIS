@@ -200,7 +200,7 @@ public class Peer implements RMIProtocol {
     public void restore(String filePath) {
         if (!version.equals("1.0")) {
             UI.printInfo("Enhanced restore protocols initiated  (v" + version + ")");
-            tcpReceiver = new TCPReceiver(MDRPort + serverId, messageHandler);
+            tcpReceiver = new TCPReceiver(TCP_PORT + serverId, messageHandler);
             scheduledExecutorService.submit(tcpReceiver);
         }
 
