@@ -301,9 +301,11 @@ public class MessageHandler {
         if(peer.isEnhanced()){
             ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
             if(storedChunks_ENH.containsKey(fileChunk)){
-                peerState.removeStoredChunk_ENH(fileChunk);
-            } else{
-                System.out.println("StoredCHunks_ENH não tem o file logo não poderei lançar aquela msg para o chunk: " + message.getChunkNo());
+                ChunkInfo chunkInfo = storedChunks_ENH.get(fileChunk);
+                if(chunkInfo.isBackedUpByPeer(message.getSenderId())){
+                    chunkInfo.decreaseCurrentRepDeg();
+                    chunkInfo.removePeer(message.getSenderId());
+                }
             }
         }
 
@@ -311,8 +313,6 @@ public class MessageHandler {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
-
-            System.out.println("Sou um dos peers que guardou o chunk, new rep degree : " + chunkInfo.getCurrentReplicationDeg());
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
@@ -327,10 +327,8 @@ public class MessageHandler {
             ChunkInfo chunkInfo = backedUpChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
-            System.out.println("Sou o peer que mandou guardar este chunk");
 
         } else if(reclaimedChunks.containsKey(fileChunk)){
-            System.out.println("Sou o peer que tinha isto guardado mas fui burro e removi sem verificar a rep degree");
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
             UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
