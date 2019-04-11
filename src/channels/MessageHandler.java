@@ -298,24 +298,24 @@ public class MessageHandler {
         ConcurrentHashMap<FileChunk, ChunkInfo> reclaimedChunks = peerState.getChunksReclaimed();
         ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunks = peerState.getBackedUpChunks();
 
+        if(peer.isEnhanced()){
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
+            if(storedChunks_ENH.containsKey(fileChunk)){
+                ChunkInfo chunkInfoEnh = storedChunks_ENH.get(fileChunk);
+                chunkInfoEnh.decreaseCurrentRepDeg();
+                chunkInfoEnh.removePeer(message.getSenderId());
+                System.out.println("StoredCHunks_ENH atualizado para o chunk: " + message.getChunkNo()+", new rep degree : " + chunkInfoEnh.getCurrentReplicationDeg());
+            } else{
+                System.out.println("StoredCHunks_ENH não tem o file logo não poderei lançar aquela msg para o chunk: " + message.getChunkNo());
+            }
+        }
+
         if(storedChunks.containsKey(fileChunk)) {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
 
             System.out.println("Sou um dos peers que guardou o chunk, new rep degree : " + chunkInfo.getCurrentReplicationDeg());
-
-            if(peer.isEnhanced()){
-                ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
-                if(storedChunks_ENH.containsKey(fileChunk)){
-                    ChunkInfo chunkInfoEnh = storedChunks_ENH.get(fileChunk);
-                    chunkInfoEnh.decreaseCurrentRepDeg();
-                    chunkInfoEnh.removePeer(message.getSenderId());
-                    System.out.println("StoredCHunks_ENH atualizado para o chunk: " + message.getChunkNo()+", new rep degree : " + chunkInfoEnh.getCurrentReplicationDeg());
-                } else{
-                    System.out.println("StoredCHunks_ENH não tem o file logo não poderei lançar aquela msg para o chunk: " + message.getChunkNo());
-                }
-            }
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
