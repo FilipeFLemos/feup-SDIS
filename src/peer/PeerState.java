@@ -362,6 +362,7 @@ public class PeerState implements Serializable {
     public FileChunk getMostStoredChunk() {
         if(storedChunks.isEmpty()) {
             UI.printWarning("Stored chunks info is empty");
+            UI.print("Size: " + storedChunks.size());
             return null;
         }
 
