@@ -34,21 +34,12 @@ public class ReclaimInitiator implements Runnable {
 
         StorageManager storageManager = peerState.getStorageManager();
         long targetSpace = space * 1000;
-        if (targetSpace == 0) {
-            if (reclaimAllSpace(storageManager)) {
-                UI.print("Successfully reclaimed all disk space");
-            } else {
-                UI.printError("Couldn't reclaim all disk space");
-            }
-
+        if(reclaimSpace(storageManager, targetSpace)){
+            UI.print("Successfully reclaimed disk space. New disk used space is " + storageManager.getUsedSpace());
         } else {
-            long reclaimedSpace = reclaimSpace(storageManager, targetSpace);
-            if (reclaimedSpace >= targetSpace) {
-                UI.print("Successfully reclaimed disk space. New disk used space is " + storageManager.getUsedSpace());
-            } else {
-                UI.printError("Couldn't reclaim " + space + " kB");
-            }
+            UI.printError("Couldn't reclaim " + space + " kB");
         }
+
         UI.printInfo("------------------------------------------------------");
     }
 
@@ -58,49 +49,24 @@ public class ReclaimInitiator implements Runnable {
      * @param targetSpace - the target space
      * @return the space reclaimed
      */
-    private long reclaimSpace(StorageManager storageManager, long targetSpace) {
-        long reclaimedSpace = 0;
-        while (reclaimedSpace < targetSpace) {
+    private boolean reclaimSpace(StorageManager storageManager, long targetSpace) {
+        while (storageManager.getUsedSpace() > targetSpace) {
             FileChunk mostStoredChunk = peerState.getMostStoredChunk();
 
             if (mostStoredChunk == null) {
                 UI.printWarning("There is no chunk to be deleted");
-                break;
+                return storageManager.getUsedSpace() > targetSpace;
             }
 
             String fileId = mostStoredChunk.getFileId();
             int chunkNo = mostStoredChunk.getChunkNo();
-            long spaceBeforeDeleting = storageManager.getUsedSpace();
-
-            UI.print("Deleting " + fileId + " - " + chunkNo);
-            peerState.deleteChunk(fileId, chunkNo, true);
-
-            reclaimedSpace += (spaceBeforeDeleting - storageManager.getUsedSpace());
-            sendREMOVED(fileId, chunkNo);
-        }
-        return reclaimedSpace;
-    }
-
-    /**
-     * Tries to reclaim all the disk space.
-     *
-     * @param storageManager - the storage manager
-     * @return
-     */
-    private boolean reclaimAllSpace(StorageManager storageManager) {
-
-        ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = peerState.getStoredChunks();
-        for (Map.Entry<FileChunk, ChunkInfo> entry : storedChunks.entrySet()) {
-            FileChunk fileChunk = entry.getKey();
-            String fileId = fileChunk.getFileId();
-            int chunkNo = fileChunk.getChunkNo();
 
             UI.print("Deleting " + fileId + " - " + chunkNo);
             peerState.deleteChunk(fileId, chunkNo, true);
             sendREMOVED(fileId, chunkNo);
         }
 
-        return storageManager.getUsedSpace() == 0;
+        return true;
     }
 
     /**
