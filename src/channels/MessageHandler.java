@@ -303,8 +303,6 @@ public class MessageHandler {
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
 
-            System.out.println("Im other peer storing this chunk");
-
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
                 Message messagePUTCHUNK = peerState.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
@@ -318,9 +316,8 @@ public class MessageHandler {
             ChunkInfo chunkInfo = backedUpChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
-            System.out.println("Im the peer backing up this chunk");
+
         } else if(reclaimedChunks.containsKey(fileChunk)){
-            System.out.println("Shit its me");
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
             UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
