@@ -244,9 +244,10 @@ public class PeerState implements Serializable {
         storageManager.deleteChunk(fileId, chunkNo);
 
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
-        ChunkInfo chunkInfo = storedChunks.remove(fileChunk);
-        chunkInfo.removePeer(serverId);
-        chunkInfo.decreaseCurrentRepDeg();
+        ChunkInfo chunkInfo = deleteStoredChunk(storedChunks,fileChunk);
+        if(isEnhanced){
+            deleteStoredChunk(storedChunks_ENH, fileChunk);
+        }
 
         ArrayList<Integer> storedChunks = storedChunksByFileId.get(fileId);
         storedChunks.remove((Integer) chunkNo);
@@ -259,6 +260,15 @@ public class PeerState implements Serializable {
             chunkInfo.setBody(chunkBeingDeleted.getBody());
             chunksReclaimed.putIfAbsent(fileChunk,chunkInfo);
         }
+    }
+
+    private ChunkInfo deleteStoredChunk(ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks, FileChunk fileChunk) {
+        ChunkInfo chunkInfo = storedChunks.remove(fileChunk);
+        if(chunkInfo != null){
+            chunkInfo.removePeer(serverId);
+            chunkInfo.decreaseCurrentRepDeg();
+        }
+        return chunkInfo;
     }
 
     public void removePeerBackingUpFile(String fileId, Integer senderId) {
