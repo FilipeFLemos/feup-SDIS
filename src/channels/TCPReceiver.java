@@ -23,6 +23,7 @@ public class TCPReceiver implements Runnable {
         try {
             this.serverSocket = new ServerSocket(port);
         } catch (IOException e) {
+            UI.printError("Error creating socket");
             e.printStackTrace();
         }
         isRestoring = true;
