@@ -60,6 +60,9 @@ public class BackupChunkInitiator implements Runnable {
             waitTime *= 2;
         } while (!hasDesiredReplicationDeg(waitTime));
 
+        if(selfDoing){
+            peerState.removeBackedUpContainer(message);
+        }
         UI.printInfo("------------------------------------------------------");
     }
 

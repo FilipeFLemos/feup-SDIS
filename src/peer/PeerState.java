@@ -441,4 +441,9 @@ public class PeerState implements Serializable {
         output += "\nStorage: \n  Available Memory(kB): "+ storageManager.getAvailableSpace()/1000 + "\n  Used Memory(kB): " + storageManager.getUsedSpace()/1000;
         return output;
     }
+
+    public void removeBackedUpContainer(Message message) {
+        FileChunk fileChunk = new FileChunk(message.getFileId(),message.getChunkNo());
+        backedUpChunks.remove(fileChunk);
+    }
 }
