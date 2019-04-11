@@ -296,8 +296,22 @@ public class MessageHandler {
         FileChunk fileChunk = new FileChunk(message.getFileId(), message.getChunkNo());
         ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = peerState.getStoredChunks();
         ConcurrentHashMap<FileChunk, ChunkInfo> reclaimedChunks = peerState.getChunksReclaimed();
+        ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunks = peerState.getBackedUpChunks();
 
         if(storedChunks.containsKey(fileChunk)) {
+            ChunkInfo chunkInfo = storedChunks.get(fileChunk);
+            chunkInfo.decreaseCurrentRepDeg();
+
+            if(!chunkInfo.achievedDesiredRepDeg()) {
+                UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
+                Message messagePUTCHUNK = peerState.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
+                messagePUTCHUNK.setMessageType(Message.MessageType.PUTCHUNK);
+                messagePUTCHUNK.setReplicationDeg(chunkInfo.getDesiredReplicationDeg());
+
+                scheduledExecutorService.schedule( new BackupChunkInitiator(peerState, messagePUTCHUNK, peer.getMDBChannel()),
+                        Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
+            }
+        } else if(backedUpChunks.containsKey(fileChunk)){
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
 

@@ -322,6 +322,10 @@ public class PeerState implements Serializable {
         return deletedFiles;
     }
 
+    public ConcurrentHashMap<FileChunk, ChunkInfo> getBackedUpChunks() {
+        return backedUpChunks;
+    }
+
     /**
      * Calculates the current replication degree of the backed up chunk.
      * @param message - the provided chunk message
