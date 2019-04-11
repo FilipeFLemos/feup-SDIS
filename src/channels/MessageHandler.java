@@ -305,8 +305,8 @@ public class MessageHandler {
 
             if(peer.isEnhanced()){
                 ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
-                ChunkInfo chunkInfoEnh = storedChunks_ENH.get(fileChunk);
-                if(chunkInfoEnh != null) {
+                if(storedChunks_ENH.containsKey(fileChunk)){
+                    ChunkInfo chunkInfoEnh = storedChunks_ENH.get(fileChunk);
                     chunkInfoEnh.decreaseCurrentRepDeg();
                     chunkInfoEnh.removePeer(message.getSenderId());
                 }

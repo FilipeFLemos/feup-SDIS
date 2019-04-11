@@ -245,7 +245,8 @@ public class PeerState implements Serializable {
 
         FileChunk fileChunk = new FileChunk(fileId, chunkNo);
         ChunkInfo chunkInfo = deleteStoredChunk(storedChunks,fileChunk);
-        if(isEnhanced){
+
+        if(isEnhanced && storedChunks_ENH.containsKey(fileChunk)){
             deleteStoredChunk(storedChunks_ENH, fileChunk);
         }
 
@@ -264,10 +265,8 @@ public class PeerState implements Serializable {
 
     private ChunkInfo deleteStoredChunk(ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks, FileChunk fileChunk) {
         ChunkInfo chunkInfo = storedChunks.remove(fileChunk);
-        if(chunkInfo != null){
-            chunkInfo.removePeer(serverId);
-            chunkInfo.decreaseCurrentRepDeg();
-        }
+        chunkInfo.removePeer(serverId);
+        chunkInfo.decreaseCurrentRepDeg();
         return chunkInfo;
     }
 
