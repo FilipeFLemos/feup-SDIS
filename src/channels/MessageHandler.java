@@ -105,18 +105,18 @@ public class MessageHandler {
             return;
         }
 
-//        if(peer.isEnhanced()) {
-//            FileChunk fileChunk = new FileChunk(fileId, chunkNo);
-//            ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
-//
-//            if(storedChunks_ENH.containsKey(fileChunk)) {
-//                if(storedChunks_ENH.get(fileChunk).achievedDesiredRepDeg()) {
-//                    UI.printWarning("Replication degree is already being respected for chunk " + message.getChunkNo() + ". Ignoring further requests");
-//                    UI.printBoot("------------------------------------------------------");
-//                    return;
-//                }
-//            }
-//        }
+        if(peer.isEnhanced()) {
+            FileChunk fileChunk = new FileChunk(fileId, chunkNo);
+            ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
+
+            if(storedChunks_ENH.containsKey(fileChunk)) {
+                if(storedChunks_ENH.get(fileChunk).achievedDesiredRepDeg()) {
+                    UI.printWarning("Replication degree is already being respected for chunk " + message.getChunkNo() + ". Ignoring further requests");
+                    UI.printBoot("------------------------------------------------------");
+                    return;
+                }
+            }
+        }
 
         peerState.startStoringChunks(message);
         ConcurrentHashMap<String, ArrayList<Integer>> storedChunksByFileId = peerState.getStoredChunksByFileId();
