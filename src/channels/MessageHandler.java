@@ -303,6 +303,13 @@ public class MessageHandler {
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
 
+            if(peer.isEnhanced()){
+                ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
+                ChunkInfo chunkInfoEnh = storedChunks_ENH.get(fileChunk);
+                chunkInfoEnh.decreaseCurrentRepDeg();
+                chunkInfoEnh.removePeer(message.getSenderId());
+            }
+
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
                 Message messagePUTCHUNK = peerState.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
