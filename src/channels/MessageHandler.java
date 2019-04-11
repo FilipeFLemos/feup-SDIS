@@ -297,7 +297,6 @@ public class MessageHandler {
         ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks = peerState.getStoredChunks();
         ConcurrentHashMap<FileChunk, ChunkInfo> reclaimedChunks = peerState.getChunksReclaimed();
         ConcurrentHashMap<FileChunk, ChunkInfo> backedUpChunks = peerState.getBackedUpChunks();
-        System.out.println(backedUpChunks.size());
 
         if(storedChunks.containsKey(fileChunk)) {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
@@ -313,7 +312,7 @@ public class MessageHandler {
                         Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
             }
         } else if(backedUpChunks.containsKey(fileChunk)){
-            ChunkInfo chunkInfo = storedChunks.get(fileChunk);
+            ChunkInfo chunkInfo = backedUpChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
 
             System.out.println("I am backing up and received removed");
