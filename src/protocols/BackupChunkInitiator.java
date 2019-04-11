@@ -42,7 +42,9 @@ public class BackupChunkInitiator implements Runnable {
             return;
         }
 
-        peerState.listenForSTORED(message);
+        if(!selfDoing) {
+            peerState.listenForSTORED(message);
+        }
 
         int tries = 1;
         int waitTime = 500;
