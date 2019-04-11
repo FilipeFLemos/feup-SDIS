@@ -301,6 +301,7 @@ public class MessageHandler {
         if(storedChunks.containsKey(fileChunk)) {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
+            chunkInfo.removePeer(message.getSenderId());
 
             if(!chunkInfo.achievedDesiredRepDeg()) {
                 UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
@@ -314,6 +315,7 @@ public class MessageHandler {
         } else if(backedUpChunks.containsKey(fileChunk)){
             ChunkInfo chunkInfo = backedUpChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
+            chunkInfo.removePeer(message.getSenderId());
         } else if(reclaimedChunks.containsKey(fileChunk)){
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
