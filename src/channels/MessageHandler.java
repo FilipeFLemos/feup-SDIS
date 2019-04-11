@@ -199,7 +199,7 @@ public class MessageHandler {
 
         Message chunk = peerState.getStorageManager().loadChunk(fileId, chunkNo);
         UI.printOK("Sending CHUNK Message: " + message.getChunkNo());
-        peer.sendMessage(chunk,address);
+        peer.sendMessage(chunk,address,message.getSenderId());
         UI.printBoot("------------------------------------------------------");
     }
 

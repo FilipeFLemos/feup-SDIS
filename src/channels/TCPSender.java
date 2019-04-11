@@ -27,14 +27,13 @@ public class TCPSender {
      * If the socket for the specified address is still opened, uses it. Else, opens a new socket for that address and
      * adds it to the sockets map for future requests.
      * Finally sends the message.
-     *
-     * @param message - the message to be sent
+     *  @param message - the message to be sent
      * @param address - the address of the destination
+     * @param requestedPeerId
      */
-    public synchronized void sendMessage(Message message, InetAddress address) {
+    public synchronized void sendMessage(Message message, InetAddress address, Integer requestedPeerId) {
         executorService.submit(() -> {
             Socket socket = null;
-            int destinationPort = port + message.getSenderId();
 
             if(sockets.containsKey(address)){
                 socket = sockets.get(address);
@@ -46,7 +45,7 @@ public class TCPSender {
 
             if(socket == null){
                 try {
-                    socket = new Socket(address, port + message.getSenderId());
+                    socket = new Socket(address, port + requestedPeerId);
                     sockets.put(address, socket);
                 } catch (IOException e) {
                     e.printStackTrace();

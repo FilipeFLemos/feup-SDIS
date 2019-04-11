@@ -237,11 +237,12 @@ public class Peer implements RMIProtocol {
      * Else, sends the CHUNK to the MDC channel.
      * @param message - the received CHUNK message
      * @param address - the address of the TCP socket
+     * @param senderId
      */
-    public void sendMessage(Message message, InetAddress address) {
+    public void sendMessage(Message message, InetAddress address, Integer requestedPeerId) {
         if (isEnhanced && !message.getVersion().equals("1.0")) {
             MDRChannel.sendMessage(message, false);
-            tcpSender.sendMessage(message, address);
+            tcpSender.sendMessage(message, address, requestedPeerId);
         } else {
             MDRChannel.sendMessage(message);
         }
