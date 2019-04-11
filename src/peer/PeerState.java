@@ -279,6 +279,10 @@ public class PeerState implements Serializable {
         }
     }
 
+    public void removeStoredChunk_ENH(FileChunk fileChunk) {
+        storedChunks_ENH.remove(fileChunk);
+    }
+
     public void removeReclaimedChunk(FileChunk fileChunk) {
         chunksReclaimed.remove(fileChunk);
     }
