@@ -303,7 +303,7 @@ public class MessageHandler {
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
 
-            System.out.println("Sou um dos peers que guardou o chunk");
+            System.out.println("Sou um dos peers que guardou o chunk, new rep degree : " + chunkInfo.getCurrentReplicationDeg());
 
             if(peer.isEnhanced()){
                 ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
@@ -311,7 +311,7 @@ public class MessageHandler {
                     ChunkInfo chunkInfoEnh = storedChunks_ENH.get(fileChunk);
                     chunkInfoEnh.decreaseCurrentRepDeg();
                     chunkInfoEnh.removePeer(message.getSenderId());
-                    System.out.println("StoredCHunks_ENH atualizado para o chunk: " + message.getChunkNo());
+                    System.out.println("StoredCHunks_ENH atualizado para o chunk: " + message.getChunkNo()+", new rep degree : " + chunkInfoEnh.getCurrentReplicationDeg());
                 } else{
                     System.out.println("StoredCHunks_ENH não tem o file logo não poderei lançar aquela msg para o chunk: " + message.getChunkNo());
                 }
