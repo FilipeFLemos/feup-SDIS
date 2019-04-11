@@ -314,18 +314,6 @@ public class MessageHandler {
         } else if(backedUpChunks.containsKey(fileChunk)){
             ChunkInfo chunkInfo = backedUpChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
-
-            System.out.println("I am backing up and received removed");
-
-            if(!chunkInfo.achievedDesiredRepDeg()) {
-                UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
-                Message messagePUTCHUNK = peerState.getStorageManager().loadChunk(message.getFileId(), message.getChunkNo());
-                messagePUTCHUNK.setMessageType(Message.MessageType.PUTCHUNK);
-                messagePUTCHUNK.setReplicationDeg(chunkInfo.getDesiredReplicationDeg());
-
-                scheduledExecutorService.schedule( new BackupChunkInitiator(peerState, messagePUTCHUNK, peer.getMDBChannel()),
-                        Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
-            }
         } else if(reclaimedChunks.containsKey(fileChunk)){
             ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
