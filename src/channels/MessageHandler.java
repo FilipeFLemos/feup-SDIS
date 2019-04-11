@@ -301,11 +301,12 @@ public class MessageHandler {
         if(peer.isEnhanced()){
             ConcurrentHashMap<FileChunk, ChunkInfo> storedChunks_ENH = peerState.getStoredChunks_ENH();
             if(storedChunks_ENH.containsKey(fileChunk)){
-                ChunkInfo chunkInfo = storedChunks_ENH.get(fileChunk);
-                if(chunkInfo.isBackedUpByPeer(message.getSenderId())){
-                    chunkInfo.decreaseCurrentRepDeg();
-                    chunkInfo.removePeer(message.getSenderId());
-                }
+//                ChunkInfo chunkInfo = storedChunks_ENH.get(fileChunk);
+//                if(chunkInfo.isBackedUpByPeer(message.getSenderId())){
+//                    chunkInfo.decreaseCurrentRepDeg();
+//                    chunkInfo.removePeer(message.getSenderId());
+//                }
+                storedChunks_ENH.remove(fileChunk);
             }
         }
 
