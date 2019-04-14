@@ -309,8 +309,18 @@ public class MessageHandler {
                 storedChunks_ENH.remove(fileChunk);
             }
         }
+        if(reclaimedChunks.containsKey(fileChunk)){
+            ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
 
-        if(storedChunks.containsKey(fileChunk)) {
+            UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
+            Message messagePUTCHUNK = new Message(peer.getVersion(), peer.getServerId(), message.getFileId(), chunkInfo.getBody(),
+                    Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
+
+            scheduledExecutorService.schedule( new BackupChunkInitiator(peerState, messagePUTCHUNK, peer.getMDBChannel()),
+                    Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
+
+            peerState.removeReclaimedChunk(fileChunk);
+        } else if(storedChunks.containsKey(fileChunk)) {
             ChunkInfo chunkInfo = storedChunks.get(fileChunk);
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
@@ -329,17 +339,6 @@ public class MessageHandler {
             chunkInfo.decreaseCurrentRepDeg();
             chunkInfo.removePeer(message.getSenderId());
 
-        } else if(reclaimedChunks.containsKey(fileChunk)){
-            ChunkInfo chunkInfo = reclaimedChunks.get(fileChunk);
-
-            UI.print("Replication degree of Chunk " + message.getChunkNo() + " is no longer being respected");
-            Message messagePUTCHUNK = new Message(peer.getVersion(), -1, message.getFileId(), chunkInfo.getBody(),
-                    Message.MessageType.PUTCHUNK, message.getChunkNo(), chunkInfo.getDesiredReplicationDeg());
-
-            scheduledExecutorService.schedule( new BackupChunkInitiator(peerState, messagePUTCHUNK, peer.getMDBChannel()),
-                    Utils.getRandom(0, Utils.MAX_DELAY_REMOVED), TimeUnit.MILLISECONDS);
-
-            peerState.removeReclaimedChunk(fileChunk);
         }
         UI.printBoot("------------------------------------------------------");
     }

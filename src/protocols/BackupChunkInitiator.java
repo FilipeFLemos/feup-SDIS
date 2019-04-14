@@ -21,8 +21,9 @@ public class BackupChunkInitiator implements Runnable {
         this.peerState = peerState;
         this.channel = channel;
         this.message = message;
-        if (this.message.getSenderId() == -1) {
+        if (this.message.getSenderId() == peerState.getServerId()) {
             selfDoing = true;
+
         }
     }
 
@@ -50,6 +51,8 @@ public class BackupChunkInitiator implements Runnable {
         int waitTime = 500;
 
         do {
+            UI.print("Sending PUTCHUNK id "+ message.getChunkNo().toString() + " messages " + tries + " times");
+
             if (tries > Utils.MAX_PUTCHUNK_TRIES) {
                 UI.printError("Aborting backup, attempt limit reached");
                 UI.printInfo("------------------------------------------------------");
@@ -59,10 +62,10 @@ public class BackupChunkInitiator implements Runnable {
             tries++;
             waitTime *= 2;
         } while (!hasDesiredReplicationDeg(waitTime));
-
         if(selfDoing){
             peerState.removeBackedUpContainer(message);
         }
+
         UI.printInfo("------------------------------------------------------");
     }
 
