@@ -10,68 +10,28 @@ echo "\n Backing up 100k file in Peer 2"
 
 java -classpath bin interfaces.TestApp //127.0.0.1/2 BACKUP "files/test100k" 2
 
-sleep 15
+sleep 7
 
-echo "\n Backing up 1M file in Peer 3"
+echo "\n Backing up 120k file in Peer 3"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/3 BACKUP "files/test1M" 2
+java -classpath bin interfaces.TestApp //127.0.0.1/3 BACKUP "files/test120k" 2
 
-sleep 35
+sleep 7
 
-java -classpath bin interfaces.TestApp //127.0.0.1/1 STATE
+echo "\n Reclaiming to 80k file in Peer 1"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/2 STATE
+java -classpath bin interfaces.TestApp //127.0.0.1/1 RECLAIM 80
 
-java -classpath bin interfaces.TestApp //127.0.0.1/3 STATE
+sleep 20
 
-java -classpath bin interfaces.TestApp //127.0.0.1/4 STATE
+echo "\n Reclaiming to 80k file in Peer 2"
 
-java -classpath bin interfaces.TestApp //127.0.0.1/4 RECLAIM 300
+java -classpath bin interfaces.TestApp //127.0.0.1/2 RECLAIM 80
 
-sleep 10
+sleep 20
 
-java -classpath bin interfaces.TestApp //127.0.0.1/1 STATE
+sh testState.sh
 
-java -classpath bin interfaces.TestApp //127.0.0.1/2 STATE
 
-java -classpath bin interfaces.TestApp //127.0.0.1/3 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/4 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/4 RECLAIM 300
-
-sleep 10
-
-java -classpath bin interfaces.TestApp //127.0.0.1/1 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/2 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/3 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/4 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/2 RECLAIM 300
-
-sleep 10
-
-java -classpath bin interfaces.TestApp //127.0.0.1/1 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/2 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/3 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/4 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/2 RECLAIM 300
-
-sleep 10
-
-java -classpath bin interfaces.TestApp //127.0.0.1/1 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/2 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/3 STATE
-
-java -classpath bin interfaces.TestApp //127.0.0.1/4 STATE
 
 
